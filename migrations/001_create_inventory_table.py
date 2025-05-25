@@ -3,7 +3,7 @@ import os
 
 db_name = "mare_kwenta.db"
 
-# check if the database file exists
+# Check if the database file exists
 if not os.path.exists(db_name):
     print("Database doesn't exist. Creating a new one.")
 else:
@@ -22,10 +22,8 @@ try:
     """)
 
     conn.commit()
-    cursor.close
 except sqlite3.Error as e:
-    print("An error occured while connecting to sqlite", e)
+    print("An error occurred while connecting to SQLite:", e)
 finally:
     if conn:
-        conn.commit()
-        cursor.close
+        conn.close()
