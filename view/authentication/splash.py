@@ -3,11 +3,10 @@ from ttkbootstrap.constants import *
 from log_in import open_login
 
 def close_window():
-    splash_window.destroy()
-    open_login()
+    open_login(splash_window, inner_frame)  # Open the login window after closing the splash screen
 
 # CREATE A FULLSCREEN WINDOW
-splash_window = tb.Window(themename="darkly")
+splash_window = tb.Window(themename="flatly")
 splash_window.title("MareKwenta POS")
 width = splash_window.winfo_screenwidth()
 height = splash_window.winfo_screenheight()
@@ -37,8 +36,11 @@ label = tb.Label(
 )
 label.grid(row=0, column=0, padx=20, pady=20)
 
-# SEPARATOR
-sep = tb.Separator(inner_frame, orient=HORIZONTAL)
+style = tb.Style()
+style.configure("Custom.TSeparator", background="#4D2D18")
+
+# Separator using the custom style
+sep = tb.Separator(inner_frame, orient=HORIZONTAL, style="Custom.TSeparator")
 sep.grid(row=1, column=0, sticky="ew", padx=40, pady=5)
 
 # POS LABEL
