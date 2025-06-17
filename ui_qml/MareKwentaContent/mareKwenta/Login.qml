@@ -18,24 +18,24 @@ Rectangle {
         text: qsTr("MareKwenta")
         anchors.left: parent.left
         anchors.top: parent.top
-        anchors.leftMargin: 542
-        anchors.topMargin: 301
+        anchors.leftMargin: 546
+        anchors.topMargin: 288
         font.pixelSize: 40
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignTop
         wrapMode: Text.Wrap
+        anchors.horizontalCenter: parent.horizontalCenter
         font.weight: Font.Medium
         font.family: "Unbounded"
     }
 
     Shape {
+        anchors.horizontalCenter: parent.horizontalCenter
         id: line_1_Stroke_
+        y: 341
         width: 320
         height: 1
-        anchors.left: parent.left
-        anchors.top: parent.top
-        anchors.leftMargin: 562
-        anchors.topMargin: 356
+        anchors.horizontalCenterOffset: 0
         layer.samples: 16
         layer.enabled: true
         ShapePath {
@@ -60,13 +60,14 @@ Rectangle {
         text: qsTr("POS")
         anchors.left: parent.left
         anchors.top: parent.top
-        anchors.leftMargin: 648
-        anchors.topMargin: 354
+        anchors.leftMargin: 643
+        anchors.topMargin: 357
         font.letterSpacing: 18
         font.pixelSize: 36
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         wrapMode: Text.Wrap
+        anchors.horizontalCenter: parent.horizontalCenter
         font.weight: Font.Normal
         font.family: "Unica One"
     }
@@ -81,6 +82,7 @@ Rectangle {
         anchors.rightMargin: 493
         anchors.topMargin: 457
         anchors.bottomMargin: 302
+        anchors.verticalCenterOffset: -30
         Rectangle {
             id: rectangle_1
             width: 455
@@ -89,6 +91,8 @@ Rectangle {
             radius: 22
             anchors.left: parent.left
             anchors.top: parent.top
+            anchors.leftMargin: 0
+            anchors.topMargin: 0
 
             Button {
                 id: login_button
@@ -119,6 +123,7 @@ Rectangle {
                 }
                 onClicked: mainWindow.login_clicked()
             }
+
             Input_Field {
                 id: username_textbox
                 width: 412

@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Shapes 1.15
-import QtQuick.Studio.Components 1.0
 
 Rectangle {
     id: employee_Management
@@ -14,20 +13,12 @@ Rectangle {
     property alias may_05_2026Text: date_text.text
     property alias endedText: ended.text
     property alias employee_IDText: employee_ID.text
-    property alias staff1Text: staff1.text
     property alias employee_NameText: employee_Name.text
-    property alias receiptsText: receipts.text
-    property alias mKText: mK.text
-    property alias inventoryText: inventory.text
-    property alias cash_BoxText: cash_Box.text
     property alias aMText: timein_text.text
-    property alias logsText: logs.text
-    property alias dash_boardText: dash_board.text
     property alias aya_Del_RosarioText: employeename_text.text
     property alias elementText: employeeid_text.text
     property alias pMText: timeout_text.text
     property alias staffText: staff.text
-    property alias ticketText: ticket.text
 
     Text {
         id: date_text
@@ -77,7 +68,7 @@ Rectangle {
         anchors.topMargin: 110
         anchors.bottomMargin: 35
         Rectangle {
-            id: rectangle_55
+            id: logs
             width: 1280
             height: 879
             color: "#ffffff"
@@ -93,7 +84,7 @@ Rectangle {
                 height: 69
                 text: "+"
                 topPadding: -3
-                font.pointSize: 40
+                font.pointSize: 33
                 font.bold: true
                 display: AbstractButton.TextOnly
             }
@@ -281,171 +272,271 @@ Rectangle {
     }
 
     Item {
-        id: group_19
+        id: group_17
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        anchors.rightMargin: 1338
+        anchors.leftMargin: -2
+        anchors.rightMargin: 1340
         Image {
-            id: rectangle_14
-            anchors.left: parent.left
+            id: rectangle_15
+            width: 124
+            height: 1040
             anchors.top: parent.top
-            anchors.leftMargin: -2
             anchors.topMargin: -8
-            source: "assets/rectangle_14_2.png"
-        }
+            source: "assets/rectangle_15.png"
 
-        Image {
-            id: rectangle_44
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: -2
-            anchors.topMargin: -8
-            source: "assets/rectangle_44_2.png"
-        }
-
-        Rectangle {
-            id: rectangle_43
-            width: 83
-            height: 97
-            color: "#424d2d18"
-            radius: 12
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: 8
-            anchors.topMargin: 236
-        }
-
-        Item {
-            id: group_95
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.leftMargin: 20
-            anchors.rightMargin: 21
-            anchors.topMargin: 580
-            anchors.bottomMargin: 385
-            Text {
-                id: ticket
-                width: 62
-                height: 21
-                color: "#4d2d18"
-                text: qsTr("Ticket")
-                anchors.top: parent.top
-                anchors.topMargin: 38
-                font.pixelSize: 16
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignTop
-                wrapMode: Text.Wrap
-                font.weight: Font.Light
-                font.family: "Unbounded"
-                anchors.horizontalCenterOffset: 1
-                anchors.horizontalCenter: parent.horizontalCenter
+            Rectangle {
+                id: rectangle8
+                x: 18
+                y: 775
+                width: 78
+                height: 85
+                color: "#f2efea"
+                radius: 12
             }
 
-            Shopping_cart {
-                id: shopping_cart
-                width: 31
-                height: 29
-                anchors.top: parent.top
-                state: "size_48"
-                clip: true
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-        }
-
-        Item {
-            id: group_92
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.leftMargin: 6
-            anchors.rightMargin: 5
-            anchors.topMargin: 144
-            anchors.bottomMargin: 815
-            Text {
-                id: inventory
-                width: 92
-                height: 26
-                color: "#4d2d18"
-                text: qsTr("Inventory")
-                anchors.top: parent.top
-                anchors.topMargin: 39
-                font.pixelSize: 14
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignTop
-                wrapMode: Text.Wrap
-                font.weight: Font.Light
-                font.family: "Unbounded"
-                anchors.horizontalCenterOffset: 1
-                anchors.horizontalCenter: parent.horizontalCenter
+            Rectangle {
+                id: rectangle9
+                x: 18
+                y: 657
+                width: 78
+                height: 85
+                color: "#f2efea"
+                radius: 12
             }
 
-            Archive {
-                id: archive
-                width: 29
-                height: 30
-                anchors.top: parent.top
-                state: "size_48"
-                clip: true
-                anchors.horizontalCenterOffset: -1
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-        }
-
-        Item {
-            id: group_96
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.topMargin: 687
-            anchors.bottomMargin: 268
-            Text {
-                id: dash_board
-                width: 103
-                height: 34
-                color: "#4d2d18"
-                text: qsTr("Dash\nboard")
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.topMargin: 35
-                font.pixelSize: 16
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignTop
-                wrapMode: Text.Wrap
-                font.weight: Font.Light
-                font.family: "Unbounded"
+            Rectangle {
+                id: rectangle7
+                x: 18
+                y: 541
+                width: 78
+                height: 85
+                color: "#f2efea"
+                radius: 12
             }
 
-            Bar_chart_2 {
-                id: bar_chart_2
-                width: 28
-                height: 29
-                anchors.top: parent.top
-                state: "size_48"
-                clip: true
-                anchors.horizontalCenter: parent.horizontalCenter
+            Rectangle {
+                id: rectangle6
+                x: 18
+                y: 423
+                width: 78
+                height: 85
+                color: "#f2efea"
+                border.color: "#f2efea"
             }
-        }
 
-        User {
-            id: user
-            width: 33
-            height: 31
-            anchors.top: parent.top
-            anchors.topMargin: 256
-            state: "size_48"
-            clip: true
-            anchors.horizontalCenterOffset: -1
-            anchors.horizontalCenter: parent.horizontalCenter
+            Rectangle {
+                id: rectangle5
+                x: 18
+                y: 305
+                width: 78
+                height: 85
+                color: "#f2efea"
+                radius: 12
+                border.color: "#f2efea"
+            }
+
+            Rectangle {
+                id: rectangle4
+                x: 18
+                y: 126
+                width: 78
+                height: 85
+                color: "#f2efea"
+                radius: 12
+                border.color: "#f2efea"
+
+                Button {
+                    id: inventory_navbar
+                    x: 0
+                    objectName: "inventory_navbar"
+                    y: 0
+                    width: 78
+                    height: 85
+                    text: qsTr("")
+                    icon.height: 55
+                    icon.color: "#4e2d18"
+                    icon.width: 55
+                    icon.source: "assets/Archive.png"
+                    onClicked: navHandler.navigateToInventory()
+                    display: AbstractButton.IconOnly
+                    background: Rectangle{
+                        color: "#f2efea"
+                        border.color: "#f2efea"
+
+                    }
+                    Text {
+                        id: text4
+                        x: 5
+                        y: 63
+                        color: "#4e2d18"
+                        text: qsTr("Inventory")
+                        font.pixelSize: 12
+                        font.family: "Unbounded"
+                    }
+                }
+
+                Button {
+                    id: staff_navbar
+                    objectName: "staff_navbar"
+                    x: 0
+                    y: 114
+                    width: 78
+                    height: 85
+                    text: qsTr("")
+                    icon.width: 55
+                    icon.source: "assets/User.png"
+                    icon.height: 55
+                    icon.color: "#4e2d18"
+                    onClicked: navHandler.navigateToStaff()
+                    display: AbstractButton.IconOnly
+                    background: Rectangle{
+                        color: "#f2efea"
+                        radius: 12
+                        border.color: "#f2efea"
+
+                    }
+
+                    Text {
+                        id: text5
+                        x: 21
+                        y: 62
+                        color: "#4e2d18"
+                        text: qsTr("Staff")
+                        font.pixelSize: 12
+                        font.family: "Unbounded"
+                    }
+                }
+
+                Button {
+                    id: receipt_navbar
+                    objectName: "receipt_navbar"
+                    x: 0
+                    y: 226
+                    width: 78
+                    height: 85
+                    text: qsTr("")
+                    icon.width: 55
+                    icon.source: "assets/List.png"
+                    icon.height: 55
+                    icon.color: "#4e2d18"
+                    display: AbstractButton.IconOnly
+                    Text {
+                        id: text6
+                        x: 12
+                        y: 65
+                        color: "#4e2d18"
+                        text: qsTr("Receipt")
+                        font.pixelSize: 12
+                        font.family: "Unbounded"
+                    }
+                    background: Rectangle {
+                        color: "#f2efea"
+                        radius: 12
+                        border.color: "#f2efea"
+                    }
+                }
+
+                Button {
+                    id: cashbox_navbar
+                    objectName: "casbox_navbar"
+                    x: 0
+                    y: 350
+                    width: 78
+                    height: 85
+                    text: qsTr("")
+                    icon.width: 55
+                    icon.source: "assets/DollarSign.png"
+                    icon.height: 55
+                    icon.color: "#4e2d18"
+                    onClicked: navHandler.navigateToCashBox()
+                    display: AbstractButton.IconOnly
+                    Text {
+                        id: text7
+                        x: 7
+                        y: 65
+                        color: "#4e2d18"
+                        text: qsTr("CashBox")
+                        font.pixelSize: 12
+                        font.family: "Unbounded"
+                    }
+                    background: Rectangle {
+                        color: "#f2efea"
+                        radius: 12
+                        border.color: "#f2efea"
+                    }
+                }
+
+                Button {
+                    id: ticket_navbar
+                    objectName: "ticket_navbar"
+                    x: 0
+                    y: 466
+                    width: 78
+                    height: 85
+                    text: qsTr("")
+                    icon.width: 55
+                    icon.source: "assets/Ticket.png"
+                    icon.height: 55
+                    icon.color: "#4e2d18"
+                    display: AbstractButton.IconOnly
+                    Text {
+                        id: text8
+                        x: 17
+                        y: 65
+                        color: "#4e2d18"
+                        text: qsTr("Ticket")
+                        font.pixelSize: 12
+                        font.family: "Unbounded"
+                    }
+                    background: Rectangle {
+                        color: "#f2efea"
+                        radius: 12
+                        border.color: "#f2efea"
+                    }
+                }
+
+                Button {
+                    id: dashboard_navbar
+                    objectName: "dashboard_navbar"
+                    x: 0
+                    y: 584
+                    width: 78
+                    height: 85
+                    text: qsTr("")
+                    icon.width: 55
+                    icon.source: "assets/BarChart.png"
+                    icon.height: 55
+                    icon.color: "#4e2d18"
+                    onClicked: navHandler.navigateToDashboard()
+                    display: AbstractButton.IconOnly
+                    Text {
+                        id: text9
+                        x: 0
+                        y: 65
+                        color: "#4e2d18"
+                        text: qsTr("Dashboard")
+                        font.pixelSize: 12
+                        font.family: "Unbounded"
+                    }
+                    background: Rectangle {
+                        color: "#f2efea"
+                        radius: 12
+                        border.color: "#f2efea"
+                    }
+                }
+            }
+
+
+
+
+
         }
 
         Text {
-            id: logs
+            id: logs1
             width: 50
             height: 34
             visible: false
@@ -464,85 +555,7 @@ Rectangle {
         }
 
         Item {
-            id: group_93
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.leftMargin: 9
-            anchors.rightMargin: 9
-            anchors.topMargin: 362
-            anchors.bottomMargin: 609
-            Text {
-                id: receipts
-                width: 85
-                height: 20
-                color: "#4e2d18"
-                text: qsTr("Receipts")
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.topMargin: 33
-                font.pixelSize: 16
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignTop
-                wrapMode: Text.Wrap
-                font.weight: Font.Light
-                font.family: "Unbounded"
-            }
-
-            List {
-                id: element3
-                width: 34
-                height: 28
-                anchors.top: parent.top
-                state: "size_48"
-                clip: true
-                anchors.horizontalCenterOffset: -3
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-        }
-
-        Item {
-            id: group_94
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.leftMargin: 14
-            anchors.rightMargin: 18
-            anchors.topMargin: 456
-            anchors.bottomMargin: 478
-            Text {
-                id: cash_Box
-                width: 71
-                height: 53
-                color: "#4e2d18"
-                text: qsTr("Cash Box")
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.topMargin: 37
-                font.pixelSize: 16
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignTop
-                wrapMode: Text.Wrap
-                font.weight: Font.Light
-                font.family: "Unbounded"
-            }
-
-            Dollar_sign {
-                id: dollar_sign
-                width: 29
-                height: 31
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.leftMargin: 19
-                state: "size_48"
-                clip: true
-            }
-        }
-
-        Item {
-            id: group_8
+            id: group_9
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
@@ -552,13 +565,15 @@ Rectangle {
             anchors.topMargin: 44
             anchors.bottomMargin: 922
             Text {
-                id: mK
+                id: mK1
                 width: 59
                 height: 58
                 color: "#4d2d18"
                 text: qsTr("MK")
                 anchors.left: parent.left
                 anchors.top: parent.top
+                anchors.leftMargin: -1
+                anchors.topMargin: -8
                 font.pixelSize: 28
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignTop
@@ -570,21 +585,21 @@ Rectangle {
             }
 
             Shape {
-                id: line_1_Stroke_
+                id: line_1_Stroke_1
                 width: 52
                 height: 2
                 anchors.left: parent.left
                 anchors.top: parent.top
-                anchors.leftMargin: 5
-                anchors.topMargin: 35
+                anchors.leftMargin: 3
+                anchors.topMargin: 28
                 layer.samples: 16
                 layer.enabled: true
                 ShapePath {
-                    id: line_1_Stroke__ShapePath_0
+                    id: line_1_Stroke__ShapePath_1
                     strokeWidth: 2
                     strokeColor: "transparent"
                     PathSvg {
-                        id: line_1_Stroke__PathSvg_0
+                        id: line_1_Stroke__PathSvg_1
                         path: "M 52 0 L 52 2 L 8.881784197001252e-16 2 L 0 1.4210854715202004e-14 L 52 0 Z"
                     }
                     fillRule: ShapePath.WindingFill
@@ -592,24 +607,6 @@ Rectangle {
                 }
                 antialiasing: true
             }
-        }
-
-        Text {
-            id: staff1
-            width: 50
-            height: 34
-            color: "#4e2d18"
-            text: qsTr("Staff")
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: 25
-            anchors.topMargin: 298
-            font.pixelSize: 16
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignTop
-            wrapMode: Text.Wrap
-            font.weight: Font.Light
-            font.family: "Unbounded"
         }
     }
 }
@@ -626,18 +623,6 @@ D{i:12;uuid:"67141bfc-3880-531b-ada8-5714500c3202"}D{i:13;uuid:"66ba591f-49c6-50
 D{i:14;uuid:"66ba591f-49c6-50e1-b4e0-89af49819205_ShapePath_0"}D{i:15;uuid:"66ba591f-49c6-50e1-b4e0-89af49819205-PathSvg_0"}
 D{i:16;uuid:"8c92b65a-7aee-5f98-aa2c-436abe3b8887"}D{i:17;uuid:"17313f8f-f9a2-5577-948d-d81ad5b0e06a"}
 D{i:18;uuid:"12f26386-803c-5e5e-86ea-af2a74fb1d2c"}D{i:19;uuid:"8386ca92-62a9-529e-b609-129ae973df7f"}
-D{i:20;uuid:"064a4728-df6f-5350-862c-542d8c1a1b06"}D{i:21;uuid:"a6bc56cd-b60e-5352-aac4-93dbed6bb66f"}
-D{i:22;uuid:"cf99f040-7273-5282-a1be-2dbce7c7f2d5"}D{i:23;uuid:"ba3340fd-51a8-5be9-bcd5-d3ec54179ec1"}
-D{i:24;uuid:"d8553bc1-d7a5-523d-a64c-f5099d3afdb0"}D{i:25;uuid:"54575589-d0d9-5e08-b87b-4e7a98666ca4"}
-D{i:26;uuid:"b350ea1e-79b6-5fdf-bd82-9f5498fb2d45"}D{i:27;uuid:"f976ec86-78dd-52e8-9435-d368faafb6d6"}
-D{i:28;uuid:"42eafbd6-b0ad-5c01-9543-1a66994941e1"}D{i:29;uuid:"f6d235a3-377e-5727-aeab-7e305f49fdc5"}
-D{i:30;uuid:"cfe7c8a9-ddb2-5087-80ef-939159544aa8"}D{i:31;uuid:"82bd6b68-188d-550e-b949-fcbe0de1eef0"}
-D{i:32;uuid:"623afc50-8ff6-52fa-a3e3-feb0bb9d6edc"}D{i:33;uuid:"bbbba031-0faa-5664-976b-5ce35488e93f"}
-D{i:34;uuid:"26d113af-57c4-5052-be9a-a92ecb15b98b"}D{i:35;uuid:"74fa70da-2c5e-5c8c-911c-4cb9ce3cfaab"}
-D{i:36;uuid:"5ed666df-fb2b-59ce-8638-44d6d750946a"}D{i:37;uuid:"2b020795-1bca-53d3-a23b-c9c0cb02c97c"}
-D{i:38;uuid:"16a897d6-3c46-524b-8aa1-cb1807e7ca46"}D{i:39;uuid:"6657ed65-dc5c-51c4-8e44-5507b708102a"}
-D{i:40;uuid:"3c001bdb-0f8f-5987-a5fe-a088bf10924d"}D{i:41;uuid:"3c001bdb-0f8f-5987-a5fe-a088bf10924d_ShapePath_0"}
-D{i:42;uuid:"3c001bdb-0f8f-5987-a5fe-a088bf10924d-PathSvg_0"}D{i:43;uuid:"3229ff45-e054-56f4-96eb-42dabd0ea284"}
 }
 ##^##*/
 

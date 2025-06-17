@@ -12,7 +12,7 @@ class MainWindow(QObject):
     def __init__(self):
         super().__init__()
         self.view = None
-        self.base_path = "C:/Users/Detera/Desktop/Py/MareKwentaTrial/MareKwentaContent/mareKwenta/"
+        self.base_path = "C:\\Users\\Detera\\Desktop\\Py\\MareKwenta\\ui_qml\\mareKwentaContent\\mareKwenta"
         
         # Create a timer for delayed navigation
         self.navigation_timer = QTimer()
@@ -132,10 +132,12 @@ class MainWindow(QObject):
             print("Error: View not set")
             return
             
-        # Map page names to QML files
+        # Unified page mapping for both directions
         page_mapping = {
-            "ingredients": "Inventory_Management_Ingredients_Linking.ui.qml",
-            "entry": "Inventory_Management_Entry.qml"  # Changed from .ui.qml to .qml
+            "inventory": "inventory.qml",
+            "linking_ingredients": "linking_ingredients.qml",
+            "ingredients": "linking_ingredients.qml",  # Alternative name
+            "entry": "inventory.qml"  # Alternative name
         }
         
         if page_name in page_mapping:
@@ -153,24 +155,47 @@ class MainWindow(QObject):
             # Clear the current source first to avoid conflicts
             self.view.setSource(QUrl())
             
-            # Load the new QML file
-            self.view.setSource(qml_url)
-            
-            # Check for errors
-            if self.view.status() == QQuickView.Error:
-                print("Error loading QML file:")
-                for error in self.view.errors():
-                    print(f"  - {error.toString()}")
-            else:
-                print(f"Successfully navigated to {page_name}")
+            # Small delay to ensure cleanup
+            QTimer.singleShot(10, lambda: self._loadNewPage(qml_url, page_name))
         else:
             print(f"Unknown page: {page_name}")
     
+    def _loadNewPage(self, qml_url, page_name):
+        """Load the new QML page after cleanup"""
+        # Load the new QML file
+        self.view.setSource(qml_url)
+        
+        # Check for errors
+        if self.view.status() == QQuickView.Error:
+            print("Error loading QML file:")
+            for error in self.view.errors():
+                print(f"  - {error.toString()}")
+        else:
+            print(f"Successfully navigated to {page_name}")
+    
+    # Navigation methods for specific pages
+    @Slot()
+    def inventoryClicked(self):
+        """Navigate to inventory page"""
+        self.pending_page = "inventory"
+        self.navigation_timer.start(50)
+    
     @Slot()
     def linkIngredientsClicked(self):
-        self.pending_page = "ingredients"
-        # Delay navigation by 50ms to allow click handler to complete
+        """Navigate to linking ingredients page"""
+        self.pending_page = "linking_ingredients"
         self.navigation_timer.start(50)
+    
+    # Alternative method names for compatibility
+    @Slot()
+    def goToInventory(self):
+        """Alternative method to navigate to inventory"""
+        self.inventoryClicked()
+    
+    @Slot()
+    def goToLinkingIngredients(self):
+        """Alternative method to navigate to linking ingredients"""
+        self.linkIngredientsClicked()
     
     def _performNavigation(self):
         """Actually perform the navigation after delay"""
@@ -195,8 +220,8 @@ def main():
     # Make Python object available to QML
     view.rootContext().setContextProperty("mainWindow", main_window)
     
-    # Load your initial QML file
-    qml_file = QUrl.fromLocalFile("C:/Users/Detera/Desktop/Py/MareKwentaTrial/MareKwentaContent/mareKwenta/Inventory_Management_Entry.qml")
+    # Load your initial QML file (start with inventory)
+    qml_file = QUrl.fromLocalFile(r"C:\Users\Detera\Desktop\Py\MareKwenta\ui_qml\mareKwentaContent\mareKwenta\inventory.qml")
     view.setSource(qml_file)
     
     if view.status() == QQuickView.Error:

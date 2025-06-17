@@ -27,7 +27,6 @@ Rectangle {
     property alias element7Text: element7.text
     property alias cash_BoxText: cash_Box.text
     property alias month_00Text: month_00.text
-    property alias logsText: logs.text
     property alias dash_boardText: dash_board.text
     property alias discountsText: discounts.text
     property alias month_02Text: month_02.text
@@ -41,7 +40,6 @@ Rectangle {
     property alias element2Text: element2.text
     property alias element9Text: element9.text
     property alias element13Text: element13.text
-    property alias staffText: staff.text
     property alias month_01Text: month_01.text
     property alias element5Text: element5.text
     property alias gross_SalesText: gross_Sales.text
@@ -1201,152 +1199,262 @@ Rectangle {
     }
 
     Item {
-        id: nav
+        id: group_17
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        anchors.rightMargin: 1338
-        anchors.bottomMargin: -72
+        anchors.leftMargin: -2
+        anchors.rightMargin: 1340
         Image {
-            id: rectangle_14
+            id: rectangle_15
+            width: 124
+            height: 1040
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.leftMargin: -2
             anchors.topMargin: -8
-            source: "assets/rectangle_14_12.png"
-        }
+            source: "assets/rectangle_15.png"
 
-        Image {
-            id: rectangle_44
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: -2
-            anchors.topMargin: -8
-            source: "assets/rectangle_44_8.png"
-        }
+            Rectangle {
+                id: rectangle8
+                x: 18
+                y: 775
+                width: 78
+                height: 85
+                color: "#ffffff"
+                radius: 12
+            }
 
-        Rectangle {
-            id: rectangle_43
-            width: 83
-            height: 97
-            color: "#424d2d18"
-            radius: 12
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: 8
-            anchors.topMargin: 680
+            Rectangle {
+                id: rectangle9
+                x: 18
+                y: 657
+                width: 78
+                height: 85
+                color: "#ffffff"
+                radius: 12
+            }
+
+            Rectangle {
+                id: rectangle7
+                x: 18
+                y: 541
+                width: 78
+                height: 85
+                color: "#ffffff"
+                radius: 12
+            }
+
+            Rectangle {
+                id: rectangle6
+                x: 18
+                y: 423
+                width: 78
+                height: 85
+                color: "#f2efea"
+                border.color: "#f2efea"
+            }
+
+            Rectangle {
+                id: rectangle5
+                x: 18
+                y: 305
+                width: 78
+                height: 85
+                color: "#f2efea"
+                radius: 12
+                border.color: "#f2efea"
+            }
+
+            Rectangle {
+                id: rectangle4
+                x: 18
+                y: 191
+                width: 78
+                height: 85
+                color: "#f2efea"
+                radius: 12
+                border.color: "#f2efea"
+
+                Button {
+                    id: inventory_navbar
+                    x: 0
+                    objectName: "inventory_navbar"
+                    y: 0
+                    width: 78
+                    height: 85
+                    text: qsTr("")
+                    icon.height: 55
+                    icon.color: "#4e2d18"
+                    icon.width: 55
+                    icon.source: "assets/Archive.png"
+                    display: AbstractButton.IconOnly
+                    background: Rectangle {
+                        color: "#f2efea"
+                        border.color: "#f2efea"
+                    }
+                    Text {
+                        id: inventory
+                        x: 5
+                        y: 63
+                        color: "#4e2d18"
+                        text: qsTr("Inventory")
+                        font.pixelSize: 12
+                        font.family: "Unbounded"
+                    }
+                }
+
+                Button {
+                    id: staff_navbar
+                    objectName: "staff_navbar"
+                    x: 0
+                    y: 114
+                    width: 78
+                    height: 85
+                    text: qsTr("")
+                    icon.width: 55
+                    icon.source: "assets/User.png"
+                    icon.height: 55
+                    icon.color: "#4e2d18"
+                    display: AbstractButton.IconOnly
+                    background: Rectangle {
+                        color: "#f2efea"
+                        radius: 12
+                        border.color: "#f2efea"
+                    }
+
+                    Text {
+                        id: text5
+                        x: 21
+                        y: 62
+                        color: "#4e2d18"
+                        text: qsTr("Staff")
+                        font.pixelSize: 12
+                        font.family: "Unbounded"
+                    }
+                }
+
+                Button {
+                    id: receipt_navbar
+                    objectName: "receipt_navbar"
+                    x: 0
+                    y: 226
+                    width: 78
+                    height: 85
+                    text: qsTr("")
+                    icon.width: 55
+                    icon.source: "assets/List.png"
+                    icon.height: 55
+                    icon.color: "#4e2d18"
+                    display: AbstractButton.IconOnly
+                    Text {
+                        id: receipts
+                        x: 12
+                        y: 65
+                        color: "#4e2d18"
+                        text: qsTr("Receipt")
+                        font.pixelSize: 12
+                        font.family: "Unbounded"
+                    }
+                    background: Rectangle {
+                        color: "#f2efea"
+                        radius: 12
+                        border.color: "#f2efea"
+                    }
+                }
+
+                Button {
+                    id: cashbox_navbar
+                    objectName: "casbox_navbar"
+                    x: 0
+                    y: 350
+                    width: 78
+                    height: 85
+                    text: qsTr("")
+                    icon.width: 55
+                    icon.source: "assets/DollarSign.png"
+                    icon.height: 55
+                    icon.color: "#4e2d18"
+                    display: AbstractButton.IconOnly
+                    Text {
+                        id: cash_Box
+                        x: 7
+                        y: 65
+                        color: "#4e2d18"
+                        text: qsTr("CashBox")
+                        font.pixelSize: 12
+                        font.family: "Unbounded"
+                    }
+                    background: Rectangle {
+                        color: "#f2efea"
+                        radius: 12
+                        border.color: "#f2efea"
+                    }
+                }
+
+                Button {
+                    id: ticket_navbar
+                    objectName: "ticket_navbar"
+                    x: 0
+                    y: 466
+                    width: 78
+                    height: 85
+                    text: qsTr("")
+                    icon.width: 55
+                    icon.source: "assets/Ticket.png"
+                    icon.height: 55
+                    icon.color: "#4e2d18"
+                    display: AbstractButton.IconOnly
+                    Text {
+                        id: ticket
+                        x: 17
+                        y: 65
+                        color: "#4e2d18"
+                        text: qsTr("Ticket")
+                        font.pixelSize: 12
+                        font.family: "Unbounded"
+                    }
+                    background: Rectangle {
+                        color: "#f2efea"
+                        radius: 12
+                        border.color: "#f2efea"
+                    }
+                }
+
+                Button {
+                    id: dashboard_navbar
+                    objectName: "dashboard_navbar"
+                    x: 0
+                    y: 584
+                    width: 78
+                    height: 85
+                    text: qsTr("")
+                    icon.width: 55
+                    icon.source: "assets/BarChart.png"
+                    icon.height: 55
+                    icon.color: "#4e2d18"
+                    display: AbstractButton.IconOnly
+                    Text {
+                        id: dash_board
+                        x: 0
+                        y: 65
+                        color: "#4e2d18"
+                        text: qsTr("Dashboard")
+                        font.pixelSize: 12
+                        font.family: "Unbounded"
+                    }
+                    background: Rectangle {
+                        color: "#f2efea"
+                        radius: 12
+                        border.color: "#f2efea"
+                    }
+                }
+            }
         }
 
         Text {
-            id: dash_board
-            width: 103
-            height: 34
-            color: "#4d2d18"
-            text: qsTr("Dash\nboard")
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.topMargin: 722
-            font.pixelSize: 16
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignTop
-            wrapMode: Text.Wrap
-            font.weight: Font.Light
-            font.family: "Unbounded"
-        }
-
-        Item {
-            id: group_116
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.leftMargin: 20
-            anchors.rightMargin: 21
-            anchors.topMargin: 580
-            anchors.bottomMargin: 385
-            Text {
-                id: ticket
-                width: 62
-                height: 21
-                color: "#4d2d18"
-                text: qsTr("Ticket")
-                anchors.top: parent.top
-                anchors.topMargin: 38
-                font.pixelSize: 16
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignTop
-                wrapMode: Text.Wrap
-                font.weight: Font.Light
-                font.family: "Unbounded"
-                anchors.horizontalCenterOffset: 1
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-
-            Shopping_cart {
-                id: shopping_cart
-                width: 31
-                height: 29
-                anchors.top: parent.top
-                state: "size_48"
-                clip: true
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-        }
-
-        Item {
-            id: group_112
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.leftMargin: 6
-            anchors.rightMargin: 5
-            anchors.topMargin: 144
-            anchors.bottomMargin: 815
-            Text {
-                id: inventory
-                width: 92
-                height: 26
-                color: "#4d2d18"
-                text: qsTr("Inventory")
-                anchors.top: parent.top
-                anchors.topMargin: 39
-                font.pixelSize: 14
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignTop
-                wrapMode: Text.Wrap
-                font.weight: Font.Light
-                font.family: "Unbounded"
-                anchors.horizontalCenterOffset: 1
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-
-            Archive {
-                id: archive
-                width: 29
-                height: 30
-                anchors.top: parent.top
-                state: "size_48"
-                clip: true
-                anchors.horizontalCenterOffset: -1
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-        }
-
-        Bar_chart_2 {
-            id: bar_chart_2
-            width: 28
-            height: 29
-            anchors.top: parent.top
-            anchors.topMargin: 687
-            state: "size_48"
-            clip: true
-            anchors.horizontalCenter: parent.horizontalCenter
-        }
-
-        Text {
-            id: logs
+            id: logs1
             width: 50
             height: 34
             visible: false
@@ -1365,85 +1473,7 @@ Rectangle {
         }
 
         Item {
-            id: group_114
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.leftMargin: 9
-            anchors.rightMargin: 9
-            anchors.topMargin: 362
-            anchors.bottomMargin: 609
-            Text {
-                id: receipts
-                width: 85
-                height: 20
-                color: "#4e2d18"
-                text: qsTr("Receipts")
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.topMargin: 33
-                font.pixelSize: 16
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignTop
-                wrapMode: Text.Wrap
-                font.weight: Font.Light
-                font.family: "Unbounded"
-            }
-
-            List {
-                id: element16
-                width: 34
-                height: 28
-                anchors.top: parent.top
-                state: "size_48"
-                clip: true
-                anchors.horizontalCenterOffset: -3
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-        }
-
-        Item {
-            id: group_115
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.leftMargin: 14
-            anchors.rightMargin: 18
-            anchors.topMargin: 456
-            anchors.bottomMargin: 478
-            Text {
-                id: cash_Box
-                width: 71
-                height: 53
-                color: "#4e2d18"
-                text: qsTr("Cash Box")
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.topMargin: 37
-                font.pixelSize: 16
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignTop
-                wrapMode: Text.Wrap
-                font.weight: Font.Light
-                font.family: "Unbounded"
-            }
-
-            Dollar_sign {
-                id: dollar_sign
-                width: 29
-                height: 31
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.leftMargin: 19
-                state: "size_48"
-                clip: true
-            }
-        }
-
-        Item {
-            id: group_8
+            id: group_9
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
@@ -1460,6 +1490,8 @@ Rectangle {
                 text: qsTr("MK")
                 anchors.left: parent.left
                 anchors.top: parent.top
+                anchors.leftMargin: -1
+                anchors.topMargin: -8
                 font.pixelSize: 28
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignTop
@@ -1471,66 +1503,27 @@ Rectangle {
             }
 
             Shape {
-                id: line_1_Stroke_
+                id: line_1_Stroke_1
                 width: 52
                 height: 2
                 anchors.left: parent.left
                 anchors.top: parent.top
-                anchors.leftMargin: 5
-                anchors.topMargin: 35
+                anchors.leftMargin: 3
+                anchors.topMargin: 28
                 layer.samples: 16
                 layer.enabled: true
                 ShapePath {
-                    id: line_1_Stroke__ShapePath_0
+                    id: line_1_Stroke__ShapePath_1
                     strokeWidth: 2
                     strokeColor: "transparent"
                     PathSvg {
-                        id: line_1_Stroke__PathSvg_0
+                        id: line_1_Stroke__PathSvg_1
                         path: "M 52 0 L 52 2 L 8.881784197001252e-16 2 L 0 1.4210854715202004e-14 L 52 0 Z"
                     }
                     fillRule: ShapePath.WindingFill
                     fillColor: "#4d2d18"
                 }
                 antialiasing: true
-            }
-        }
-
-        Item {
-            id: group_113
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.leftMargin: 25
-            anchors.rightMargin: 28
-            anchors.topMargin: 256
-            anchors.bottomMargin: 692
-            User {
-                id: user
-                width: 33
-                height: 31
-                anchors.top: parent.top
-                state: "size_48"
-                clip: true
-                anchors.horizontalCenterOffset: 1
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-
-            Text {
-                id: staff
-                width: 50
-                height: 34
-                color: "#4e2d18"
-                text: qsTr("Staff")
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.topMargin: 42
-                font.pixelSize: 16
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignTop
-                wrapMode: Text.Wrap
-                font.weight: Font.Light
-                font.family: "Unbounded"
             }
         }
     }
@@ -1586,19 +1579,6 @@ D{i:88;uuid:"0b2e50fd-48c7-5b06-884f-399306081da0"}D{i:89;uuid:"c1573897-6fdb-54
 D{i:90;uuid:"99e61923-2b44-5c41-804d-19e3bac16def"}D{i:91;uuid:"a08eda3b-b91a-554d-9a33-bfebef809246"}
 D{i:92;uuid:"a08eda3b-b91a-554d-9a33-bfebef809246_ShapePath_0"}D{i:93;uuid:"a08eda3b-b91a-554d-9a33-bfebef809246-PathSvg_0"}
 D{i:94;uuid:"feefb81f-68fa-5f81-8539-e60df2e2de51"}D{i:95;uuid:"a83d6f29-cff0-5705-896b-91e6e265ff9e"}
-D{i:96;uuid:"fb0b669a-1563-570f-8ed4-288fb5213ead"}D{i:97;uuid:"31b182f4-cec3-5415-bf34-52f9d5fb4b6a"}
-D{i:98;uuid:"824e2956-e5d5-58e2-991a-86169342bc64"}D{i:99;uuid:"2f925bbe-b5b8-52de-85a5-902de3a41d57"}
-D{i:100;uuid:"440c40f2-1050-5236-a8e0-bcb0737615c8"}D{i:101;uuid:"0aa9c12f-106d-56eb-b887-f1684d781afc"}
-D{i:102;uuid:"cf368c25-cacf-50a9-9ac9-a36414c2a4d4"}D{i:103;uuid:"b1f8bea7-27b8-50e6-9749-f0fbf7cf652f"}
-D{i:104;uuid:"b71f3a20-351b-580b-8bb9-bd553cef8229"}D{i:105;uuid:"c43097ba-3bc1-5dc5-800d-24a20544e864"}
-D{i:106;uuid:"16a5603a-87ad-5411-9413-ec17e919b0ee"}D{i:107;uuid:"2fd81e95-3c69-502c-a078-ef3bdb9caf07"}
-D{i:108;uuid:"44839487-4e1b-50ea-ae34-47cdf4eccb59"}D{i:109;uuid:"5815dcbb-41e0-5765-8ae5-0f92968966a0"}
-D{i:110;uuid:"f26abe99-5103-5280-9322-ac6f949be142"}D{i:111;uuid:"b67f2b4e-bc07-505e-b8e2-a3971fccad1a"}
-D{i:112;uuid:"0db21ef5-ac03-5a7b-9baf-71685eb8ba27"}D{i:113;uuid:"ff4ecb3f-6f01-57c1-92fb-63e261d6a16d"}
-D{i:114;uuid:"9ba442b0-77a4-5d86-b011-984717f38a5d"}D{i:115;uuid:"739b1a54-7780-5f2e-9d36-d61b172f94fd"}
-D{i:116;uuid:"739b1a54-7780-5f2e-9d36-d61b172f94fd_ShapePath_0"}D{i:117;uuid:"739b1a54-7780-5f2e-9d36-d61b172f94fd-PathSvg_0"}
-D{i:118;uuid:"4de9a41a-cf20-5118-aa2e-2fd0b763dc1c"}D{i:119;uuid:"0932414a-467d-595e-8a62-745988055a9c"}
-D{i:120;uuid:"1ad28aad-b14c-51b7-8551-bb9ed45d3a10"}
 }
 ##^##*/
 

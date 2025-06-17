@@ -9,7 +9,7 @@ Window {
     visible: true
     title: "MareKwenta"
 
-    Inventory_Management_Entry {
+    Login {
         id: mainScreen
     }
 
