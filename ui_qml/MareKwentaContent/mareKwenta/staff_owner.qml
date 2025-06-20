@@ -78,8 +78,8 @@ Rectangle {
 
             RoundButton {
                 id: addemployee_button
-                x: 1151
-                y: 767
+                x: 1126
+                y: 542
                 width: 74
                 height: 69
                 text: "+"
