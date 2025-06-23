@@ -1,273 +1,290 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Shapes 1.15
+import QtCharts
 
 Rectangle {
-    id: employee_Management
+    id: dashboard_Sales_Summary
     width: 1440
-    height: 1024
+    height: 952
     color: "#f2efea"
     border.color: "#000000"
     border.width: 1
-    property alias startedText: started.text
-    property alias may_05_2026Text: date_text.text
-    property alias endedText: ended.text
-    property alias employee_IDText: employee_ID.text
-    property alias employee_NameText: employee_Name.text
-    property alias aMText: timein_text.text
-    property alias aya_Del_RosarioText: employeename_text.text
-    property alias elementText: employeeid_text.text
-    property alias pMText: timeout_text.text
-    property alias staffText: staff.text
+    property alias mKText: mK.text
+    property alias receiptsText: receipts.text
+    property alias headerText: header.text
+    property alias inventoryText: inventory.text
+    property alias cash_BoxText: cash_Box.text
+    property alias dash_boardText: dash_board.text
+    property alias ticketText: ticket.text
 
     Text {
-        id: date_text
-        width: 229
-        height: 55
+        id: header
+        width: 208
+        height: 54
         color: "#4e2d18"
-        text: qsTr("May 05, 2026")
-        anchors.top: parent.top
-        anchors.topMargin: 32
-        font.letterSpacing: 1.188
-        font.pixelSize: 24
-        horizontalAlignment: Text.AlignLeft
-        verticalAlignment: Text.AlignVCenter
-        wrapMode: Text.Wrap
-        font.weight: Font.Normal
-        font.family: "Unbounded"
-        anchors.horizontalCenterOffset: 576
-        anchors.horizontalCenter: parent.horizontalCenter
-    }
-
-    Text {
-        id: staff
-        width: 257
-        height: 38
-        color: "#4e2d18"
-        text: qsTr("Staff")
+        text: qsTr("Dashboard")
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.leftMargin: 142
-        anchors.topMargin: 41
+        anchors.topMargin: 33
         font.pixelSize: 36
         horizontalAlignment: Text.AlignLeft
         verticalAlignment: Text.AlignTop
-        wrapMode: Text.Wrap
-        font.weight: Font.Medium
-        font.family: "Unbounded"
+        wrapMode: Text.NoWrap
+        font.weight: Font.Bold
+        font.family: "Poppins"
     }
 
     Item {
-        id: group_38
+        id: filters
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        anchors.leftMargin: 127
-        anchors.rightMargin: 33
-        anchors.topMargin: 110
-        anchors.bottomMargin: 35
-        Rectangle {
-            id: logs
-            width: 1280
-            height: 879
-            color: "#ffffff"
-            radius: 20
-            anchors.left: parent.left
-            anchors.top: parent.top
+        anchors.leftMargin: 142
+        anchors.rightMargin: 141
+        anchors.topMargin: 121
+        anchors.bottomMargin: 853
 
-            RoundButton {
-                id: addemployee_button
-                x: 1126
-                y: 542
-                width: 74
-                height: 69
-                text: "+"
-                topPadding: -3
-                font.pointSize: 33
-                font.bold: true
-                display: AbstractButton.TextOnly
+        ComboBox {
+            id: category_combo
+            objectName: "category_combo"
+            x: 8
+            y: 0
+            width: 209
+            height: 50
+            model: ["Sales by Category", "Sales by Product", "Sales Summary"]
+            onCurrentTextChanged: navHandler.onCategorySelected(currentText)
+            background: Rectangle {
+                color: "#f2efea"
+                border.color: "#918f8e"
+                border.width: 1
+                radius: 8
             }
-        }
 
-        Text {
-            id: employee_ID
-            width: 201
-            height: 43
-            color: "#000000"
-            text: qsTr("Employee ID")
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: 26
-            anchors.topMargin: 14
-            font.pixelSize: 24
-            horizontalAlignment: Text.AlignLeft
-            verticalAlignment: Text.AlignVCenter
-            wrapMode: Text.Wrap
-            font.weight: Font.Normal
-            font.family: "Inter"
-        }
+            contentItem: Text {
+                text: category_combo.displayText
+                color: "#333333"
+                font.pixelSize: 14
+                leftPadding: 12
+                rightPadding: 30  // Make room for arrow
+                verticalAlignment: Text.AlignVCenter
+            }
 
-        Text {
-            id: employee_Name
-            width: 201
-            height: 43
-            color: "#000000"
-            text: qsTr("Employee Name")
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: 220
-            anchors.topMargin: 14
-            font.pixelSize: 24
-            horizontalAlignment: Text.AlignLeft
-            verticalAlignment: Text.AlignVCenter
-            wrapMode: Text.Wrap
-            font.weight: Font.Normal
-            font.family: "Inter"
-        }
+            indicator: Canvas {
+                id: canvas
+                x: category_combo.width - width - 12
+                y: category_combo.topPadding + (category_combo.availableHeight - height) / 2
+                width: 12
+                height: 8
+                contextType: "2d"
 
-        Text {
-            id: started
-            width: 201
-            height: 43
-            color: "#000000"
-            text: qsTr("Started")
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: 851
-            anchors.topMargin: 14
-            font.pixelSize: 24
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            wrapMode: Text.Wrap
-            font.weight: Font.Normal
-            font.family: "Inter"
-        }
-
-        Text {
-            id: ended
-            width: 201
-            height: 43
-            color: "#000000"
-            text: qsTr("Ended")
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: 1051
-            anchors.topMargin: 14
-            font.pixelSize: 24
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            wrapMode: Text.Wrap
-            font.weight: Font.Normal
-            font.family: "Inter"
-        }
-
-        Text {
-            id: employeeid_text
-            width: 201
-            height: 43
-            color: "#000000"
-            text: qsTr("0001")
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: 26
-            anchors.topMargin: 72
-            font.pixelSize: 24
-            horizontalAlignment: Text.AlignLeft
-            verticalAlignment: Text.AlignVCenter
-            wrapMode: Text.Wrap
-            font.weight: Font.Normal
-            font.family: "Inter"
-        }
-
-        Text {
-            id: employeename_text
-            width: 201
-            height: 43
-            color: "#000000"
-            text: qsTr("Aya Del Rosario")
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: 220
-            anchors.topMargin: 72
-            font.pixelSize: 24
-            horizontalAlignment: Text.AlignLeft
-            verticalAlignment: Text.AlignVCenter
-            wrapMode: Text.Wrap
-            font.weight: Font.Normal
-            font.family: "Inter"
-        }
-
-        Text {
-            id: timein_text
-            width: 201
-            height: 43
-            color: "#000000"
-            text: qsTr("7:56 AM")
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: 851
-            anchors.topMargin: 72
-            font.pixelSize: 24
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            wrapMode: Text.Wrap
-            font.weight: Font.Normal
-            font.family: "Inter"
-        }
-
-        Text {
-            id: timeout_text
-            width: 201
-            height: 43
-            color: "#000000"
-            text: qsTr("12:03 PM")
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: 1051
-            anchors.topMargin: 72
-            font.pixelSize: 24
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            wrapMode: Text.Wrap
-            font.weight: Font.Normal
-            font.family: "Inter"
-        }
-
-        Shape {
-            id: line_17_Stroke_
-            width: 1230
-            height: 1
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: 21
-            anchors.topMargin: 67
-            layer.samples: 16
-            layer.enabled: true
-            ShapePath {
-                id: line_17_Stroke__ShapePath_0
-                strokeWidth: 1
-                strokeColor: "transparent"
-                PathSvg {
-                    id: line_17_Stroke__PathSvg_0
-                    path: "M 1230.009765625 0 L 1230.009765625 1 L 0 1 L 0 0 L 1230.009765625 0 Z"
+                onPaint: {
+                    context.reset();
+                    context.moveTo(0, 0);
+                    context.lineTo(width, 0);
+                    context.lineTo(width / 2, height);
+                    context.closePath();
+                    context.fillStyle = "#666666";
+                    context.fill();
                 }
-                fillRule: ShapePath.WindingFill
-                fillColor: "#000000"
             }
-            antialiasing: true
         }
 
-        Item {
-            id: group_117
+        ComboBox {
+            id: periodicity_combobox
+            objectName: "periodicity_combobox"
+            x: 290
+            y: 0
+            width: 209
+            height: 50
+            model: ["Daily", "Weekly", "Monthly","Yearly"]
+            onCurrentTextChanged: navHandler.onPeriodicitySelected(currentText)
+            contentItem: Text {
+                color: "#333333"
+                text: periodicity_combobox.displayText
+                font.pixelSize: 14
+                verticalAlignment: Text.AlignVCenter
+                rightPadding: 30
+                leftPadding: 12
+            }
+            background: Rectangle {
+                color: "#f2efea"
+                radius: 8
+                border.color: "#918f8e"
+                border.width: 1
+            }
+            indicator: Canvas {
+                id: canvas1
+                x: periodicity_combobox.width - width - 12
+                y: periodicity_combobox.topPadding + (periodicity_combobox.availableHeight - height) / 2
+                width: 12
+                height: 8
+                contextType: "2d"
+
+                onPaint: {
+                    context.reset();
+                    context.moveTo(0, 0);
+                    context.lineTo(width, 0);
+                    context.lineTo(width / 2, height);
+                    context.closePath();
+                    context.fillStyle = "#666666";
+                    context.fill();
+                }
+            }
+        }
+
+        ComboBox {
+            id: date_combobox
+            objectName: "date_combobox"
+            x: 599
+            y: 0
+            width: 209
+            height: 50
+            model: ["Daily", "Weekly", "Monthly","Yearly"]
+            onCurrentTextChanged: navHandler.onDateSelected(currentText)
+            contentItem: Text {
+                color: "#333333"
+                text: date_combobox.displayText
+                font.pixelSize: 14
+                verticalAlignment: Text.AlignVCenter
+                rightPadding: 30
+                leftPadding: 12
+            }
+            background: Rectangle {
+                color: "#f2efea"
+                radius: 8
+                border.color: "#918f8e"
+                border.width: 1
+            }
+            indicator: Canvas {
+                id: canvas2
+                x: date_combobox.width - width - 12
+                y: date_combobox.topPadding + (date_combobox.availableHeight - height) / 2
+                width: 12
+                height: 8
+                contextType: "2d"
+
+                onPaint: {
+                    context.reset();
+                    context.moveTo(0, 0);
+                    context.lineTo(width, 0);
+                    context.lineTo(width / 2, height);
+                    context.closePath();
+                    context.fillStyle = "#666666";
+                    context.fill();
+                }
+            }
+        }
+        Button {
+            id: generate_button
+            objectName: "generate_button"
+            x: 912
+            y: 0
+            width: 129
+            height: 50
+            font.pointSize: 13
+            font.family: "Inter 18pt 18pt"
+            font.bold: true
+            display: AbstractButton.TextOnly
+            onClicked: navHandler.onGenerateClicked()
+            contentItem: Text {
+                color: "#f2efea"
+                text: "Generate"
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                font.styleName: "Medium"
+                font.pointSize: 11
+                font.family: "Inter 18pt 18pt"
+            }
+            background: Rectangle {
+                color: "#4e2d18"
+                radius: 8
+                border.color: "#4e2d18"
+                border.width: 1
+            }
+        }
+    }
+    Connections {
+        target: navHandler
+
+        function onPeriodicityEnabled(enabled) {
+            periodicity_combobox.enabled = enabled
+        }
+
+        function onDateEnabled(enabled) {
+            date_combobox.enabled = enabled
+        }
+
+        function onDateOptionsChanged(options) {
+            date_combobox.model = options
+        }
+    }
+    Item {
+        id: graph
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.leftMargin: 142
+        anchors.rightMargin: 51
+        anchors.topMargin: 208
+        anchors.bottomMargin: 54
+        Image {
+            id: rectangle_46
             anchors.left: parent.left
-            anchors.right: parent.right
             anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.leftMargin: 1176
-            anchors.rightMargin: 24
-            anchors.topMargin: 782
-            anchors.bottomMargin: 17
+            anchors.leftMargin: -4
+            source: "assets/rectangle_46_2.png"
+
+            ChartView {
+                id: line
+                x: 103
+                y: 53
+                width: 1050
+                height: 592
+                LineSeries {
+                    name: "LineSeries"
+                    XYPoint {
+                        x: 0
+                        y: 2
+                    }
+
+                    XYPoint {
+                        x: 1
+                        y: 1.2
+                    }
+
+                    XYPoint {
+                        x: 2
+                        y: 3.3
+                    }
+
+                    XYPoint {
+                        x: 5
+                        y: 2.1
+                    }
+                }
+            }
+        }
+
+        Text {
+            id: sales_by_Product_Chart
+            width: 223
+            height: 24
+            color: "#4e2d18"
+            text: qsTr("Sales Summary")
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.leftMargin: 39
+            anchors.topMargin: 36
+            font.pixelSize: 16
+            horizontalAlignment: Text.AlignLeft
+            verticalAlignment: Text.AlignTop
+            wrapMode: Text.Wrap
+            font.weight: Font.DemiBold
+            font.family: "Poppins"
         }
     }
 
@@ -613,16 +630,9 @@ Rectangle {
 
 /*##^##
 Designer {
-    D{i:0;uuid:"ab4c7de6-6014-57b5-9a28-cc4b142065fd"}D{i:1;uuid:"5bd738fe-e1a2-5c4a-811d-cc5d0f64cce7"}
-D{i:2;uuid:"bd53f988-a59e-5aea-b94c-7e3422133f54"}D{i:3;uuid:"ca482a50-cf48-5af4-b037-ce9d9c92f4aa"}
-D{i:4;uuid:"31350e4b-390a-51a6-9517-d565f680e71a"}D{i:5;uuid:"ae72bcd8-68d0-5a99-b6ef-01e7c84d7c9c"}
-D{i:6;uuid:"1e958c90-548c-5072-906c-4c11f6053bb9"}D{i:7;uuid:"5b4b3c79-ee5a-59c7-9b64-fa64b6e0937b"}
-D{i:8;uuid:"e4c29f67-ef62-5b66-ba5a-f628dcf0346a"}D{i:9;uuid:"a2a5684e-7047-5fea-8424-ce2c55c8ac4d"}
-D{i:10;uuid:"1475a969-8409-5dcd-9b8a-c645f42179c0"}D{i:11;uuid:"5bf7c4de-12d0-5a4a-9e74-7ac3f88dd551"}
-D{i:12;uuid:"67141bfc-3880-531b-ada8-5714500c3202"}D{i:13;uuid:"66ba591f-49c6-50e1-b4e0-89af49819205"}
-D{i:14;uuid:"66ba591f-49c6-50e1-b4e0-89af49819205_ShapePath_0"}D{i:15;uuid:"66ba591f-49c6-50e1-b4e0-89af49819205-PathSvg_0"}
-D{i:16;uuid:"8c92b65a-7aee-5f98-aa2c-436abe3b8887"}D{i:17;uuid:"17313f8f-f9a2-5577-948d-d81ad5b0e06a"}
-D{i:18;uuid:"12f26386-803c-5e5e-86ea-af2a74fb1d2c"}D{i:19;uuid:"8386ca92-62a9-529e-b609-129ae973df7f"}
+    D{i:0;uuid:"3f86a195-e5ae-5638-93e1-318f02ffdc75"}D{i:1;uuid:"290d9591-6d57-54f3-9717-8c0ed342dcd0"}
+D{i:2;uuid:"d74184c6-dc83-5d4f-bf8b-da33057a4b85"}D{i:19;uuid:"feefb81f-68fa-5f81-8539-e60df2e2de51"}
+D{i:20;uuid:"a83d6f29-cff0-5705-896b-91e6e265ff9e"}
 }
 ##^##*/
 

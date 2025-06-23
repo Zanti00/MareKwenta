@@ -30,6 +30,7 @@ Rectangle {
     property alias element3Text: maya_text.text
     property alias element4Text: pettycash_text.text
 
+
     Text {
         id: header
         width: 257
@@ -401,6 +402,25 @@ Rectangle {
         anchors.topMargin: 163
     }
 
+    Rectangle {
+        id: circle2
+        x: 279
+        y: 174
+        width: 34
+        height: 32
+        color: "#f2efea"
+        radius: 24
+        border.color: "#f2efea"
+
+        Image {
+            id: cash
+            x: 5
+            y: 4
+            source: "assets/Cash.png"
+            fillMode: Image.PreserveAspectFit
+        }
+    }
+
     Text {
         id: cASH
         width: 46
@@ -463,6 +483,17 @@ Rectangle {
         anchors.top: parent.top
         anchors.leftMargin: 353
         anchors.topMargin: 162
+
+        Rectangle {
+            id: circle
+            x: 149
+            y: 8
+            width: 34
+            height: 32
+            color: "#f2efea"
+            radius: 24
+            border.color: "#f2efea"
+        }
     }
 
     Rectangle {
@@ -514,7 +545,16 @@ Rectangle {
         font.weight: Font.Normal
         font.family: "Inter"
     }
-
+    Rectangle {
+        id: circle1
+        x: 502
+        y: 283
+        width: 34
+        height: 32
+        color: "#f2efea"
+        radius: 24
+        border.color: "#f2efea"
+    }
     Text {
         id: gcash_text
         width: 153
@@ -556,7 +596,7 @@ Rectangle {
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.leftMargin: 507
-        anchors.topMargin: 289
+        anchors.topMargin: 287
         source: "assets/debit_Card_1.png"
     }
 
@@ -582,7 +622,24 @@ Rectangle {
         anchors.leftMargin: 128
         anchors.topMargin: 279
     }
+    Rectangle {
+        id: circle3
+        x: 279
+        y: 174
+        width: 34
+        height: 32
+        color: "#f2efea"
+        radius: 24
+        border.color: "#f2efea"
 
+        Image {
+            id: cash6
+            x: 5
+            y: 4
+            source: "assets/Cash.png"
+            fillMode: Image.PreserveAspectFit
+        }
+    }
     Rectangle {
         id: rectangle_69
         width: 200
@@ -596,7 +653,24 @@ Rectangle {
         anchors.leftMargin: 128
         anchors.topMargin: 395
     }
+    Rectangle {
+        id: circle5
+        x: 279
+        y: 403
+        width: 34
+        height: 32
+        color: "#f2efea"
+        radius: 24
+        border.color: "#f2efea"
 
+        Image {
+            id: cash5
+            x: 5
+            y: 4
+            source: "assets/Cash.png"
+            fillMode: Image.PreserveAspectFit
+        }
+    }
 
     Text {
         id: pETTY_CASH
@@ -684,7 +758,24 @@ Rectangle {
         anchors.topMargin: 511
     }
 
+    Rectangle {
+        id: circle8
+        x: 279
+        y: 174
+        width: 34
+        height: 32
+        color: "#f2efea"
+        radius: 24
+        border.color: "#f2efea"
 
+        Image {
+            id: cash4
+            x: 5
+            y: 4
+            source: "assets/Cash.png"
+            fillMode: Image.PreserveAspectFit
+        }
+    }
     Text {
         id: cASH_EXPENSES
         width: 83
@@ -734,7 +825,24 @@ Rectangle {
         anchors.leftMargin: 129
         anchors.topMargin: 647
     }
+    Rectangle {
+        id: circle10
+        x: 279
+        y: 654
+        width: 34
+        height: 32
+        color: "#f2efea"
+        radius: 24
+        border.color: "#f2efea"
 
+        Image {
+            id: cash7
+            x: 5
+            y: 4
+            source: "assets/Cash.png"
+            fillMode: Image.PreserveAspectFit
+        }
+    }
     Text {
         id: nON_CASH_EXPENSES
         width: 103
@@ -969,15 +1077,49 @@ Rectangle {
             navHandler.addExpenseButtonClicked()
         }
     }
+
+    Rectangle {
+        id: circle4
+        x: 279
+        y: 295
+        width: 34
+        height: 32
+        color: "#f2efea"
+        radius: 24
+        border.color: "#f2efea"
+        Image {
+            id: cash1
+            x: 5
+            y: 4
+            source: "assets/Cash.png"
+            fillMode: Image.PreserveAspectFit
+        }
+    }
+
+    Rectangle {
+        id: circle6
+        x: 279
+        y: 518
+        width: 34
+        height: 32
+        color: "#f2efea"
+        radius: 24
+        border.color: "#f2efea"
+        Image {
+            id: cash2
+            x: 5
+            y: 4
+            source: "assets/Cash.png"
+            fillMode: Image.PreserveAspectFit
+        }
+    }
+
+
 }
 
 /*##^##
 Designer {
-    D{i:0;uuid:"0154729e-62fa-5104-9e79-fd6f8ca55248"}D{i:1;uuid:"764cc56a-ad90-525a-aa58-cadaa2b722b9"}
-D{i:2;uuid:"b35aee79-ffc6-59da-8d3f-3d07b5fce7f5"}D{i:34;uuid:"eff5447a-5502-517a-b612-fca95467d22e"}
-D{i:35;uuid:"546e3da8-3c1b-5b0d-bd79-1a5232b6924f"}D{i:36;uuid:"fdb62f75-0917-54df-99aa-fb83ddb79031"}
-D{i:37;uuid:"3ef80c7c-bfc2-5417-be71-6ea110567fd5"}D{i:39;uuid:"e4d3542d-58f1-5c94-af7d-1ad51ee6d95f"}
-D{i:43;uuid:"ea6596a3-206f-519d-889b-c27a6311cb5e"}
+    D{i:0;uuid:"0154729e-62fa-5104-9e79-fd6f8ca55248"}
 }
 ##^##*/
 

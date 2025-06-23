@@ -1,5 +1,7 @@
 import sys
 import os
+from datetime import datetime, timedelta
+import calendar
 from PySide6.QtWidgets import QApplication
 from PySide6.QtQml import qmlRegisterType
 from PySide6.QtQuick import QQuickView
@@ -15,6 +17,11 @@ class NavBarHandler(QObject):
     # Signals
     navigationChanged = Signal(str)
     dataChanged = Signal()
+    categoryChanged = Signal(str)
+    periodicityChanged = Signal(str)
+    dateOptionsChanged = Signal(list)
+    periodicityEnabled = Signal(bool)
+    dateEnabled = Signal(bool)
     
     def __init__(self):
         super().__init__()
@@ -24,6 +31,11 @@ class NavBarHandler(QObject):
         self.add_expense_view = None  # Specific reference to add_expense window
         self.base_path = r"C:\Users\Detera\Desktop\Py\MareKwenta\ui_qml\MareKwentaContent\mareKwenta"
         self._current_page = "inventory.qml"
+        
+        # Dashboard combo box states
+        self._selected_category = ""
+        self._selected_periodicity = ""
+        self._selected_date = ""
         
         # Create a timer for delayed navigation
         self.navigation_timer = QTimer()
@@ -37,6 +49,27 @@ class NavBarHandler(QObject):
         self.current_view = view
         if view not in self.all_views:
             self.all_views.append(view)
+    
+    # Properties for dashboard combo boxes
+    @Property(str, notify=categoryChanged)
+    def selectedCategory(self):
+        return self._selected_category
+    
+    @selectedCategory.setter
+    def selectedCategory(self, category):
+        if self._selected_category != category:
+            self._selected_category = category
+            self.categoryChanged.emit(category)
+    
+    @Property(str, notify=periodicityChanged)
+    def selectedPeriodicity(self):
+        return self._selected_periodicity
+    
+    @selectedPeriodicity.setter
+    def selectedPeriodicity(self, periodicity):
+        if self._selected_periodicity != periodicity:
+            self._selected_periodicity = periodicity
+            self.periodicityChanged.emit(periodicity)
         
     @Property(str, notify=navigationChanged)
     def currentPage(self):
@@ -52,6 +85,145 @@ class NavBarHandler(QObject):
     def _get_qml_path(self, filename):
         """Get full path to QML file"""
         return os.path.join(self.base_path, filename)
+    
+    def _generate_date_options(self, periodicity, current_date=None):
+        """Generate date options based on selected periodicity"""
+        if current_date is None:
+            current_date = datetime.now()
+        
+        options = []
+        
+        if periodicity == "Daily":
+            # Generate days for current month
+            year = current_date.year
+            month = current_date.month
+            days_in_month = calendar.monthrange(year, month)[1]
+            month_name = calendar.month_name[month]
+            
+            for day in range(1, days_in_month + 1):
+                date_str = f"{month_name} {day}, {year}"
+                options.append(date_str)
+                
+        elif periodicity == "Weekly":
+            # Generate weeks for current month
+            year = current_date.year
+            month = current_date.month
+            
+            # Get first and last day of the month
+            first_day = datetime(year, month, 1)
+            last_day = datetime(year, month, calendar.monthrange(year, month)[1])
+            
+            # Calculate weeks
+            week_count = 1
+            current_week_start = first_day
+            
+            while current_week_start <= last_day:
+                # Find the end of the current week (Sunday)
+                days_until_sunday = (6 - current_week_start.weekday()) % 7
+                current_week_end = current_week_start + timedelta(days=days_until_sunday)
+                
+                # Make sure we don't go beyond the month
+                if current_week_end > last_day:
+                    current_week_end = last_day
+                
+                week_label = f"Week {week_count}"
+                options.append(week_label)
+                
+                # Move to next week
+                current_week_start = current_week_end + timedelta(days=1)
+                week_count += 1
+                
+        elif periodicity == "Monthly":
+            # Generate month names
+            options = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ]
+            
+        elif periodicity == "Yearly":
+            # Generate years (current year and some previous years)
+            current_year = current_date.year
+            for year in range(current_year - 5, current_year + 1):
+                options.append(str(year))
+        
+        return options
+    
+    @Slot(str)
+    def onCategorySelected(self, category):
+        """Handle category combo box selection"""
+        print(f"Category selected: {category}")
+        self.selectedCategory = category
+        
+        if category:
+            # Enable periodicity combo box
+            self.periodicityEnabled.emit(True)
+            # Reset periodicity and date selections
+            self.selectedPeriodicity = ""
+            self._selected_date = ""
+            self.dateEnabled.emit(False)
+        else:
+            # Disable both periodicity and date combo boxes
+            self.periodicityEnabled.emit(False)
+            self.dateEnabled.emit(False)
+            self.selectedPeriodicity = ""
+            self._selected_date = ""
+    
+    @Slot(str)
+    def onPeriodicitySelected(self, periodicity):
+        """Handle periodicity combo box selection"""
+        print(f"Periodicity selected: {periodicity}")
+        self.selectedPeriodicity = periodicity
+        
+        if periodicity:
+            # Enable date combo box and populate options
+            self.dateEnabled.emit(True)
+            date_options = self._generate_date_options(periodicity)
+            self.dateOptionsChanged.emit(date_options)
+            # Reset date selection
+            self._selected_date = ""
+        else:
+            # Disable date combo box
+            self.dateEnabled.emit(False)
+            self._selected_date = ""
+    
+    @Slot(str)
+    def onDateSelected(self, date):
+        """Handle date combo box selection"""
+        print(f"Date selected: {date}")
+        self._selected_date = date
+    
+    @Slot()
+    def onGenerateClicked(self):
+        """Handle generate button click - navigate to appropriate dashboard"""
+        if not self._selected_category:
+            print("Error: No category selected")
+            return
+        
+        # Determine which dashboard to navigate to based on category
+        dashboard_mapping = {
+            "Sales by Category": "dashboard.qml",
+            "Sales Summary": "dashboard_3.qml", 
+            "Sales by Product": "dashboard_2.qml"
+        }
+        
+        target_page = dashboard_mapping.get(self._selected_category)
+        if target_page:
+            print(f"Navigating to {target_page} for category: {self._selected_category}")
+            self.pending_page = target_page
+            self.pending_action = "replace"
+            self.navigation_timer.start(50)
+        else:
+            print(f"Error: Unknown category '{self._selected_category}'")
+    
+    @Slot()
+    def resetDashboardFilters(self):
+        """Reset all dashboard combo boxes to initial state"""
+        self.selectedCategory = ""
+        self.selectedPeriodicity = ""
+        self._selected_date = ""
+        self.periodicityEnabled.emit(False)
+        self.dateEnabled.emit(False)
+        self.dateOptionsChanged.emit([])
     
     def _load_page_in_window(self, qml_filename, window_title="MareKwenta", close_current=True):
         """Load a QML page in a new window, optionally closing the current one"""
@@ -225,7 +397,6 @@ class NavBarHandler(QObject):
         else:
             print(f"Warning: Unknown page '{page_name}'")
     
-
     @Slot()
     def goHome(self):
         """Navigate back to home/default page (inventory)"""

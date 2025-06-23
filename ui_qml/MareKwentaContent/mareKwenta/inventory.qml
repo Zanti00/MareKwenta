@@ -552,7 +552,7 @@ Rectangle {
                 y: 60
                 width: 114
                 height: 36
-                model: ["Create", "Delete"]
+                model: ["Edit", "Delete"]
                 font.letterSpacing: 0
                 currentIndex: 0
                 textRole: ""
