@@ -2,11 +2,10 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Shapes 1.15
 
-Window {
+Item {
     id: employee_Management
     width: 1440
     height: 1024
-    color: "#f2efea"
     visible: true
     property alias startedText: started.text
     property alias may_05_2026Text: date_text.text

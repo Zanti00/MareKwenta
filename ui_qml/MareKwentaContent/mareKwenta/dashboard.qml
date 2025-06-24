@@ -5,7 +5,8 @@ import QtCharts
 
 Item{
     id: dashboard_Sales_by_Category
-    width: 1440
+    width: 1240
+
     height: 1024
     visible: true
     property alias element1Text: element1.text
@@ -32,7 +33,7 @@ Item{
             text: qsTr("Dashboard")
             anchors.left: parent.left
             anchors.top: parent.top
-            anchors.leftMargin: 142
+            anchors.leftMargin: 44
             anchors.topMargin: 33
             font.pixelSize: 36
             horizontalAlignment: Text.AlignLeft
@@ -48,10 +49,10 @@ Item{
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            anchors.leftMargin: 142
-            anchors.rightMargin: 141
-            anchors.topMargin: 121
-            anchors.bottomMargin: 853
+            anchors.leftMargin: 44
+            anchors.rightMargin: 239
+            anchors.topMargin: 135
+            anchors.bottomMargin: 839
 
             ComboBox {
                 id: category_combo
@@ -233,12 +234,14 @@ Item{
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            anchors.leftMargin: 142
-            anchors.rightMargin: 51
-            anchors.topMargin: 208
-            anchors.bottomMargin: 396
+            anchors.leftMargin: 37
+            anchors.rightMargin: 201
+            anchors.topMargin: 255
+            anchors.bottomMargin: 349
             Image {
                 id: rectangle_46
+                width: 1178
+                height: 428
                 anchors.left: parent.left
                 anchors.top: parent.top
                 anchors.leftMargin: -4
@@ -291,8 +294,8 @@ Item{
                 text: qsTr("₱170.00")
                 anchors.left: parent.left
                 anchors.top: parent.top
-                anchors.leftMargin: 624
-                anchors.topMargin: 139
+                anchors.leftMargin: 612
+                anchors.topMargin: 136
                 font.pixelSize: 16
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignTop
@@ -303,26 +306,15 @@ Item{
 
             Shape {
                 id: line_11_Stroke_
-                width: 1182
+                width: 1108
                 height: 1
                 opacity: 0.5
                 anchors.left: parent.left
                 anchors.top: parent.top
                 anchors.leftMargin: 27
-                anchors.topMargin: 119
+                anchors.topMargin: 120
                 layer.samples: 16
                 layer.enabled: true
-                ShapePath {
-                    id: line_11_Stroke__ShapePath_0
-                    strokeWidth: 0.8
-                    strokeColor: "transparent"
-                    PathSvg {
-                        id: line_11_Stroke__PathSvg_0
-                        path: "M 1182 0 L 1182 0.7998046875 L 0 0.7998046875 L 0 0 L 1182 0 Z"
-                    }
-                    fillRule: ShapePath.WindingFill
-                    fillColor: "#4d2d18"
-                }
                 antialiasing: true
             }
 
@@ -362,7 +354,8 @@ Item{
                     text: qsTr("Items sold")
                     anchors.left: parent.left
                     anchors.top: parent.top
-                    anchors.leftMargin: 348
+                    anchors.leftMargin: 276
+                    anchors.topMargin: 0
                     font.pixelSize: 16
                     horizontalAlignment: Text.AlignLeft
                     verticalAlignment: Text.AlignTop
@@ -380,7 +373,8 @@ Item{
                     text: qsTr("Net sales")
                     anchors.left: parent.left
                     anchors.top: parent.top
-                    anchors.leftMargin: 588
+                    anchors.leftMargin: 582
+                    anchors.topMargin: -1
                     font.pixelSize: 16
                     horizontalAlignment: Text.AlignLeft
                     verticalAlignment: Text.AlignTop
@@ -416,7 +410,8 @@ Item{
                     text: qsTr("Gross profit")
                     anchors.left: parent.left
                     anchors.top: parent.top
-                    anchors.leftMargin: 1077
+                    anchors.leftMargin: 1010
+                    anchors.topMargin: -1
                     font.pixelSize: 16
                     horizontalAlignment: Text.AlignLeft
                     verticalAlignment: Text.AlignTop
@@ -426,9 +421,9 @@ Item{
                 }
             }
 
-            Shape {
+            Rectangle{
                 id: line_13_Stroke_
-                width: 1182
+                width: 1108
                 height: 1
                 opacity: 0.5
                 anchors.left: parent.left
@@ -437,23 +432,14 @@ Item{
                 anchors.topMargin: 61
                 layer.samples: 16
                 layer.enabled: true
-                ShapePath {
-                    id: line_13_Stroke__ShapePath_0
-                    strokeWidth: 0.8
-                    strokeColor: "transparent"
-                    PathSvg {
-                        id: line_13_Stroke__PathSvg_0
-                        path: "M 1182 0 L 1182 0.7998046875 L 0 0.7998046875 L 0 0 L 1182 0 Z"
-                    }
-                    fillRule: ShapePath.WindingFill
-                    fillColor: "#4d2d18"
-                }
                 antialiasing: true
+                visible: true
+                color: "#3d2b0a"
             }
 
-            Shape {
+            Rectangle {
                 id: line_14_Stroke_
-                width: 1182
+                width: 1108
                 height: 1
                 opacity: 0.5
                 anchors.left: parent.left
@@ -462,20 +448,25 @@ Item{
                 anchors.topMargin: 183
                 layer.samples: 16
                 layer.enabled: true
-                ShapePath {
-                    id: line_14_Stroke__ShapePath_0
-                    strokeWidth: 0.8
-                    strokeColor: "transparent"
-                    PathSvg {
-                        id: line_14_Stroke__PathSvg_0
-                        path: "M 1182 0 L 1182 0.7998046875 L 0 0.7998046875 L 0 0 L 1182 0 Z"
-                    }
-                    fillRule: ShapePath.WindingFill
-                    fillColor: "#4d2d18"
-                }
                 antialiasing: true
+                visible: true
+                color: "#3d2b0a"
             }
-
+            Rectangle {
+                id: line_14_Stroke_1
+                width: 1108
+                height: 1
+                opacity: 0.5
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.leftMargin: 27
+                anchors.topMargin: 120
+                layer.samples: 16
+                layer.enabled: true
+                antialiasing: true
+                visible: true
+                color: "#3d2b0a"
+            }
             Text {
                 id: element4
                 objectName: "items_sold_text"
@@ -485,8 +476,8 @@ Item{
                 text: qsTr("10")
                 anchors.left: parent.left
                 anchors.top: parent.top
-                anchors.leftMargin: 437
-                anchors.topMargin: 141
+                anchors.leftMargin: 330
+                anchors.topMargin: 143
                 font.pixelSize: 16
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignTop
@@ -523,8 +514,8 @@ Item{
                 text: qsTr("₱500.00")
                 anchors.left: parent.left
                 anchors.top: parent.top
-                anchors.leftMargin: 1115
-                anchors.topMargin: 146
+                anchors.leftMargin: 1047
+                anchors.topMargin: 143
                 font.pixelSize: 16
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignTop

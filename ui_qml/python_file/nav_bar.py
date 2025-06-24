@@ -122,17 +122,6 @@ class MareKwentaApp:
         
         # Check if the file exists
         if not os.path.exists(qml_file):
-            print(f"QML file not found at: {qml_file}")
-            print("Please ensure the file structure is:")
-            print("  project_root/")
-            print("  ├── python_file/")
-            print("  │   └── main.py")
-            print("  └── MareKwentaContent/")
-            print("      └── mareKwenta/")
-            print("          └── main_window.qml")
-            print(f"Current directory: {current_dir}")
-            print(f"Parent directory: {parent_dir}")
-            print(f"Looking for QML at: {qml_file}")
             sys.exit(-1)
         
         self.engine.load(qml_file)
