@@ -1,79 +1,32 @@
+#!/usr/bin/env python3
 import sys
 import os
-from datetime import datetime, timedelta
-import calendar
-from PySide6.QtWidgets import QApplication
-from PySide6.QtQml import qmlRegisterType
-from PySide6.QtQuick import QQuickView
-from PySide6.QtCore import QUrl, QObject, Signal, Slot, QTimer, Property
+from PySide6.QtGui import QGuiApplication
+from PySide6.QtQml import QmlElement, qmlRegisterType
+from PySide6.QtQuickControls2 import QQuickStyle
+from PySide6.QtCore import QObject, Signal, Slot, Property
+from PySide6.QtQml import QQmlApplicationEngine
 
+# Navigation handler class
+QML_IMPORT_NAME = "NavigationHandler"
+QML_IMPORT_MAJOR_VERSION = 1
 
-class NavBarHandler(QObject):
+@QmlElement
+class NavigationHandler(QObject):
     """
-    Navigation handler for the application navbar.
-    Manages navigation between different QML pages using QQuickView windows.
+    Navigation handler for QML interface
+    This class handles navigation between different sections of the application
     """
     
-    # Signals
+    # Signals for navigation events
     navigationChanged = Signal(str)
-    dataChanged = Signal()
-    categoryChanged = Signal(str)
-    periodicityChanged = Signal(str)
-    dateOptionsChanged = Signal(list)
-    periodicityEnabled = Signal(bool)
-    dateEnabled = Signal(bool)
     
     def __init__(self):
         super().__init__()
-        self.current_view = None  # Currently active window
-        self.all_views = []  # Track all open windows
-        self.cash_box_view = None  # Specific reference to cash_box window
-        self.add_expense_view = None  # Specific reference to add_expense window
-        self.base_path = r"C:\Users\Detera\Desktop\Py\MareKwenta\ui_qml\MareKwentaContent\mareKwenta"
-        self._current_page = "inventory.qml"
-        
-        # Dashboard combo box states
-        self._selected_category = ""
-        self._selected_periodicity = ""
-        self._selected_date = ""
-        
-        # Create a timer for delayed navigation
-        self.navigation_timer = QTimer()
-        self.navigation_timer.setSingleShot(True)
-        self.navigation_timer.timeout.connect(self._performNavigation)
-        self.pending_page = None
-        self.pending_action = "replace"  # "replace" or "new_window"
-        
-    def set_current_view(self, view):
-        """Set the current active view reference"""
-        self.current_view = view
-        if view not in self.all_views:
-            self.all_views.append(view)
+        self._current_page = "ticket"
     
-    # Properties for dashboard combo boxes
-    @Property(str, notify=categoryChanged)
-    def selectedCategory(self):
-        return self._selected_category
-    
-    @selectedCategory.setter
-    def selectedCategory(self, category):
-        if self._selected_category != category:
-            self._selected_category = category
-            self.categoryChanged.emit(category)
-    
-    @Property(str, notify=periodicityChanged)
-    def selectedPeriodicity(self):
-        return self._selected_periodicity
-    
-    @selectedPeriodicity.setter
-    def selectedPeriodicity(self, periodicity):
-        if self._selected_periodicity != periodicity:
-            self._selected_periodicity = periodicity
-            self.periodicityChanged.emit(periodicity)
-        
     @Property(str, notify=navigationChanged)
     def currentPage(self):
-        """Current active page property"""
         return self._current_page
     
     @currentPage.setter
@@ -81,428 +34,132 @@ class NavBarHandler(QObject):
         if self._current_page != page:
             self._current_page = page
             self.navigationChanged.emit(page)
-    
-    def _get_qml_path(self, filename):
-        """Get full path to QML file"""
-        return os.path.join(self.base_path, filename)
-    
-    def _generate_date_options(self, periodicity, current_date=None):
-        """Generate date options based on selected periodicity"""
-        if current_date is None:
-            current_date = datetime.now()
-        
-        options = []
-        
-        if periodicity == "Daily":
-            # Generate days for current month
-            year = current_date.year
-            month = current_date.month
-            days_in_month = calendar.monthrange(year, month)[1]
-            month_name = calendar.month_name[month]
-            
-            for day in range(1, days_in_month + 1):
-                date_str = f"{month_name} {day}, {year}"
-                options.append(date_str)
-                
-        elif periodicity == "Weekly":
-            # Generate weeks for current month
-            year = current_date.year
-            month = current_date.month
-            
-            # Get first and last day of the month
-            first_day = datetime(year, month, 1)
-            last_day = datetime(year, month, calendar.monthrange(year, month)[1])
-            
-            # Calculate weeks
-            week_count = 1
-            current_week_start = first_day
-            
-            while current_week_start <= last_day:
-                # Find the end of the current week (Sunday)
-                days_until_sunday = (6 - current_week_start.weekday()) % 7
-                current_week_end = current_week_start + timedelta(days=days_until_sunday)
-                
-                # Make sure we don't go beyond the month
-                if current_week_end > last_day:
-                    current_week_end = last_day
-                
-                week_label = f"Week {week_count}"
-                options.append(week_label)
-                
-                # Move to next week
-                current_week_start = current_week_end + timedelta(days=1)
-                week_count += 1
-                
-        elif periodicity == "Monthly":
-            # Generate month names
-            options = [
-                "January", "February", "March", "April", "May", "June",
-                "July", "August", "September", "October", "November", "December"
-            ]
-            
-        elif periodicity == "Yearly":
-            # Generate years (current year and some previous years)
-            current_year = current_date.year
-            for year in range(current_year - 5, current_year + 1):
-                options.append(str(year))
-        
-        return options
-    
-    @Slot(str)
-    def onCategorySelected(self, category):
-        """Handle category combo box selection"""
-        print(f"Category selected: {category}")
-        self.selectedCategory = category
-        
-        if category:
-            # Enable periodicity combo box
-            self.periodicityEnabled.emit(True)
-            # Reset periodicity and date selections
-            self.selectedPeriodicity = ""
-            self._selected_date = ""
-            self.dateEnabled.emit(False)
-        else:
-            # Disable both periodicity and date combo boxes
-            self.periodicityEnabled.emit(False)
-            self.dateEnabled.emit(False)
-            self.selectedPeriodicity = ""
-            self._selected_date = ""
-    
-    @Slot(str)
-    def onPeriodicitySelected(self, periodicity):
-        """Handle periodicity combo box selection"""
-        print(f"Periodicity selected: {periodicity}")
-        self.selectedPeriodicity = periodicity
-        
-        if periodicity:
-            # Enable date combo box and populate options
-            self.dateEnabled.emit(True)
-            date_options = self._generate_date_options(periodicity)
-            self.dateOptionsChanged.emit(date_options)
-            # Reset date selection
-            self._selected_date = ""
-        else:
-            # Disable date combo box
-            self.dateEnabled.emit(False)
-            self._selected_date = ""
-    
-    @Slot(str)
-    def onDateSelected(self, date):
-        """Handle date combo box selection"""
-        print(f"Date selected: {date}")
-        self._selected_date = date
-    
-    @Slot()
-    def onGenerateClicked(self):
-        """Handle generate button click - navigate to appropriate dashboard"""
-        if not self._selected_category:
-            print("Error: No category selected")
-            return
-        
-        # Determine which dashboard to navigate to based on category
-        dashboard_mapping = {
-            "Sales by Category": "dashboard.qml",
-            "Sales Summary": "dashboard_3.qml", 
-            "Sales by Product": "dashboard_2.qml"
-        }
-        
-        target_page = dashboard_mapping.get(self._selected_category)
-        if target_page:
-            print(f"Navigating to {target_page} for category: {self._selected_category}")
-            self.pending_page = target_page
-            self.pending_action = "replace"
-            self.navigation_timer.start(50)
-        else:
-            print(f"Error: Unknown category '{self._selected_category}'")
-    
-    @Slot()
-    def resetDashboardFilters(self):
-        """Reset all dashboard combo boxes to initial state"""
-        self.selectedCategory = ""
-        self.selectedPeriodicity = ""
-        self._selected_date = ""
-        self.periodicityEnabled.emit(False)
-        self.dateEnabled.emit(False)
-        self.dateOptionsChanged.emit([])
-    
-    def _load_page_in_window(self, qml_filename, window_title="MareKwenta", close_current=True):
-        """Load a QML page in a new window, optionally closing the current one"""
-        qml_path = self._get_qml_path(qml_filename)
-        
-        # Check if file exists
-        if not os.path.exists(qml_path):
-            print(f"Error: QML file not found at {qml_path}")
-            return False
-        
-        # Store reference to current view before creating new one
-        old_view = self.current_view if close_current else None
-        
-        # Create new window for the page
-        new_view = QQuickView()
-        new_view.rootContext().setContextProperty("navHandler", self)
-        
-        # Load the QML file
-        qml_url = QUrl.fromLocalFile(qml_path)
-        new_view.setSource(qml_url)
-        
-        if new_view.status() == QQuickView.Error:
-            print(f"Error loading QML file {qml_filename}:")
-            for error in new_view.errors():
-                print(error.toString())
-            return False
-        
-        # Set window properties
-        page_display_name = qml_filename.replace('.qml', '').replace('_', ' ').title()
-        new_view.setTitle(f"{window_title} - {page_display_name}")
-        
-        # Handle special cases for cash_box and add_expense relationship
-        if qml_filename == "cash_box.qml":
-            self.cash_box_view = new_view
-            # Close any existing add_expense window when opening cash_box
-            if self.add_expense_view:
-                self.add_expense_view.close()
-                if self.add_expense_view in self.all_views:
-                    self.all_views.remove(self.add_expense_view)
-                self.add_expense_view = None
-                
-        elif qml_filename == "add_expense.qml":
-            self.add_expense_view = new_view
-            # Set up close event handler for add_expense
-            new_view.closing.connect(self._on_add_expense_closed)
-        
-        # Add to our list of views
-        self.all_views.append(new_view)
-        
-        # Set the new view as current BEFORE showing it
-        self.current_view = new_view
-        
-        # Show the new window
-        new_view.show()
-        
-        # Close the old window ONLY if close_current is True
-        if close_current and old_view and old_view != new_view:
-            old_view.close()
-            if old_view in self.all_views:
-                self.all_views.remove(old_view)
-            # Clear specific references if needed
-            if old_view == self.cash_box_view:
-                self.cash_box_view = None
-            elif old_view == self.add_expense_view:
-                self.add_expense_view = None
-        
-        # Update current page
-        self.currentPage = qml_filename
-        print(f"Navigated to: {qml_filename} (close_current: {close_current})")
-        return True
-    
-    def _open_new_window(self, qml_filename, window_title="MareKwenta"):
-        """Open a QML page in a new window without closing existing windows"""
-        return self._load_page_in_window(qml_filename, window_title, close_current=False)
+            print(f"Navigation changed to: {page}")
     
     @Slot()
     def navigateToInventory(self):
         """Navigate to inventory page"""
-        self.pending_page = "inventory.qml"
-        self.pending_action = "replace"
-        self.navigation_timer.start(50)
-    
-    @Slot()
-    def navigateToCashBox(self):
-        """Navigate to cash box page"""
-        self.pending_page = "cash_box.qml"
-        self.pending_action = "replace"
-        self.navigation_timer.start(50)
+        self.currentPage = "inventory"
+        print("Navigated to Inventory")
     
     @Slot()
     def navigateToStaff(self):
-        """Navigate to staff/owner page"""
-        self.pending_page = "staff_owner.qml"
-        self.pending_action = "replace"
-        self.navigation_timer.start(50)
+        """Navigate to staff page"""
+        self.currentPage = "staff"
+        print("Navigated to Staff")
+    
+    @Slot()
+    def navigateToReceipt(self):
+        """Navigate to receipt page"""
+        self.currentPage = "receipt"
+        print("Navigated to Receipt")
+    
+    @Slot()
+    def navigateToCashBox(self):
+        """Navigate to cashbox page"""
+        self.currentPage = "cashbox"
+        print("Navigated to CashBox")
+    
+    @Slot()
+    def navigateToTicket(self):
+        """Navigate to ticket page"""
+        self.currentPage = "ticket"
+        print("Navigated to Ticket")
     
     @Slot()
     def navigateToDashboard(self):
         """Navigate to dashboard page"""
-        self.pending_page = "dashboard.qml"
-        self.pending_action = "replace"
-        self.navigation_timer.start(50)
-    
-    def _on_add_expense_closed(self):
-        """Handle when add_expense window is closed"""
-        print("Add expense window closed")
-        if self.add_expense_view in self.all_views:
-            self.all_views.remove(self.add_expense_view)
-        self.add_expense_view = None
-        
-        # If cash_box is still open, make it the current view
-        if self.cash_box_view and self.cash_box_view in self.all_views:
-            self.current_view = self.cash_box_view
-            self.currentPage = "cash_box.qml"
-            print("Returned focus to cash_box window")
-    
-    def _close_cash_box_and_add_expense(self):
-        """Close both cash_box and add_expense windows"""
-        if self.add_expense_view:
-            self.add_expense_view.close()
-            if self.add_expense_view in self.all_views:
-                self.all_views.remove(self.add_expense_view)
-            self.add_expense_view = None
-            
-        if self.cash_box_view:
-            self.cash_box_view.close()
-            if self.cash_box_view in self.all_views:
-                self.all_views.remove(self.cash_box_view)
-            self.cash_box_view = None
-        
-        print("Closed cash_box and add_expense windows")
-    
-    def _performNavigation(self):
-        """Actually perform the navigation after delay"""
-        if self.pending_page:
-            print(f"=== Performing delayed navigation to: {self.pending_page} (action: {self.pending_action}) ===")
-            
-            # If navigating away from cash_box to any other page, close both cash_box and add_expense
-            if (self._current_page == "cash_box.qml" and 
-                self.pending_page != "add_expense.qml" and 
-                self.pending_action == "replace"):
-                print("Navigating away from cash_box - closing cash_box and add_expense windows")
-                self._close_cash_box_and_add_expense()
-            
-            if self.pending_action == "new_window":
-                self._open_new_window(self.pending_page)
-            else:
-                self._load_page_in_window(self.pending_page)
-            
-            self.pending_page = None
-            self.pending_action = "replace"
-    
-    @Slot(str)
-    def navigateToPage(self, page_name):
-        """
-        Generic navigation method
-        Args:
-            page_name (str): Name of the page to navigate to
-        """
-        valid_pages = {
-            "inventory": "inventory.qml",
-            "cashbox": "cash_box.qml", 
-            "staff": "staff_owner.qml",
-            "dashboard": "dashboard.qml"
-        }
-        
-        if page_name.lower() in valid_pages:
-            self.pending_page = valid_pages[page_name.lower()]
-            self.pending_action = "replace"
-            self.navigation_timer.start(50)
-        else:
-            print(f"Warning: Unknown page '{page_name}'")
-    
-    @Slot()
-    def goHome(self):
-        """Navigate back to home/default page (inventory)"""
-        self.navigateToInventory()
-    
-    @Slot(str)
-    def handleButtonClick(self, message):
-        """Handle general button clicks"""
-        print(f"Button clicked with message: {message}")
-    
-    @Slot()
-    def closeCurrentWindow(self):
-        """Close the current active window"""
-        if self.current_view:
-            self.current_view.close()
-            if self.current_view in self.all_views:
-                self.all_views.remove(self.current_view)
-            self.current_view = None
-            print("Closed current window")
-    
-    @Slot()
-    def closeAllWindows(self):
-        """Close all open windows"""
-        for view in self.all_views[:]:  # Copy list to avoid modification during iteration
-            view.close()
-        self.all_views.clear()
-        self.current_view = None
-        print("Closed all windows")
-    
-    @Slot()
-    def login_clicked(self):
-        """Handle the login click - navigate to inventory"""
-        print("=== Login clicked - navigating to inventory ===")
-        self.navigateToInventory()
+        self.currentPage = "dashboard"
+        print("Navigated to Dashboard")
 
-    @Slot()
-    def linkIngredientsClicked(self):
-        """Navigate to linking ingredients page"""
-        self.pending_page = "linking_ingredients.qml"
-        self.pending_action = "replace"
-        self.navigation_timer.start(50)
+class MareKwentaApp:
+    """
+    Main application class for MareKwenta
+    """
     
-    @Slot()
-    def inventoryClicked(self):
-        """Navigate to inventory page"""
-        self.pending_page = "inventory.qml"
-        self.pending_action = "replace"
-        self.navigation_timer.start(50)
+    def __init__(self):
+        self.app = QGuiApplication(sys.argv)
+        self.engine = QQmlApplicationEngine()
+        self.nav_handler = NavigationHandler()
+        
+        # Set up the application
+        self.setup_application()
+        
+    def setup_application(self):
+        """Setup the QML application"""
+        
+        # Set application properties
+        self.app.setApplicationName("MareKwenta")
+        self.app.setApplicationVersion("1.0.0")
+        self.app.setOrganizationName("MareKwenta Systems")
+        
+        # Set the QuickControls style (optional)
+        QQuickStyle.setStyle("Material")
+        
+        # Register the navigation handler
+        self.engine.rootContext().setContextProperty("navHandler", self.nav_handler)
+        
+        # Register QML types
+        qmlRegisterType(NavigationHandler, "NavigationHandler", 1, 0, "NavigationHandler")
+        
+        # Add import paths if needed
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # Go up one directory level (exit python_file folder)
+        parent_dir = os.path.dirname(current_dir)
+        # Navigate to MareKwentaContent/mareKwenta
+        marekwenta_dir = os.path.join(parent_dir, "MareKwentaContent", "mareKwenta")
+        
+        # Add both directories to import path
+        self.engine.addImportPath(current_dir)
+        self.engine.addImportPath(parent_dir)
+        self.engine.addImportPath(marekwenta_dir)
+        
+        # Connect quit signal
+        self.engine.quit.connect(self.app.quit)
+        
+        # Load the main QML file from MareKwentaContent/mareKwenta directory
+        qml_file = os.path.join(marekwenta_dir, "main_window.qml")
+        
+        # Check if the file exists
+        if not os.path.exists(qml_file):
+            print(f"QML file not found at: {qml_file}")
+            print("Please ensure the file structure is:")
+            print("  project_root/")
+            print("  ├── python_file/")
+            print("  │   └── main.py")
+            print("  └── MareKwentaContent/")
+            print("      └── mareKwenta/")
+            print("          └── main_window.qml")
+            print(f"Current directory: {current_dir}")
+            print(f"Parent directory: {parent_dir}")
+            print(f"Looking for QML at: {qml_file}")
+            sys.exit(-1)
+        
+        self.engine.load(qml_file)
+        
+        # Check if QML loaded successfully
+        if not self.engine.rootObjects():
+            print("Failed to load QML file")
+            sys.exit(-1)
+            
+        print("MareKwenta application started successfully")
     
-    @Slot()
-    def addExpenseButtonClicked(self):
-        """Handle the add expense button click - open as popup only from cash_box"""
-        print("=== Add expense button clicked ===")
-        
-        # Only open in new window if currently in cash_box, otherwise replace
-        if self._current_page == "cash_box.qml":
-            print("Opening add_expense as popup window (keeping cash_box open)")
-            self.pending_page = "add_expense.qml"
-            self.pending_action = "new_window"
-        else:
-            print("Replacing current window with add_expense")
-            self.pending_page = "add_expense.qml"
-            self.pending_action = "replace"
-        
-        self.navigation_timer.start(50)
+    def run(self):
+        """Run the application"""
+        return self.app.exec()
 
-def register_nav_types():
-    """Register the NavBarHandler type for QML usage"""
-    qmlRegisterType(NavBarHandler, "Navigation", 1, 0, "NavBarHandler")
-
-        
 def main():
-    app = QApplication(sys.argv)
-
-    # Register the navigation handler type
-    register_nav_types()
-
-    # Create the main QML view (Initial page)
-    main_view = QQuickView()
-    
-    # Create the navigation handler
-    nav_handler = NavBarHandler()
-    nav_handler.set_current_view(main_view)
-    
-    # Make navigation handler available to QML
-    main_view.rootContext().setContextProperty("navHandler", nav_handler)
-    
-    # Load your initial QML file
-    qml_file = QUrl.fromLocalFile(r"C:\Users\Detera\Desktop\Py\MareKwenta\ui_qml\MareKwentaContent\mareKwenta\inventory.qml")
-    main_view.setSource(qml_file)
-    
-    if main_view.status() == QQuickView.Error:
-        print("Error loading initial QML file:")
-        for error in main_view.errors():
-            print(error.toString())
-        sys.exit(-1)
-
-    # Set window properties
-    main_view.setTitle("MareKwenta - Inventory")
-    main_view.show()
-    
-    print("MareKwenta application started successfully!")
-    
-    # Run the application
-    sys.exit(app.exec())
-
+    """Main function"""
+    try:
+        # Create and run the application
+        app = MareKwentaApp()
+        exit_code = app.run()
+        print(f"Application exited with code: {exit_code}")
+        return exit_code
+        
+    except Exception as e:
+        print(f"Error running application: {e}")
+        return -1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
