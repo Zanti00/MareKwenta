@@ -69,17 +69,15 @@ class SalesHistoryMain(ctk.CTk):
 
         # Inner wrapper to center content vertically and horizontally
         center_frame = ctk.CTkFrame(right_wrapper, fg_color="transparent")
-        center_frame.pack(expand=True)  # This will center inside right_wrapper
+        center_frame.pack(expand=True)  
 
         self.right_panel = ctk.CTkFrame(center_frame, fg_color="#ffffff", corner_radius=15, width=500)
-        # Don't pack initially - will be shown when receipt is selected
 
-        # Create a placeholder label for when no receipt is selected
+
         self.placeholder_label = ctk.CTkLabel(center_frame, text="Select a receipt to view details", 
                                              font=("Poppins", 18), text_color="#8B7355")
         self.placeholder_label.pack(expand=True)
 
-        # Create a frame for the header details
         self.header_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent", width=500)
         self.header_frame.pack(pady=20)
 
@@ -87,11 +85,11 @@ class SalesHistoryMain(ctk.CTk):
         self.order_id_label = ctk.CTkLabel(self.header_frame, text="", font=("Poppins", 24, "bold"), text_color="#4E2D18", width=500)
         self.order_id_label.pack()
 
-        # "Order ID" label (smaller, different color)
+        # "Order ID" label 
         self.order_id_sublabel = ctk.CTkLabel(self.header_frame, text="Order ID", font=("Inter", 12), text_color="lightgray", width=500)
         self.order_id_sublabel.pack()
 
-        # Cashier name (same size as order ID, left aligned)
+        # Cashier name 
         self.cashier_label = ctk.CTkLabel(self.header_frame, text="", font=("Inter", 16), text_color="#4e2d18", width=500, anchor="w")
         self.cashier_label.pack(pady=(10, 0),padx=20)
 
@@ -122,7 +120,6 @@ class SalesHistoryMain(ctk.CTk):
         self.payment_frame.pack(fill="x", padx=20, pady=(10, 20))
 
     def populate_receipt_list(self):
-        # Clear any existing widgets first
         for widget in self.receipt_list_frame.winfo_children():
             widget.destroy()
 
@@ -233,7 +230,7 @@ class SalesHistoryMain(ctk.CTk):
             price_label = ctk.CTkLabel(right_price, text=f"₱{subtotal:.2f}", anchor="e", font=("Poppins", 14, "bold"), text_color="#4e2d18")
             price_label.pack(anchor="e")
 
-        # Total amount (after items)
+        # Total amount 
         total_label = ctk.CTkLabel(self.total_frame, text="Total:", font=("Inter", 18, "bold"), text_color="#4E2D18", anchor="w")
         total_label.pack(side="left")
         
