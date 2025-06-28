@@ -6,7 +6,7 @@ from components.mofifier_popup import ModifierPopup
 class TicketMainPage(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.geometry("1400x1024")
+        self.geometry("1240x1024")
         self.title("MareKwenta POS")
         self.configure(fg_color="#f2efea")
 
@@ -16,11 +16,11 @@ class TicketMainPage(ctk.CTk):
 
         # === LEFT COLUMN (Header + Product Panel) ===
         left_column = ctk.CTkFrame(main_frame, fg_color="transparent")
-        left_column.pack(side="left", fill="both", expand=True, padx=(40, 20), pady=30)
+        left_column.pack(side="left", fill="both", expand=True, padx=(5, 20), pady=30)
 
         # === HEADER ===
         header_frame = ctk.CTkFrame(left_column, fg_color="transparent")
-        header_frame.pack(fill="x", pady=(0, 10))
+        header_frame.pack(fill="x", pady=(0, 10),padx=20)
 
         hello_label = ctk.CTkLabel(header_frame, text="Hello,", font=("Unbounded", 36), text_color="#4e2d18")
         hello_label.pack(side="left")

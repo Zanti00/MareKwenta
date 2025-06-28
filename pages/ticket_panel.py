@@ -5,7 +5,7 @@ from components.split_popup import SplitPopup
 
 class TicketPanel(ctk.CTkFrame):
     def __init__(self, master, on_split_popup, *args, **kwargs):
-        super().__init__(master, width=500, height=1024, fg_color="#f2efea", border_width=1, border_color="lightgray", *args, **kwargs)
+        super().__init__(master, width=440, height=1024, fg_color="#f2efea", border_width=1, border_color="lightgray", *args, **kwargs)
         self.pack_propagate(False)
 
         self.on_split_popup = on_split_popup
@@ -23,7 +23,7 @@ class TicketPanel(ctk.CTkFrame):
         ctk.CTkLabel(header_frame, text="Ticket", font=("Unbounded", 24), text_color="#4d2d18").pack(anchor="w")
 
         # === Item List ===
-        self.item_list_scroll = ctk.CTkScrollableFrame(self, width=448, height=400, fg_color="transparent")
+        self.item_list_scroll = ctk.CTkScrollableFrame(self, width=430, height=400, fg_color="transparent")
         self.item_list_scroll.pack(padx=10, pady=(0, 10), fill="both")
         self.add_item_detail("Americano", 3, "Grande", "Iced", "Whipped Cream", 90.00)
 
@@ -68,7 +68,7 @@ class TicketPanel(ctk.CTkFrame):
 
         for idx, (label, value, color) in enumerate(cash_buttons):
             cmd = self.clear_cash if label == "Clear" else lambda v=value: self.add_cash(v)
-            btn = ctk.CTkButton(self.change_frame, text=label, width=111, height=40,
+            btn = ctk.CTkButton(self.change_frame, text=label, width=90, height=40,
                                 font=("Unbounded", 13), text_color=color,
                                 border_color=color, fg_color="#f2efea",
                                 border_width=2, corner_radius=8, hover_color="#e8e4df",
@@ -77,7 +77,7 @@ class TicketPanel(ctk.CTkFrame):
 
         # Entry placed beside last button
         self.change_amount_entry = ctk.CTkEntry(self.change_frame, placeholder_text="Amount",
-                                                width=111, height=40, font=("Inter", 13),
+                                                width=90, height=40, font=("Inter", 13),
                                                 text_color="#4e2d18", border_color="#f2efea")
         self.change_amount_entry.grid(row=1, column=3, padx=5, pady=5)
 
@@ -100,7 +100,7 @@ class TicketPanel(ctk.CTkFrame):
             if label == "Clear":
                 cmd = lambda: self.apply_discount(0, "percent")
 
-            btn = ctk.CTkButton(self.discount_frame, text=label, width=111, height=40,
+            btn = ctk.CTkButton(self.discount_frame, text=label, width=90, height=40,
                                 font=("Unbounded", 13), text_color=color,
                                 border_color=color, fg_color="#f2efea",
                                 border_width=2, corner_radius=8, hover_color="#e8e4df",
@@ -108,11 +108,11 @@ class TicketPanel(ctk.CTkFrame):
             btn.grid(row=0 if idx < 4 else 1, column=idx % 4, padx=5, pady=5)
 
         # === Move entry fields to row=1, column=4 and column=5 (next to buttons)
-        self.peso_input = ctk.CTkEntry(self.discount_frame, placeholder_text="₱ Amount", width=111, height=40,
+        self.peso_input = ctk.CTkEntry(self.discount_frame, placeholder_text="₱ Amount", width=90, height=40,
                                     font=("Inter", 13), text_color="#4e2d18", border_color="#f2efea")
         self.peso_input.grid(row=1, column=2, padx=5, pady=5)
 
-        self.percent_input = ctk.CTkEntry(self.discount_frame, placeholder_text="% Amount", width=111,height=40,
+        self.percent_input = ctk.CTkEntry(self.discount_frame, placeholder_text="% Amount", width=90,height=40,
                                         font=("Inter", 13), text_color="#4e2d18", border_color="#f2efea")
         self.percent_input.grid(row=1, column=3, padx=5, pady=5)
 
@@ -138,23 +138,23 @@ class TicketPanel(ctk.CTkFrame):
         self.payment_buttons_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.payment_buttons_frame.pack(padx=10, pady=(15, 10))
 
-        self.gcash_btn = ctk.CTkButton(self.payment_buttons_frame, text="GCash", width=95, height=40,
+        self.gcash_btn = ctk.CTkButton(self.payment_buttons_frame, text="GCash", width=78, height=40,
                                        font=("Unbounded", 16, "bold"), fg_color="#0091f7", text_color="#f2efea", hover_color="#005ea8",
                                        corner_radius=8)
         self.gcash_btn.grid(row=0, column=0, padx=(0, 10))
 
-        self.maya_btn = ctk.CTkButton(self.payment_buttons_frame, text="Maya", width=76, height=40,
+        self.maya_btn = ctk.CTkButton(self.payment_buttons_frame, text="Maya", width=63, height=40,
                                       font=("Unbounded", 16, "bold"), fg_color="#9aca1f", text_color="#f2efea", hover_color="#7a9e18",
                                       corner_radius=8)
         self.maya_btn.grid(row=0, column=1, padx=(0, 10))
 
-        self.split_btn = ctk.CTkButton(self.payment_buttons_frame, text="Split", width=95, height=40,
+        self.split_btn = ctk.CTkButton(self.payment_buttons_frame, text="Split", width=78, height=40,
                                        font=("Unbounded", 16, "bold"), fg_color="#708a2e", text_color="#f2efea", hover_color="#5c7324",
                                        corner_radius=8,
                                        command=self.open_split_popup)
         self.split_btn.grid(row=0, column=2, padx=(0, 10))
 
-        self.charge_btn = ctk.CTkButton(self.payment_buttons_frame, text="Charge", width=167, height=40,
+        self.charge_btn = ctk.CTkButton(self.payment_buttons_frame, text="Charge", width=140, height=40,
                                         font=("Unbounded", 16, "bold"), fg_color="#708a2e", text_color="#f2efea", hover_color="#5c7324",
                                         corner_radius=8)
         self.charge_btn.grid(row=0, column=3)

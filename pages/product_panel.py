@@ -6,11 +6,11 @@ from PIL import Image
 
 class ProductPanel(ctk.CTkFrame):
     def __init__(self, master, on_product_click=None, *args, **kwargs):
-        super().__init__(master,*args, **kwargs, width=878, height=938, fg_color="#f2efea")
+        super().__init__(master,*args, **kwargs, width=800, height=938, fg_color="#f2efea")
 
         self.on_product_click = on_product_click
         self.current_tab = "All"
-        self.selected_tab = "All"  # Track the currently selected tab
+        self.selected_tab = "All"  
 
         self.products = [
             {"name": "Americano", "image": "assets/americano.png", "category": "Coffee", "type": "Coffee"},
@@ -89,7 +89,7 @@ class ProductPanel(ctk.CTkFrame):
                                 product_image_path=product["image"],
                                 product_type=product["type"],
                                 command=self.handle_product_click)
-            btn.grid(row=row, column=col, padx=10, pady=10)
+            btn.grid(row=row, column=col, padx=5, pady=10)
             col += 1
             if col >= max_cols:
                 col = 0
