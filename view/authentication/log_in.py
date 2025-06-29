@@ -1,9 +1,26 @@
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
+import sys
+import os
+
+# Add the project root to the path to make sure the log_in module can be imported
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+from controller.log_in import log_in
 
 def open_login(login_window, inner_frame):
     # CREATE A FULLSCREEN WINDOW
 
+
+    def handle_login():
+        success = log_in(username, password)
+        if success:
+            # Handle successful login (e.g., close login window, open main app)
+            login_window.destroy()
+            # You can add code here to open your main application window
+        else:
+            # Handle failed login (e.g., show error message)
+            # You could add a label to show error messages
+            pass
 
 # MAREKWENTA LABEL
     label = tb.Label(
@@ -108,7 +125,7 @@ def open_login(login_window, inner_frame):
         text="Log In",
         width=12,
         style="primary.TButton",
-        command=lambda: print("Login clicked")
+        command=handle_login
     )
     login_btn.grid(row=4, column=0, pady=(10, 0))
 

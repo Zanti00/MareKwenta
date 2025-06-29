@@ -1,6 +1,11 @@
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
-from log_in import open_login
+import sys
+import os
+
+# Add the project root to the path to make sure the log_in module can be imported
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+from view.authentication.log_in import open_login
 
 def close_window():
     open_login(splash_window, inner_frame)  # Open the login window after closing the splash screen
