@@ -1,4 +1,5 @@
 import customtkinter as ctk
+
 from splash import SplashScreen
 
 if __name__ == "__main__":

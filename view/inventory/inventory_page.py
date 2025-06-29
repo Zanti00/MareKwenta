@@ -48,17 +48,13 @@ class InventoryManagement:
     def setup_ui(self):
         # Create navbar
         self.navbar = Navbar(self.root, width=124)
-        self.navbar.grid(row=0, column=0, sticky="ns")
-        
-        # Set up navbar callbacks
+        self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
+        self.navbar.set_nav_callback("ticket", self.show_ticket)
+        self.navbar.set_nav_callback("receipt", self.show_receipt)
         self.navbar.set_nav_callback("inventory", self.show_inventory)
         self.navbar.set_nav_callback("staff", self.show_staff)
-        self.navbar.set_nav_callback("receipt", self.show_receipt)
         self.navbar.set_nav_callback("cashbox", self.show_cashbox)
-        self.navbar.set_nav_callback("ticket", self.show_ticket)
         self.navbar.set_nav_callback("dashboard", self.show_dashboard)
-        
-        # Main content area with appropriate spacing from navbar
         self.main_frame = ctk.CTkFrame(self.root, fg_color="#f2efea")
         self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(20, 20), pady=20)
         
@@ -511,46 +507,29 @@ class InventoryManagement:
     
     # Navigation callback methods with error handling
     def show_inventory(self):
-        try:
-            print("Showing Inventory section")
-            # Current view is already inventory
-        except Exception as e:
-            print(f"Error showing inventory: {e}")
+        pass  # Already on this page, do nothing!
     
     def show_staff(self):
-        try:
-            print("Navigating to Staff section")
-            messagebox.showinfo("Navigation", "Staff section coming soon!")
-        except Exception as e:
-            print(f"Error showing staff: {e}")
+        self.root.destroy()
+        # TODO: Implement StaffMainPage
     
     def show_receipt(self):
-        try:
-            print("Navigating to Receipt section")
-            messagebox.showinfo("Navigation", "Receipt section coming soon!")
-        except Exception as e:
-            print(f"Error showing receipt: {e}")
+        from receipt.sales_history import SalesHistoryMain
+        self.root.destroy()
+        SalesHistoryMain().mainloop()
     
     def show_cashbox(self):
-        try:
-            print("Navigating to CashBox section")
-            messagebox.showinfo("Navigation", "CashBox section coming soon!")
-        except Exception as e:
-            print(f"Error showing cashbox: {e}")
+        self.root.destroy()
+        # TODO: Implement CashboxMainPage
     
     def show_ticket(self):
-        try:
-            print("Navigating to Ticket section")
-            messagebox.showinfo("Navigation", "Ticket section coming soon!")
-        except Exception as e:
-            print(f"Error showing ticket: {e}")
+        from ticket.ticket_main import TicketMainPage
+        self.root.destroy()
+        TicketMainPage().mainloop()
     
     def show_dashboard(self):
-        try:
-            print("Navigating to Dashboard section")
-            messagebox.showinfo("Navigation", "Dashboard section coming soon!")
-        except Exception as e:
-            print(f"Error showing dashboard: {e}")
+        self.root.destroy()
+        # TODO: Implement DashboardMainPage
     
     def run(self):
         """Start the application with error handling"""

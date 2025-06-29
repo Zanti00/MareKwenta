@@ -115,6 +115,8 @@ class Navbar(ctk.CTkFrame):
     
     def on_nav_click(self, nav_name):
         """Handle navigation button clicks"""
+        if nav_name == self.active_tab:
+            return  # Prevent recursion if already on this tab
         self.active_tab = nav_name
         for name, btn in self.nav_buttons.items():
             if name == nav_name:

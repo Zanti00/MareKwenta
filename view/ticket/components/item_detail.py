@@ -48,7 +48,10 @@ class ItemDetail(ctk.CTkFrame):
         self.right_column = ctk.CTkFrame(self, fg_color="transparent", width=90, height=95)
         self.right_column.place(x=385, rely=0.5, anchor="e")
         
-        trash_icon = ctk.CTkImage(light_image=Image.open("assets/trash.png"))
+        # Get the absolute path to the assets folder relative to this file
+        assets_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'assets')
+        icon_path = os.path.abspath(os.path.join(assets_dir, 'trash.png'))
+        trash_icon = ctk.CTkImage(light_image=Image.open(icon_path))
         
         delete_btn = ctk.CTkButton(self.right_column, width=20, height=20, text="",
                                    fg_color="transparent", hover_color="#f0f0f0",

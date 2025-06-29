@@ -1,6 +1,6 @@
 import customtkinter as ctk
 import os
-from components.product_btn import ProductButton
+from .components.product_btn import ProductButton
 from PIL import Image
 
 
@@ -13,22 +13,21 @@ class ProductPanel(ctk.CTkFrame):
         self.selected_tab = "All"  
 
         self.products = [
-            {"name": "Americano", "image": "assets/americano.png", "category": "Coffee", "type": "Coffee"},
-            {"name": "Cafe Latte", "image": "assets/cafe_latte.png", "category": "Coffee", "type": "Coffee"},
-            {"name": "Caramel Macchiato", "image": "assets/caramel_macc.png", "category": "Coffee", "type": "Coffee"},
-            {"name": "Mocha", "image": "assets/mocha.png", "category": "Coffee", "type": "Coffee"},
-            {"name": "Cappuccino", "image": "assets/cappuccino.png", "category": "Coffee", "type": "Coffee"},
-            {"name": "Matcha Latte", "image": "assets/matcha.png", "category": "Non-Coffee", "type": "Matcha"},
-            {"name": "Chocolate", "image": "assets/chocolate.png", "category": "Non-Coffee", "type": "Chocolate"},
-            {"name": "Strawberry Frappe", "image": "assets/sb_frappe.png", "category": "Non-Coffee", "type": "Frappe"},
-            {"name": "Caramel Frappe", "image": "assets/caramel_frappe.png", "category": "Non-Coffee", "type": "Frappe"},
-            {"name": "Chocolate Chip Frappe", "image": "assets/choc_chip_frappe.png", "category": "Non-Coffee", "type": "Frappe"},
-            {"name": "Tocilog", "image": "assets/tocilog.png", "category": "Food", "type": "Food"},
-            {"name": "Garlic Rice", "image": "assets/garlic_rice.png", "category": "Food", "type": "Food"},
-            {"name": "Pork Siomai Rice", "image": "assets/pork_siomai_rice.png", "category": "Food", "type": "Food"},
-            {"name": "Hamsilog", "image": "assets/hamsilog.png", "category": "Food", "type": "Food"},
+            {"name": "Americano", "image": "americano.png", "category": "Coffee", "type": "Coffee"},
+            {"name": "Cafe Latte", "image": "cafe_latte.png", "category": "Coffee", "type": "Coffee"},
+            {"name": "Caramel Macchiato", "image": "caramel_macc.png", "category": "Coffee", "type": "Coffee"},
+            {"name": "Mocha", "image": "mocha.png", "category": "Coffee", "type": "Coffee"},
+            {"name": "Cappuccino", "image": "cappuccino.png", "category": "Coffee", "type": "Coffee"},
+            {"name": "Matcha Latte", "image": "matcha.png", "category": "Non-Coffee", "type": "Matcha"},
+            {"name": "Chocolate", "image": "chocolate.png", "category": "Non-Coffee", "type": "Chocolate"},
+            {"name": "Strawberry Frappe", "image": "sb_frappe.png", "category": "Non-Coffee", "type": "Frappe"},
+            {"name": "Caramel Frappe", "image": "caramel_frappe.png", "category": "Non-Coffee", "type": "Frappe"},
+            {"name": "Chocolate Chip Frappe", "image": "choc_chip_frappe.png", "category": "Non-Coffee", "type": "Frappe"},
+            {"name": "Tocilog", "image": "tocilog.png", "category": "Food", "type": "Food"},
+            {"name": "Garlic Rice", "image": "garlic_rice.png", "category": "Food", "type": "Food"},
+            {"name": "Pork Siomai Rice", "image": "pork_siomai_rice.png", "category": "Food", "type": "Food"},
+            {"name": "Hamsilog", "image": "hamsilog.png", "category": "Food", "type": "Food"},
         ]
-
         self.filtered_products = []
 
         self.tab_buttons = []
@@ -84,9 +83,10 @@ class ProductPanel(ctk.CTkFrame):
         col = 0
         max_cols = 4
         for product in self.filtered_products:
+            image_path = os.path.join(os.path.dirname(__file__), "..", "assets", product["image"])
             btn = ProductButton(self.product_container,
                                 product_name=product["name"],
-                                product_image_path=product["image"],
+                                product_image_path=image_path,
                                 product_type=product["type"],
                                 command=self.handle_product_click)
             btn.grid(row=row, column=col, padx=5, pady=10)
