@@ -1,116 +1,196 @@
-import ttkbootstrap as tb
-from ttkbootstrap.constants import *
+import customtkinter as ctk
+from tkinter import CENTER
+import sys
+from inventory.inventory_page import InventoryManagement
 
-def open_login(login_window, inner_frame):
-    # CREATE A FULLSCREEN WINDOW
+class LoginWindow(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.setup_window()
+        self.setup_ui()
+        self.setup_bindings()
+        
+        # Focus on username field
+        self.after(100, lambda: self.username.focus())
+    
+    def setup_window(self):
+        """Configure the login window"""
+        self.title("MareKwenta POS - Login")
+        self.configure(fg_color="#CABA9C")
+        self.geometry("1240x1440")  # Set fixed size for login window
+        
+        # Try multiple methods for fullscreen compatibility
+        self.make_fullscreen()
+    
+    def setup_ui(self):
+        """Create the login window UI elements"""
+        
+        # Create main frame (fills entire screen)
+        main_frame = ctk.CTkFrame(self, fg_color="#CABA9C", corner_radius=0)
+        main_frame.pack(fill="both", expand=True)
+        
+        # Center container frame
+        center_frame = ctk.CTkFrame(main_frame, fg_color="#CABA9C", corner_radius=0)
+        center_frame.place(relx=0.5, rely=0.5, anchor=CENTER)
+        
+        # MAREKWENTA LABEL
+        title_label = ctk.CTkLabel(
+            center_frame,
+            text="MareKwenta",
+            font=("Unbounded", 36, "bold"),
+            text_color="#4D2D18",
+            fg_color="transparent"
+        )
+        title_label.grid(row=0, column=0, padx=20, pady=20)
+        
+        # Custom separator (using Frame as line)
+        separator = ctk.CTkFrame(center_frame, height=2, fg_color="#4D2D18", corner_radius=0)
+        separator.grid(row=1, column=0, sticky="ew", padx=40, pady=5)
+        
+        # POS LABEL
+        pos_label = ctk.CTkLabel(
+            center_frame,
+            text="POS",
+            font=("Unica One", 30, "normal"),
+            text_color="#4D2D18",
+            fg_color="transparent"
+        )
+        pos_label.grid(row=2, column=0, pady=(10, 20))
+        
+        # LOGIN FRAME
+        login_frame = ctk.CTkFrame(
+            center_frame,
+            fg_color="#F2EFEA",
+            corner_radius=12,
+            border_width=2,
+            border_color="#D4C4A8",
+            width=400,
+            height=280
+        )
+        login_frame.grid(row=3, column=0, pady=(10, 20), padx=20)
+        login_frame.grid_propagate(False)  # Maintain fixed size
+        
+        # Configure login frame grid
+        login_frame.grid_columnconfigure(0, weight=1)
+        
+        # Username Label
+        username_label = ctk.CTkLabel(
+            login_frame,
+            text="Username",
+            font=("Inter", 12, "normal"),
+            text_color="#4D2D18",
+            fg_color="transparent"
+        )
+        username_label.grid(row=0, column=0, sticky="w", padx=30, pady=(25, 5))
+        
+        # Username Entry
+        self.username = ctk.CTkEntry(
+            login_frame,
+            font=("Inter", 12),
+            fg_color="white",
+            text_color="#333333",
+            border_color="#CCCCCC",
+            corner_radius=6,
+            height=35,
+            width=290
+        )
+        self.username.grid(row=1, column=0, padx=30, pady=(0, 15))
+        
+        # Password Label
+        password_label = ctk.CTkLabel(
+            login_frame,
+            text="Password",
+            font=("Inter", 12, "normal"),
+            text_color="#4D2D18",
+            fg_color="transparent"
+        )
+        password_label.grid(row=2, column=0, sticky="w", padx=30, pady=(0, 5))
+        
+        # Password Entry
+        self.password = ctk.CTkEntry(
+            login_frame,
+            show="*",
+            font=("Inter", 12),
+            fg_color="white",
+            text_color="#333333",
+            border_color="#CCCCCC",
+            corner_radius=6,
+            height=35,
+            width=290
+        )
+        self.password.grid(row=3, column=0, padx=30, pady=(0, 20))
+        
+        # Login Button
+        login_btn = ctk.CTkButton(
+            login_frame,
+            text="Log In",
+            width=140,
+            height=40,
+            font=("Inter", 12, "bold"),
+            fg_color="#5E3921",
+            hover_color="#4D2D18",
+            text_color="white",
+            corner_radius=6,
+            command=self.handle_login
+        )
+        login_btn.grid(row=4, column=0, pady=(0, 25))
+    
+    def setup_bindings(self):
+        """Setup keyboard bindings"""
+        self.bind("<Escape>", lambda e: self.exit_app())  # ESC to exit
+        self.bind("<F11>", lambda e: self.toggle_fullscreen())  # F11 to toggle fullscreen
+        self.bind("<Return>", lambda e: self.handle_login())  # Enter to login
+    
+    def make_fullscreen(self):
+        """Make window fullscreen using multiple methods for compatibility"""
+        try:
+            # Method 1: Try state zoomed (works on Windows)
+            self.state('zoomed')
+        except:
+            try:
+                # Method 2: Try fullscreen attribute
+                self.attributes('-fullscreen', True)
+            except:
+                try:
+                    # Method 3: Try zoomed attribute (Linux/Mac)
+                    self.attributes('-zoomed', True)
+                except:
+                    # Method 4: Manual fullscreen using geometry
+                    self.update_idletasks()
+                    screen_width = self.winfo_screenwidth()
+                    screen_height = self.winfo_screenheight()
+                    self.geometry(f"{screen_width}x{screen_height}+0+0")
+    
+    def toggle_fullscreen(self):
+        """Toggle between fullscreen and windowed mode"""
+        if self.attributes('-fullscreen'):
+            self.attributes('-fullscreen', False)
+        else:
+            self.attributes('-fullscreen', True)
+    
+    def handle_login(self):
+        """Handle login button click"""
+        username = self.username.get()
+        password = self.password.get()
+        
+        # Basic validation
+        if not username or not password:
+            print("Please enter both username and password")
+            return
+        
+        # Add your login validation logic here
+        print(f"Login attempted with username: {username}")
+        
+        if username and password:  # Simple validation
+            print("Login successful!")
+            self.inventory_page()
 
-
-# MAREKWENTA LABEL
-    label = tb.Label(
-        inner_frame,
-        text="MareKwenta",
-        font=("Unbounded", 30, "bold"),
-        foreground="#4D2D18",
-        background="#CABA9C"
-    )   
-    label.grid(row=0, column=0, padx=20, pady=20)
-
-    style = tb.Style()
-    style.configure("Custom.TSeparator", background="#4D2D18")
-
-    # Separator using the custom style
-    sep = tb.Separator(inner_frame, orient=HORIZONTAL, style="Custom.TSeparator")
-    sep.grid(row=1, column=0, sticky="ew", padx=40, pady=5)
-
-    # POS LABEL
-    pos_label = tb.Label(
-        inner_frame,
-        text="POS",
-        font=("Unica One", 20),
-        foreground="#4D2D18",
-        background="#CABA9C"
-    )
-    pos_label.grid(row=2, column=0, pady=(10, 20))
-
-    style = tb.Style()
-    style.configure("Login.TFrame", background="#F2EFEA")
-
-    # LOGIN FRAME
-    login_frame = tb.Frame(
-    inner_frame,
-    style="Login.TFrame",
-    padding=(60, 20, 60, 20),
-    borderwidth=1,
-    relief="solid"       
-)
-
-    login_frame.grid(row=3, column=0, pady=(10, 20))
-    login_frame.grid_rowconfigure(0, weight=1)
-    login_frame.grid_rowconfigure(1, weight=1)
-    login_frame.grid_columnconfigure(0, weight=1)
-
-
- # Username Label
-    username_label = tb.Label(
-        login_frame,
-        text="Username",
-        font=("Montserrat Medium", 11),
-        foreground="#4D2D18",
-        background="#F2EFEA"
-    )
-    username_label.grid(row=0, column=0, sticky="w", padx=40, pady=(0, 2))
-
-# Username Entry
-    username = tb.Entry(login_frame, font=("Montserrat Medium", 11))
-    username.grid(row=1, column=0, sticky="we", padx=40, pady=(0, 10))
-
-# Password Label
-    password_label = tb.Label(  
-        login_frame,
-        text="Password",
-        font=("Montserrat Medium", 11),
-        foreground="#4D2D18",
-        background="#F2EFEA"
-    )
-    password_label.grid(row=2, column=0, sticky="w", padx=40, pady=(0, 2))
-
-# Password Entry
-    password = tb.Entry(login_frame, show="*", font=("Montserrat Medium", 11))
-    password.grid(row=3, column=0, sticky="we", padx=40, pady=(0, 10))
-
-# Make column expand horizontally
-    login_frame.columnconfigure(0, weight=1)
-
-    style = tb.Style()
-
-    style.configure(
-        "primary.TButton",
-        foreground="white",
-        background="#5E3921",  # default background (can be lighter/different)
-        font=("Montserrat Medium", 11)
-    )
-
-    style.map(
-        "primary.TButton",
-        background=[
-            ("active", "#4D2D18"),   # when hovered/active
-            ("pressed", "#3B1F0F"),  # when clicked/pressed (darker shade)
-            ("!active", "#5E3921")   # normal state (optional)
-        ],
-        foreground=[
-            ("disabled", "gray"),
-            ("!disabled", "white")
-        ]   
-    )
-
-    login_btn = tb.Button(
-        login_frame,
-        text="Log In",
-        width=12,
-        style="primary.TButton",
-        command=lambda: print("Login clicked")
-    )
-    login_btn.grid(row=4, column=0, pady=(10, 0))
-
-
-    login_window.mainloop()
+    def inventory_page(self):
+        """Navigate to inventory page"""
+        # Close login window
+        self.destroy()
+        InventoryManagement().mainloop()
+    
+    def exit_app(self):
+        """Exit the application"""
+        sys.exit()
