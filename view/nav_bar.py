@@ -4,9 +4,9 @@ import os
 from PIL import Image
 
 class Navbar(ctk.CTkFrame):
-    def __init__(self, parent, width=100, **kwargs):
+    def __init__(self, parent, width=100, role="owner", **kwargs):
         super().__init__(parent, width=width, corner_radius=0, **kwargs)
-        
+        self.role = role
         # Configure the navbar
         self.configure(fg_color="#f7f3ee")
         self.grid_propagate(False)  # Maintain fixed width
@@ -71,6 +71,14 @@ class Navbar(ctk.CTkFrame):
             {"name": "ticket", "text": "Ticket", "icon": "Ticket.png"},
             {"name": "dashboard", "text": "Dashboard", "icon": "dashboard.png"}
         ]
+        # Filter buttons based on role
+        if self.role == "owner":
+            allowed = {"inventory", "staff", "receipt", "cashbox", "ticket", "dashboard"}
+        elif self.role == "employee":
+            allowed = {"ticket", "staff", "receipt", "cashbox"}
+        else:
+            allowed = {"ticket"}  # fallback
+        nav_buttons = [btn for btn in nav_buttons if btn["name"] in allowed]
         self.nav_buttons = {}
         for i, button_data in enumerate(nav_buttons):
             icon = self.load_icon(button_data["icon"], size=(28, 28))
