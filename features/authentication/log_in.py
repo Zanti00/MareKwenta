@@ -15,12 +15,13 @@ class LoginWindow(ctk.CTk):
     
     def setup_window(self):
         """Configure the login window"""
-        self.title("MareKwenta POS - Login")
+        self.title("MareKwenta POS")
         self.configure(fg_color="#CABA9C")
-        self.geometry("1240x1440")  # Set fixed size for login window
-        
-        # Try multiple methods for fullscreen compatibility
-        self.make_fullscreen()
+        taskbar_height = 70  # Adjust this value as needed
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        usable_height = screen_height - taskbar_height
+        self.geometry(f"{screen_width}x{usable_height}+0+0")
     
     def setup_ui(self):
         """Create the login window UI elements"""
@@ -181,15 +182,39 @@ class LoginWindow(ctk.CTk):
         # Add your login validation logic here
         print(f"Login attempted with username: {username}")
         
-        if username and password:  # Simple validation
-            print("Login successful!")
-            self.inventory_page()
+        # Simple role-based authentication (you can replace this with your actual authentication logic)
+        user_role = self.authenticate_user(username, password)
+        
+        if user_role:
+            print(f"Login successful! User role: {user_role}")
+            self.inventory_page(user_role)
+        else:
+            print("Invalid credentials")
 
-    def inventory_page(self):
-        """Navigate to inventory page"""
+    def authenticate_user(self, username, password):
+        """Simple authentication logic - replace with your actual authentication system"""
+        # Example credentials (in a real app, this would be in a database)
+        users = {
+            "owner": {"password": "owner123", "role": "admin"},
+            "employee": {"password": "emp123", "role": "employee"},
+            "admin": {"password": "admin123", "role": "admin"},
+            "staff": {"password": "staff123", "role": "employee"}
+        }
+        
+        if username in users and users[username]["password"] == password:
+            return users[username]["role"]
+        return None
+
+    def inventory_page(self, user_role):
+        """Navigate to inventory page with user role"""
         # Close login window
         self.destroy()
-        InventoryManagement().mainloop()
+        if user_role == "admin":
+            from inventory.inventory_page import InventoryManagement
+            InventoryManagement(user_role=user_role).run()
+        else:
+            from ticket.ticket_main import TicketMainPage
+            TicketMainPage(user_role=user_role).run()
     
     def exit_app(self):
         """Exit the application"""

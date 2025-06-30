@@ -4,18 +4,19 @@ import os
 from PIL import Image
 
 class Navbar(ctk.CTkFrame):
-    def __init__(self, parent, width=100, role="owner", **kwargs):
+    def __init__(self, parent, width=100, user_role="employee", active_tab=None, **kwargs):
         super().__init__(parent, width=width, corner_radius=0, **kwargs)
-        self.role = role
+        
         # Configure the navbar
         self.configure(fg_color="#f7f3ee")
         self.grid_propagate(False)  # Maintain fixed width
         
-        # Store callbacks for navigation
+        # Store user role and callbacks for navigation
+        self.user_role = user_role
         self.nav_callbacks = {}
         
         # Setup the navbar layout
-        self.active_tab = "inventory"
+        self.active_tab = active_tab or ("inventory" if user_role == "owner" else "ticket")
         self.icon_images = {}
         self.grid_rowconfigure(1, weight=1)  # Center nav buttons vertically
         self.setup_header()
@@ -63,7 +64,9 @@ class Navbar(ctk.CTkFrame):
         self.grid_rowconfigure(3, weight=1)  # Bottom spacer
         self.buttons_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.buttons_frame.grid(row=2, column=0, sticky="ns", pady=0)
-        nav_buttons = [
+        
+        # Define all possible navigation buttons
+        all_nav_buttons = [
             {"name": "inventory", "text": "Inventory", "icon": "inventory.png"},
             {"name": "staff", "text": "Staff", "icon": "staff.png"},
             {"name": "receipt", "text": "Receipts", "icon": "receipt.png"},
@@ -71,29 +74,38 @@ class Navbar(ctk.CTkFrame):
             {"name": "ticket", "text": "Ticket", "icon": "Ticket.png"},
             {"name": "dashboard", "text": "Dashboard", "icon": "dashboard.png"}
         ]
-        # Filter buttons based on role
-        if self.role == "owner":
-            allowed = {"inventory", "staff", "receipt", "cashbox", "ticket", "dashboard"}
-        elif self.role == "employee":
-            allowed = {"ticket", "staff", "receipt", "cashbox"}
+        
+        # Filter buttons based on user role
+        if self.user_role == "employee":
+            # Employees can only access: ticket, staff, receipts, cashbox
+            nav_buttons = [
+                {"name": "ticket", "text": "Ticket", "icon": "Ticket.png"},
+                {"name": "staff", "text": "Staff", "icon": "staff.png"},
+                {"name": "receipt", "text": "Receipts", "icon": "receipt.png"},
+                {"name": "cashbox", "text": "Cash Box", "icon": "cashbox.png"}
+            ]
         else:
-            allowed = {"ticket"}  # fallback
-        nav_buttons = [btn for btn in nav_buttons if btn["name"] in allowed]
+            # Owners can access all buttons
+            nav_buttons = all_nav_buttons
+        
         self.nav_buttons = {}
         for i, button_data in enumerate(nav_buttons):
             icon = self.load_icon(button_data["icon"], size=(28, 28))
+            is_active = self.active_tab == button_data["name"]
             btn = ctk.CTkButton(
                 self.buttons_frame,
                 text=button_data["text"],
                 image=icon,
                 compound="top",
-                fg_color="#ede3d2" if self.active_tab == button_data["name"] else "#f7f3ee",
+                fg_color="#D5C8B0" if is_active else "#f7f3ee",
                 hover_color="#ede3d2",
                 text_color="#4d2d18",
                 font=ctk.CTkFont(family="Arial", size=12, weight="bold"),
                 corner_radius=16,
                 width=90,
                 height=70,
+                border_width=1 if is_active else 0,
+                border_color="#D5C8B0" if is_active else "#f7f3ee",
                 command=lambda n=button_data["name"]: self.on_nav_click(n)
             )
             btn.grid(row=i, column=0, pady=(0, 8), padx=0, sticky="ew")

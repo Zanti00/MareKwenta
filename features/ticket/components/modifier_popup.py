@@ -32,12 +32,6 @@ class ModifierPopup(ctk.CTkToplevel):
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
         header_frame.pack(padx=25, pady=(25, 10), fill="x")
 
-        close_btn = ctk.CTkButton(header_frame, text="X", width=40, height=40,
-                                  fg_color="transparent", hover_color="lightgray",
-                                  text_color="#4e2d18", font=("Unbounded", 22, "bold"),
-                                  command=self.destroy)
-        close_btn.pack(side="left")
-
         title_label = ctk.CTkLabel(header_frame, text=self.product_name,
                                    font=("Unbounded", 20, "bold"), text_color="#4e2d18")
         title_label.pack(side="left", expand=True, anchor="w", padx=10)

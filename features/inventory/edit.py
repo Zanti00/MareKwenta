@@ -162,7 +162,7 @@ class EditInventoryPopup(ctk.CTkToplevel):
         save_btn = ctk.CTkButton(
             btn_frame,
             text="Save",
-            width=80,
+            width=100,
             height=40,
             fg_color="#4e2d18",
             text_color="#ffffff",
