@@ -307,7 +307,7 @@ class StaffPageAdmin(ctk.CTk):
     def open_reset_password_popup(self):
         popup = ctk.CTkToplevel(self)
         popup.title("Reset Password")
-        popup.geometry("200x250")
+        popup.geometry("300x250")
         popup.configure(fg_color="#f2efea")
         popup.grab_set()
 

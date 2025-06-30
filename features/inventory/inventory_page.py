@@ -507,12 +507,9 @@ class InventoryManagement:
             messagebox.showerror("Error", f"Failed to perform action: {e}")
     
     def link_ingredients_clicked(self):
-        """Handle link ingredients navigation"""
-        try:
-            print("Navigating to Link Ingredients")
-            messagebox.showinfo("Navigation", "Link Ingredients feature coming soon!")
-        except Exception as e:
-            print(f"Error in link_ingredients_clicked: {e}")
+        from .link_ingredients import LinkIngredientsPage
+        self.root.destroy()
+        LinkIngredientsPage(user_role=self.user_role).mainloop()
     
     # Navigation callback methods with error handling
     def show_inventory(self):
