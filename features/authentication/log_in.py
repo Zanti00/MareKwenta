@@ -195,9 +195,9 @@ class LoginWindow(ctk.CTk):
         """Simple authentication logic - replace with your actual authentication system"""
         # Example credentials (in a real app, this would be in a database)
         users = {
-            "owner": {"password": "owner123", "role": "owner"},
+            "owner": {"password": "owner123", "role": "admin"},
             "employee": {"password": "emp123", "role": "employee"},
-            "admin": {"password": "admin123", "role": "owner"},
+            "admin": {"password": "admin123", "role": "admin"},
             "staff": {"password": "staff123", "role": "employee"}
         }
         
@@ -209,7 +209,12 @@ class LoginWindow(ctk.CTk):
         """Navigate to inventory page with user role"""
         # Close login window
         self.destroy()
-        InventoryManagement(user_role=user_role).mainloop()
+        if user_role == "admin":
+            from inventory.inventory_page import InventoryManagement
+            InventoryManagement(user_role=user_role).run()
+        else:
+            from ticket.ticket_main import TicketMainPage
+            TicketMainPage(user_role=user_role).run()
     
     def exit_app(self):
         """Exit the application"""

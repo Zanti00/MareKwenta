@@ -6,12 +6,14 @@ import threading
 import time
 from .add_quantity import AddQuantityPopup
 from .edit import EditInventoryPopup
+from staff.staff_admin import StaffPageAdmin
+from staff.staff_employee import StaffPageEmployee
 
 class InventoryManagement:
-    def __init__(self, user_role="employee"):
+    def __init__(self, user_role="admin"):
         # Initialize the main window
         self.root = ctk.CTk()
-        self.root.title("Inventory Management")
+        self.root.title("MareKwenta POS")
         taskbar_height = 70  # Adjust this value as needed
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
@@ -151,7 +153,7 @@ class InventoryManagement:
         inner_frame.grid(row=0, column=1, sticky="", pady=20)
     
         # Configure inner frame columns with even spacing
-        for i in range(5):
+        for i in range(6):
             inner_frame.grid_columnconfigure(i, weight=1, uniform="col")
 
         # Title
@@ -161,7 +163,7 @@ class InventoryManagement:
             font=ctk.CTkFont("Unbounded", size=16, weight="bold"),
             text_color="#4e2d18"
      )
-        title_label.grid(row=0, column=0, columnspan=5, pady=(0, 20))
+        title_label.grid(row=0, column=0, columnspan=6, pady=(0, 20))
     
         # Input fields with consistent spacing
         entry_padx = 10
@@ -204,11 +206,24 @@ class InventoryManagement:
             text_color="#4e2d18"
         )
         self.cost_entry.grid(row=1, column=2, padx=entry_padx, pady=(0, 20))
+
+        self.restock_point_entry = ctk.CTkEntry(
+            inner_frame,
+            height=32,
+            width=130,
+            placeholder_text="Restock Point",
+            font=ctk.CTkFont("Inter", size=12),
+            fg_color="#ffffff",
+            border_color="#d1d5db",
+            corner_radius=8,
+            text_color="#4e2d18"
+        )
+        self.restock_point_entry.grid(row=1, column=3, padx=entry_padx, pady=(0, 20))
     
         self.measurement_combo = ctk.CTkOptionMenu(
             inner_frame,
             height=32,
-            width=100,
+            width=130,
             values=["mg", "ml", "grams", "oz", "pcs"],
             font=ctk.CTkFont("Inter", size=12),
             fg_color="#ffffff",
@@ -218,8 +233,8 @@ class InventoryManagement:
             corner_radius=8,
             text_color="#4e2d18"
         )
-        self.measurement_combo.grid(row=1, column=3, padx=entry_padx, pady=(0, 20))
-        self.measurement_combo.set("mg")
+        self.measurement_combo.grid(row=1, column=4, padx=entry_padx, pady=(0, 20))
+        self.measurement_combo.set("Unit")
 
         plus_btn = ctk.CTkButton(
             inner_frame,
@@ -232,7 +247,7 @@ class InventoryManagement:
             corner_radius=16,
             command=self.save_ingredient
         )
-        plus_btn.grid(row=1, column=4, padx=entry_padx, pady=(0, 20))
+        plus_btn.grid(row=1, column=5, padx=entry_padx, pady=(0, 20))
         
     def setup_inventory_list(self):
         self.list_frame = ctk.CTkFrame(
@@ -294,7 +309,7 @@ class InventoryManagement:
                     ingredient_label = ctk.CTkLabel(
                         self.inventory_container,
                         text=item["ingredient"],
-                        font=ctk.CTkFont("Inter", size=12, weight="normal"),
+                        font=ctk.CTkFont("Inter", size=15, weight="normal"),
                         text_color="#222222",
                         anchor="center"  # Center align like create ingredient panel
                     )
@@ -303,7 +318,7 @@ class InventoryManagement:
                     quantity_label = ctk.CTkLabel(
                         self.inventory_container,
                         text=item["quantity"],
-                        font=ctk.CTkFont("Inter", size=12, weight="normal"),
+                        font=ctk.CTkFont("Inter", size=15, weight="normal"),
                         text_color="#222222",
                         anchor="center"  # Center align like create ingredient panel
                     )
@@ -312,7 +327,7 @@ class InventoryManagement:
                     measurement_label = ctk.CTkLabel(
                         self.inventory_container,
                         text=item["measurement"],
-                        font=ctk.CTkFont("Inter", size=12, weight="normal"),
+                        font=ctk.CTkFont("Inter", size=15, weight="normal"),
                         text_color="#222222",
                         anchor="center"  # Center align like create ingredient panel
                     )
@@ -321,7 +336,7 @@ class InventoryManagement:
                     status_label = ctk.CTkLabel(
                         self.inventory_container,
                         text=item["status"],
-                        font=ctk.CTkFont("Inter", size=12, weight="bold"),
+                        font=ctk.CTkFont("Inter", size=15, weight="bold"),
                         text_color="#0a8a06",
                         anchor="center"  # Center align like create ingredient panel
                     )
@@ -332,7 +347,7 @@ class InventoryManagement:
                         height=32,
                         width=100,
                         values=["Add Quantity", "Edit", "Delete"],
-                        font=ctk.CTkFont("Inter", size=11),
+                        font=ctk.CTkFont("Inter", size=13),
                         fg_color="#ffffff",
                         button_color="#919191",
                         button_hover_color="#808080",
@@ -365,6 +380,7 @@ class InventoryManagement:
             ingredient_name = self.ingredient_name_entry.get().strip()
             amount_stock = self.amount_stock_entry.get().strip()
             cost = self.cost_entry.get().strip()
+            restock_point = self.restock_point_entry.get().strip()
             measurement = self.measurement_combo.get()
             
             # Validate input
@@ -379,6 +395,10 @@ class InventoryManagement:
             if not cost:
                 messagebox.showwarning("Validation Error", "Please enter cost")
                 return
+
+            if not restock_point:
+                messagebox.showwarning("Validation Error", "Please enter restock point")
+                return
                 
             if measurement not in ["mg", "ml", "grams", "oz", "pcs"]:
                 messagebox.showwarning("Validation Error", "Please select a unit of measurement")
@@ -388,8 +408,9 @@ class InventoryManagement:
             try:
                 float(amount_stock)
                 float(cost)
+                float(restock_point)
             except ValueError:
-                messagebox.showerror("Validation Error", "Amount and cost must be valid numbers")
+                messagebox.showerror("Validation Error", "Amount, cost, and restock point must be valid numbers")
                 return
             
             # Add new ingredient to data
@@ -398,6 +419,7 @@ class InventoryManagement:
                 "quantity": amount_stock,
                 "measurement": measurement,
                 "cost": cost,
+                "restock_point": restock_point,
                 "status": "In Stock",
                 "color": "#0a8a06"
             }
@@ -421,6 +443,7 @@ class InventoryManagement:
             self.ingredient_name_entry.delete(0, 'end')
             self.amount_stock_entry.delete(0, 'end')
             self.cost_entry.delete(0, 'end')
+            self.restock_point_entry.delete(0, 'end')
             self.measurement_combo.set("mg")
         except Exception as e:
             print(f"Error clearing input fields: {e}")
@@ -497,7 +520,10 @@ class InventoryManagement:
     
     def show_staff(self):
         self.root.destroy()
-        # TODO: Implement StaffMainPage
+        if self.user_role == "admin":
+            StaffPageAdmin(user_role="admin").run()
+        else:
+            StaffPageEmployee(user_role="employee").run()
     
     def show_receipt(self):
         from receipt.sales_history import SalesHistoryMain
@@ -515,8 +541,9 @@ class InventoryManagement:
         TicketMainPage(user_role=self.user_role).mainloop()
     
     def show_dashboard(self):
+        from dashboard.sales_dashboard import SalesDashboard
         self.root.destroy()
-        # TODO: Implement DashboardMainPage
+        SalesDashboard(user_role=self.user_role).mainloop()
     
     def run(self):
         """Start the application with error handling"""

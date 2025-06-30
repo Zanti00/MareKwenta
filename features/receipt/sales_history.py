@@ -3,6 +3,8 @@ import tkinter as tk
 import json
 from datetime import datetime, timedelta
 from nav_bar import Navbar
+from staff.staff_admin import StaffPageAdmin
+from staff.staff_employee import StaffPageEmployee
 
 sample_receipts = [
     {
@@ -312,7 +314,10 @@ class SalesHistoryMain(ctk.CTk):
 
     def show_staff(self):
         self.destroy()
-        # TODO: Implement StaffMainPage
+        if self.user_role == "admin":
+            StaffPageAdmin(user_role="admin").run()
+        else:
+            StaffPageEmployee(user_role="employee").run()
 
     def show_cashbox(self):
         from cash_box.cashbox_page import CashBoxApp
@@ -320,5 +325,6 @@ class SalesHistoryMain(ctk.CTk):
         CashBoxApp(user_role=self.user_role).run()
 
     def show_dashboard(self):
+        from dashboard.sales_dashboard import SalesDashboard
         self.destroy()
-        # TODO: Implement DashboardMainPage
+        SalesDashboard(user_role=self.user_role).mainloop()

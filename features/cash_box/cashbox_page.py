@@ -9,7 +9,7 @@ class CashBoxApp:
     def __init__(self, user_role="employee"):
         # Initialize the main window
         self.root = ctk.CTk()
-        self.root.title("Cash Box")
+        self.root.title("MareKwenta POS")
         taskbar_height = 70  # Adjust this value as needed
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
@@ -92,7 +92,7 @@ class CashBoxApp:
         header_label = ctk.CTkLabel(
             header_frame,
             text="Cash Box",
-            font=ctk.CTkFont(family="Arial", size=36, weight="bold"),
+            font=ctk.CTkFont(family="Unbounded", size=36, weight="bold"),
             text_color="#4d2d18"
         )
         header_label.grid(row=0, column=0, sticky="w", padx=30, pady=20)
@@ -431,7 +431,9 @@ class CashBoxApp:
         TicketMainPage(user_role=self.user_role).mainloop()
 
     def show_dashboard(self):
-        print("Dashboard page not yet implemented")
+        from dashboard.sales_dashboard import SalesDashboard
+        self.root.destroy()
+        SalesDashboard(user_role=self.user_role).mainloop()
     
     def mainloop(self):
         """Alternative method name for compatibility"""

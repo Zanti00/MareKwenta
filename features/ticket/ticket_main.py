@@ -107,10 +107,13 @@ class TicketMainPage(ctk.CTk):
             print(f"Error loading inventory page: {e}")
 
     def show_staff(self):
-        if self._switching_page:
-            return
-        print("Staff page not yet implemented")
-        # TODO: Implement StaffMainPage
+        from staff.staff_admin import StaffPageAdmin
+        from staff.staff_employee import StaffPageEmployee
+        self.destroy()
+        if self.user_role == "admin":
+            StaffPageAdmin(user_role="admin").run()
+        else:
+            StaffPageEmployee(user_role="employee").run()
 
     def show_cashbox(self):
         if self._switching_page:
@@ -133,10 +136,9 @@ class TicketMainPage(ctk.CTk):
             print(f"Error loading cashbox page: {e}")
 
     def show_dashboard(self):
-        if self._switching_page:
-            return
-        print("Dashboard page not yet implemented")
-        # TODO: Implement DashboardMainPage
+        from dashboard.sales_dashboard import SalesDashboard
+        self.destroy()
+        SalesDashboard(user_role=self.user_role).mainloop()
 
     def handle_product_click(self, product_name, product_type):
         print(f"Clicked: {product_name} ({product_type})")
