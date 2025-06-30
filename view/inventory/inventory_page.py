@@ -8,12 +8,19 @@ from .add_quantity import AddQuantityPopup
 from .edit import EditInventoryPopup
 
 class InventoryManagement:
-    def __init__(self):
+    def __init__(self, user_role="employee"):
         # Initialize the main window
         self.root = ctk.CTk()
         self.root.title("Inventory Management")
-        self.root.geometry("1240x1440")
+        taskbar_height = 70  # Adjust this value as needed
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        usable_height = screen_height - taskbar_height
+        self.root.geometry(f"{screen_width}x{usable_height}+0+0")
         self.root.configure(fg_color="#f2efea")
+        
+        # Store user role
+        self.user_role = user_role
         
         # Configure appearance
         ctk.set_appearance_mode("light")
@@ -46,8 +53,8 @@ class InventoryManagement:
             pass
         
     def setup_ui(self):
-        # Create navbar
-        self.navbar = Navbar(self.root, width=124)
+        # Create navbar with user role
+        self.navbar = Navbar(self.root, width=124, user_role=self.user_role, active_tab="inventory")
         self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
         self.navbar.set_nav_callback("ticket", self.show_ticket)
         self.navbar.set_nav_callback("receipt", self.show_receipt)
@@ -212,7 +219,7 @@ class InventoryManagement:
             text_color="#4e2d18"
         )
         self.measurement_combo.grid(row=1, column=3, padx=entry_padx, pady=(0, 20))
-        self.measurement_combo.set("Unit")
+        self.measurement_combo.set("mg")
 
         plus_btn = ctk.CTkButton(
             inner_frame,
@@ -237,21 +244,15 @@ class InventoryManagement:
         self.list_frame.grid_columnconfigure(0, weight=1)
         self.list_frame.grid_rowconfigure(2, weight=1)
         self.main_frame.grid_rowconfigure(3, weight=1)
-    
-        # Headers frame with proper column configuration
-        self.header_padx = (10, 5)  # Consistent padding for both header and items
+
+        # Responsive headers frame
+        self.header_padx = 10
         headers_frame = ctk.CTkFrame(self.list_frame, fg_color="transparent")
-        headers_frame.grid(row=0, column=0, sticky="ew", pady=(20, 10), padx=12)
-    
-        # Configure columns with specific weights for alignment - same as create form
-        headers_frame.grid_columnconfigure(0, weight=2)  # Ingredient - wider
-        headers_frame.grid_columnconfigure(1, weight=1)  # Quantity
-        headers_frame.grid_columnconfigure(2, weight=1)  # Measurement
-        headers_frame.grid_columnconfigure(3, weight=1)  # Cost
-        headers_frame.grid_columnconfigure(4, weight=1)  # Status
-        headers_frame.grid_columnconfigure(5, weight=1, minsize=100)  # Action
-    
-        headers = ["Ingredient", "Quantity", "Measurement", "Cost", "Status", "Action"]
+        headers_frame.grid(row=0, column=0, sticky="ew", pady=(20, 10))
+        for i in range(5):
+            headers_frame.grid_columnconfigure(i, weight=1, uniform="col")
+
+        headers = ["Ingredient", "Quantity", "Measurement", "Status", "Action"]
         for i, text in enumerate(headers):
             header = ctk.CTkLabel(
                 headers_frame,
@@ -261,26 +262,21 @@ class InventoryManagement:
                 anchor="center"
             )
             header.grid(row=0, column=i, pady=5, padx=self.header_padx, sticky="ew")
-    
+
         separator1 = ctk.CTkFrame(self.list_frame, height=2, fg_color="#222222")
-        separator1.grid(row=1, column=0, sticky="ew", padx=12, pady=(0, 15))
-    
+        separator1.grid(row=1, column=0, sticky="ew", pady=(0, 15))
+
         self.inventory_container = ctk.CTkScrollableFrame(
-            self.list_frame, 
+            self.list_frame,
             fg_color="#ffffff"
         )
-        self.inventory_container.grid(row=2, column=0, sticky="nsew", padx=12, pady=(0, 20))
-    
-        # Configure inventory container columns to match headers exactly
-        self.inventory_container.grid_columnconfigure(0, weight=2)  # Ingredient - wider
-        self.inventory_container.grid_columnconfigure(1, weight=1)  # Quantity
-        self.inventory_container.grid_columnconfigure(2, weight=1)  # Measurement
-        self.inventory_container.grid_columnconfigure(3, weight=1)  # Cost
-        self.inventory_container.grid_columnconfigure(4, weight=1)  # Status
-        self.inventory_container.grid_columnconfigure(5, weight=1, minsize=100)  # Action
-    
+        self.inventory_container.grid(row=2, column=0, sticky="nsew", pady=(0, 20))
+        self.inventory_container.grid_rowconfigure(0, weight=1)
+        for i in range(5):
+            self.inventory_container.grid_columnconfigure(i, weight=1, uniform="col")
+
         self.display_inventory_items()
-    
+
     def display_inventory_items(self):
         try:
             if self.is_updating:
@@ -293,8 +289,6 @@ class InventoryManagement:
                 print(f"Error clearing widgets: {e}")
                 return
             
-            col_padx = self.header_padx  # Use the same as header
-            
             for i, item in enumerate(self.inventory_data):
                 try:
                     ingredient_label = ctk.CTkLabel(
@@ -302,45 +296,36 @@ class InventoryManagement:
                         text=item["ingredient"],
                         font=ctk.CTkFont("Inter", size=12, weight="normal"),
                         text_color="#222222",
-                        anchor="center"
+                        anchor="center"  # Center align like create ingredient panel
                     )
-                    ingredient_label.grid(row=2*i, column=0, pady=8, padx=col_padx, sticky="ew")
+                    ingredient_label.grid(row=2*i, column=0, pady=8, padx=self.header_padx, sticky="ew")
                     
                     quantity_label = ctk.CTkLabel(
                         self.inventory_container,
                         text=item["quantity"],
                         font=ctk.CTkFont("Inter", size=12, weight="normal"),
                         text_color="#222222",
-                        anchor="center"
+                        anchor="center"  # Center align like create ingredient panel
                     )
-                    quantity_label.grid(row=2*i, column=1, pady=8, padx=col_padx, sticky="ew")
+                    quantity_label.grid(row=2*i, column=1, pady=8, padx=self.header_padx, sticky="ew")
                     
                     measurement_label = ctk.CTkLabel(
                         self.inventory_container,
                         text=item["measurement"],
                         font=ctk.CTkFont("Inter", size=12, weight="normal"),
                         text_color="#222222",
-                        anchor="center"
+                        anchor="center"  # Center align like create ingredient panel
                     )
-                    measurement_label.grid(row=2*i, column=2, pady=8, padx=col_padx, sticky="ew")
-                    
-                    cost_label = ctk.CTkLabel(
-                        self.inventory_container,
-                        text=f"${item['cost']}",
-                        font=ctk.CTkFont("Inter", size=12, weight="normal"),
-                        text_color="#222222",
-                        anchor="center"
-                    )
-                    cost_label.grid(row=2*i, column=3, pady=8, padx=col_padx, sticky="ew")
+                    measurement_label.grid(row=2*i, column=2, pady=8, padx=self.header_padx, sticky="ew")
                     
                     status_label = ctk.CTkLabel(
                         self.inventory_container,
                         text=item["status"],
                         font=ctk.CTkFont("Inter", size=12, weight="bold"),
                         text_color="#0a8a06",
-                        anchor="center"
+                        anchor="center"  # Center align like create ingredient panel
                     )
-                    status_label.grid(row=2*i, column=4, pady=8, padx=col_padx, sticky="ew")
+                    status_label.grid(row=2*i, column=3, pady=8, padx=self.header_padx, sticky="ew")
                     
                     action_combo = ctk.CTkOptionMenu(
                         self.inventory_container,
@@ -355,13 +340,14 @@ class InventoryManagement:
                         text_color="#4e2d18",
                         command=lambda choice, idx=i: self.handle_action(choice, idx)
                     )
-                    action_combo.grid(row=2*i, column=5, pady=8, padx=col_padx, sticky="")
+                    # Center the combo box in its column
+                    action_combo.grid(row=2*i, column=4, pady=8, padx=self.header_padx, sticky="")
                     action_combo.set("Action")
                     
                     # Insert a thin separator after each row except the last
                     if i < len(self.inventory_data) - 1:
                         separator = ctk.CTkFrame(self.inventory_container, height=1, fg_color="#e0e0e0")
-                        separator.grid(row=2*i+1, column=0, columnspan=6, sticky="ew", pady=(0, 0), padx=col_padx)
+                        separator.grid(row=2*i+1, column=0, columnspan=5, sticky="ew", pady=(0, 0), padx=self.header_padx)
                         
                 except Exception as e:
                     print(f"Error creating item {i}: {e}")
@@ -394,7 +380,7 @@ class InventoryManagement:
                 messagebox.showwarning("Validation Error", "Please enter cost")
                 return
                 
-            if measurement == "Unit":
+            if measurement not in ["mg", "ml", "grams", "oz", "pcs"]:
                 messagebox.showwarning("Validation Error", "Please select a unit of measurement")
                 return
             
@@ -435,7 +421,7 @@ class InventoryManagement:
             self.ingredient_name_entry.delete(0, 'end')
             self.amount_stock_entry.delete(0, 'end')
             self.cost_entry.delete(0, 'end')
-            self.measurement_combo.set("Unit")
+            self.measurement_combo.set("mg")
         except Exception as e:
             print(f"Error clearing input fields: {e}")
     
@@ -516,16 +502,17 @@ class InventoryManagement:
     def show_receipt(self):
         from receipt.sales_history import SalesHistoryMain
         self.root.destroy()
-        SalesHistoryMain().mainloop()
+        SalesHistoryMain(user_role=self.user_role).mainloop()
     
     def show_cashbox(self):
         self.root.destroy()
-        # TODO: Implement CashboxMainPage
+        from cash_box.cashbox_page import CashBoxApp
+        CashBoxApp(user_role=self.user_role).mainloop()
     
     def show_ticket(self):
         from ticket.ticket_main import TicketMainPage
         self.root.destroy()
-        TicketMainPage().mainloop()
+        TicketMainPage(user_role=self.user_role).mainloop()
     
     def show_dashboard(self):
         self.root.destroy()

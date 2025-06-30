@@ -4,7 +4,7 @@ class EditInventoryPopup(ctk.CTkToplevel):
     def __init__(self, parent, item_data, on_save=None):
         super().__init__(parent)
         self.title("Edit Inventory Item")
-        self.geometry("370x450")
+        self.geometry("350x450")
         self.resizable(False, False)
         self.configure(fg_color="#f7f4f1", border_width=1, border_color="#7c5a3a")
         self.grab_set()  # Modal
@@ -114,7 +114,7 @@ class EditInventoryPopup(ctk.CTkToplevel):
             corner_radius=8,
             text_color="#4e2d18"
         )
-        self.cost_entry.grid(row=row, column=0, sticky="ew", pady=(0, 24))
+        self.cost_entry.grid(row=row, column=0, sticky="ew", pady=(0, 12))
         self.cost_entry.insert(0, item_data.get("cost", ""))
         row += 1
 

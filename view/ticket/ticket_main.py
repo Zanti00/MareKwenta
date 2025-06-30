@@ -8,11 +8,18 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # Add view folder t
 from nav_bar import Navbar
 
 class TicketMainPage(ctk.CTk):
-    def __init__(self):
+    def __init__(self, user_role="employee"):
         super().__init__()
-        self.geometry("1240x1440")
+        taskbar_height = 70  # Adjust this value as needed
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        usable_height = screen_height - taskbar_height
+        self.geometry(f"{screen_width}x{usable_height}+0+0")
         self.title("MareKwenta POS")
         self.configure(fg_color="#f2efea")
+        
+        # Store user role
+        self.user_role = user_role
         
         # Flag to prevent recursive calls
         self._switching_page = False
@@ -21,7 +28,7 @@ class TicketMainPage(ctk.CTk):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
-        self.navbar = Navbar(self, width=124)
+        self.navbar = Navbar(self, width=124, user_role=self.user_role, active_tab="ticket")
         self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
         self.navbar.set_nav_callback("ticket", self.show_ticket)
         self.navbar.set_nav_callback("receipt", self.show_receipt)
@@ -74,7 +81,7 @@ class TicketMainPage(ctk.CTk):
         try:
             from receipt.sales_history import SalesHistoryMain
             self.destroy()
-            app = SalesHistoryMain()
+            app = SalesHistoryMain(user_role=self.user_role)
             app.mainloop()
         except Exception as e:
             print(f"Error loading receipt page: {e}")
@@ -94,7 +101,7 @@ class TicketMainPage(ctk.CTk):
         try:
             from inventory.inventory_page import InventoryManagement
             self.destroy()
-            app = InventoryManagement()
+            app = InventoryManagement(user_role=self.user_role)
             app.mainloop()
         except Exception as e:
             print(f"Error loading inventory page: {e}")
@@ -108,8 +115,22 @@ class TicketMainPage(ctk.CTk):
     def show_cashbox(self):
         if self._switching_page:
             return
-        print("Cashbox page not yet implemented")
-        # TODO: Implement CashboxMainPage
+        self._switching_page = True
+        
+        try:
+            self.after_idle(self._switch_to_cashbox)
+        except Exception as e:
+            print(f"Error switching to cashbox: {e}")
+            self._switching_page = False
+
+    def _switch_to_cashbox(self):
+        try:
+            from cash_box.cashbox_page import CashBoxApp
+            self.destroy()
+            app = CashBoxApp(user_role=self.user_role)
+            app.run()
+        except Exception as e:
+            print(f"Error loading cashbox page: {e}")
 
     def show_dashboard(self):
         if self._switching_page:
@@ -165,10 +186,10 @@ class TicketMainPage(ctk.CTk):
             print(f"Error in mainloop: {e}")
 
 # Alternative entry point function to avoid recursion issues
-def create_ticket_app():
+def create_ticket_app(user_role="employee"):
     """Factory function to create the ticket application"""
     try:
-        app = TicketMainPage()
+        app = TicketMainPage(user_role=user_role)
         return app
     except Exception as e:
         print(f"Error creating ticket app: {e}")

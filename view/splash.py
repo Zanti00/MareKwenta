@@ -15,7 +15,11 @@ class SplashScreen(ctk.CTk):
     def setup_window(self):
         """Configure the splash window"""
         self.title("MareKwenta POS")
-        self.geometry("1240x1440")
+        taskbar_height = 70  # Adjust this value as needed
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        usable_height = screen_height - taskbar_height
+        self.geometry(f"{screen_width}x{usable_height}+0+0")
         self.configure(fg_color="#CABA9C")
     
     def setup_ui(self):

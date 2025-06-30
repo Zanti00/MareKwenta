@@ -38,15 +38,22 @@ sample_receipts = [
 ]
 
 class SalesHistoryMain(ctk.CTk):
-    def __init__(self):
+    def __init__(self, user_role="employee"):
         super().__init__()
-        self.geometry("1240x1440")
+        taskbar_height = 70  # Adjust this value as needed
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        usable_height = screen_height - taskbar_height
+        self.geometry(f"{screen_width}x{usable_height}+0+0")
         self.configure(fg_color="#f2efea")
+        
+        # Store user role
+        self.user_role = user_role
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
-        self.navbar = Navbar(self, width=124)
+        self.navbar = Navbar(self, width=124, user_role=self.user_role, active_tab="receipt")
         self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
         self.navbar.set_nav_callback("ticket", self.show_ticket)
         self.navbar.set_nav_callback("receipt", self.show_receipt)
@@ -64,7 +71,7 @@ class SalesHistoryMain(ctk.CTk):
         self.selected_receipt = None
 
         # === LEFT COLUMN (Header + Product Panel) ===
-        left_column = ctk.CTkFrame(main_frame, fg_color="transparent", width=400)
+        left_column = ctk.CTkFrame(main_frame, fg_color="transparent", width=300)
         left_column.grid(row=0, column=0, sticky="ns", padx=(20, 20), pady=40)
         left_column.grid_rowconfigure(2, weight=1)
 
@@ -73,7 +80,7 @@ class SalesHistoryMain(ctk.CTk):
         history_label.grid(row=0, column=0, sticky="w", pady=(0, 10))
 
         # === RECEIPT LIST ===
-        self.receipt_list_frame = ctk.CTkScrollableFrame(left_column, fg_color="#ffffff", corner_radius=15, width=350)
+        self.receipt_list_frame = ctk.CTkScrollableFrame(left_column, fg_color="#ffffff", corner_radius=15, width=250, height=600)
         self.receipt_list_frame.grid(row=1, column=0, sticky="ns", pady=(0, 20))
         left_column.grid_rowconfigure(1, weight=1)
 
@@ -293,7 +300,7 @@ class SalesHistoryMain(ctk.CTk):
     def show_ticket(self):
         from ticket.ticket_main import TicketMainPage
         self.destroy()
-        TicketMainPage().mainloop()
+        TicketMainPage(user_role=self.user_role).mainloop()
 
     def show_receipt(self):
         pass  # Already on this page, do nothing!
@@ -301,15 +308,16 @@ class SalesHistoryMain(ctk.CTk):
     def show_inventory(self):
         from inventory.inventory_page import InventoryManagement
         self.destroy()
-        InventoryManagement().mainloop()
+        InventoryManagement(user_role=self.user_role).mainloop()
 
     def show_staff(self):
         self.destroy()
         # TODO: Implement StaffMainPage
 
     def show_cashbox(self):
+        from cash_box.cashbox_page import CashBoxApp
         self.destroy()
-        # TODO: Implement CashboxMainPage
+        CashBoxApp(user_role=self.user_role).run()
 
     def show_dashboard(self):
         self.destroy()

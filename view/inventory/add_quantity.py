@@ -4,7 +4,7 @@ class AddQuantityPopup(ctk.CTkToplevel):
     def __init__(self, parent, on_save=None):
         super().__init__(parent)
         self.title("Add Quantity")
-        self.geometry("340x300")
+        self.geometry("320x300")
         self.resizable(False, False)
         self.configure(fg_color="#f7f4f1", border_width=1, border_color="#7c5a3a")
         self.grab_set()  # Make modal
