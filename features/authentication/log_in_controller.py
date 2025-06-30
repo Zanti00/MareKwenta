@@ -1,5 +1,4 @@
 import sqlite3
-from tkinter import messagebox
 
 def authenticate_user(username_entry, password_entry):
     try:
