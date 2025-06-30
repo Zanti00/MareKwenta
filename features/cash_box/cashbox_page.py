@@ -298,36 +298,40 @@ class CashBoxApp:
         item_frame.grid_rowconfigure(0, weight=1)
 
         # Action buttons (delete, edit) in a horizontal row, vertically centered, fixed size
-        action_frame = ctk.CTkFrame(item_frame, fg_color="transparent", width=60, height=80)
+        action_frame = ctk.CTkFrame(item_frame, fg_color="transparent", width=80, height=80)
         action_frame.grid(row=0, column=0, sticky="nsew", padx=(16, 0), pady=0)
         action_frame.grid_rowconfigure(0, weight=1)
         action_frame.grid_columnconfigure(0, weight=1)
         action_frame.grid_columnconfigure(1, weight=1)
+        
         delete_btn = ctk.CTkButton(
             action_frame,
             text="🗑",
-            width=30,
-            height=30,
-            font=ctk.CTkFont(family="Unbounded", size=15),
-            fg_color="#ff6b6b",
-            text_color="#fff",
-            border_width=0,
-            corner_radius=18,
-            hover_color="#ff5252",
+            width=40,
+            height=40,
+            font=ctk.CTkFont(family="Unbounded", size=14),
+            fg_color="#ffc9be",
+            text_color="#ff6b6b",
+            border_width=2,
+            border_color="#ff6b6b",
+            corner_radius=8,
+            hover_color="#fff5f5",
             command=lambda idx=index: self.delete_expense(idx)
         )
         delete_btn.grid(row=0, column=0, padx=(0, 6), pady=0, sticky="")
+        
         edit_btn = ctk.CTkButton(
             action_frame,
             text="✎",
-            width=30,
-            height=30,
-            font=ctk.CTkFont(family="Unbounded", size=15),
-            fg_color="#4caf50",
-            text_color="#fff",
-            border_width=0,
-            corner_radius=18,
-            hover_color="#45a049",
+            width=40,
+            height=40,
+            font=ctk.CTkFont(family="Unbounded", size=14),
+            fg_color="#beffd0",
+            text_color="#4caf50",
+            border_width=2,
+            border_color="#4caf50",
+            corner_radius=8,
+            hover_color="#f5fff5",
             command=lambda idx=index: self.edit_expense(idx)
         )
         edit_btn.grid(row=0, column=1, padx=0, pady=0, sticky="")
@@ -366,8 +370,11 @@ class CashBoxApp:
         amount_label.grid(row=0, column=2, sticky="nsew", padx=(0, 24), pady=0)
         
     def add_expense_clicked(self):
-        # Placeholder for add expense functionality
-        messagebox.showinfo("Add Expense", "Add expense dialog will be implemented here.")
+        from .add_expense import AddExpenseDialog
+        def on_save(expense):
+            self.expenses.append(expense)
+            self.refresh_expense_list()
+        AddExpenseDialog(self.root, on_save=on_save)
     
     def delete_expense(self, index):
         if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this expense?"):
@@ -376,8 +383,11 @@ class CashBoxApp:
             self.update_totals()
         
     def edit_expense(self, index):
-        # Placeholder for edit expense functionality
-        messagebox.showinfo("Edit Expense", f"Edit expense dialog for {self.expenses[index]['name']} will be implemented here.")
+        from .edit_expense import EditExpenseDialog
+        def on_save(updated_expense):
+            self.expenses[index] = updated_expense
+            self.refresh_expense_list()
+        EditExpenseDialog(self.root, self.expenses[index], on_save=on_save)
     
     def update_totals(self):
         # This method would update the payment method totals
