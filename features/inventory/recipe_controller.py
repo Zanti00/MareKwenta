@@ -83,3 +83,122 @@ class RecipeController:
             finally:
                 conn.close()
         return []
+
+    @staticmethod
+    def delete_recipes_by_product_type_id(product_type_id):
+        """Delete all recipe ingredients for a product type"""
+        conn = RecipeController.connect_db()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    DELETE FROM product_ingredients_recipe 
+                    WHERE product_type_id = ?
+                """, (product_type_id,))
+                conn.commit()
+                cursor.close()
+                return True
+            except Exception as e:
+                print("Error deleting recipe ingredients:", e)
+                conn.rollback()
+                return False
+            finally:
+                conn.close()
+        return False
+
+    @staticmethod
+    def update_recipe_ingredients(product_type_id, ingredients_data):
+        """Update recipe ingredients by deleting old ones and adding new ones"""
+        conn = RecipeController.connect_db()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                
+                # Delete existing recipes for this product_type
+                cursor.execute("""
+                    DELETE FROM product_ingredients_recipe 
+                    WHERE product_type_id = ?
+                """, (product_type_id,))
+                
+                # Add new recipes
+                for quantity, inventory_id in ingredients_data:
+                    cursor.execute("""
+                        INSERT INTO product_ingredients_recipe 
+                        (required_ingredient_quantity, product_type_id, inventory_id)
+                        VALUES (?, ?, ?)
+                    """, (quantity, product_type_id, inventory_id))
+                
+                conn.commit()
+                cursor.close()
+                return True
+            except Exception as e:
+                print("Error updating recipe ingredients:", e)
+                conn.rollback()
+                return False
+            finally:
+                conn.close()
+        return False
+
+    @staticmethod
+    def check_duplicate_ingredient(product_type_id, inventory_id):
+        """Check if an ingredient already exists for a product type"""
+        conn = RecipeController.connect_db()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT COUNT(*) FROM product_ingredients_recipe 
+                    WHERE product_type_id = ? AND inventory_id = ?
+                """, (product_type_id, inventory_id))
+                count = cursor.fetchone()[0]
+                cursor.close()
+                return count > 0
+            except Exception as e:
+                print("Error checking for duplicate ingredient:", e)
+                return False
+            finally:
+                conn.close()
+        return False
+
+    @staticmethod
+    def remove_ingredient(product_type_id, inventory_id):
+        """Remove a specific ingredient from a product type"""
+        conn = RecipeController.connect_db()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    DELETE FROM product_ingredients_recipe 
+                    WHERE product_type_id = ? AND inventory_id = ?
+                """, (product_type_id, inventory_id))
+                conn.commit()
+                cursor.close()
+                return True
+            except Exception as e:
+                print("Error removing ingredient:", e)
+                conn.rollback()
+                return False
+            finally:
+                conn.close()
+        return False
+
+    @staticmethod
+    def get_coffee_non_coffee_options():
+        """Get size and temperature options for Coffee/Non-Coffee items"""
+        conn = RecipeController.connect_db()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT DISTINCT size, temperature FROM product_types
+                    WHERE size IS NOT NULL AND temperature IS NOT NULL
+                """)
+                options = cursor.fetchall()
+                cursor.close()
+                return [{"size": row[0], "temperature": row[1]} for row in options]
+            except Exception as e:
+                print("Error fetching Coffee/Non-Coffee options:", e)
+                return []
+            finally:
+                conn.close()
+        return []
