@@ -142,13 +142,13 @@ class SizeTempPopup(ctk.CTkToplevel):
         ctk.CTkLabel(self, text="Select Size", font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4e2d18").pack(pady=(18, 4))
         size_frame = ctk.CTkFrame(self, fg_color="transparent")
         size_frame.pack(pady=2)
-        for s in ["Grande", "Venti"]:
+        for s in ["Grande", "Venti"]:  # Grande first, then Venti
             ctk.CTkRadioButton(size_frame, text=s, variable=self.size, value=s, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(side="left", padx=12)
         
         ctk.CTkLabel(self, text="Select Temperature", font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4e2d18").pack(pady=(16, 4))
         temp_frame = ctk.CTkFrame(self, fg_color="transparent")
         temp_frame.pack(pady=2)
-        for t in ["Hot", "Iced"]:
+        for t in ["Hot", "Iced"]:  # Hot first, then Iced
             ctk.CTkRadioButton(temp_frame, text=t, variable=self.temp, value=t, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(side="left", padx=12)
         
         btn = ctk.CTkButton(self, text="Next", fg_color="#4e2d18", text_color="#fff", width=120, height=36, corner_radius=10, command=self._on_next)
@@ -761,8 +761,12 @@ class LinkIngredientsPage:
         size_frame = ctk.CTkFrame(popup, fg_color="transparent")
         size_frame.pack(pady=2)
         
-        # Get unique sizes from variants with recipes
+        # Get unique sizes from variants with recipes and sort them properly
         available_sizes = list(set(variant['product_type']['size'] for variant in variants_with_recipes))
+        # Sort sizes: Grande first, then Venti
+        size_order = {"Grande": 1, "Venti": 2}
+        available_sizes.sort(key=lambda x: size_order.get(x, 999))
+        
         for s in available_sizes:
             ctk.CTkRadioButton(size_frame, text=s, variable=size_var, value=s, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(side="left", padx=12)
         
@@ -770,8 +774,12 @@ class LinkIngredientsPage:
         temp_frame = ctk.CTkFrame(popup, fg_color="transparent")
         temp_frame.pack(pady=2)
         
-        # Get unique temperatures from variants with recipes
+        # Get unique temperatures from variants with recipes and sort them properly
         available_temps = list(set(variant['product_type']['temperature'] for variant in variants_with_recipes))
+        # Sort temperatures: Hot first, then Iced
+        temp_order = {"Hot": 1, "Iced": 2}
+        available_temps.sort(key=lambda x: temp_order.get(x, 999))
+        
         for t in available_temps:
             ctk.CTkRadioButton(temp_frame, text=t, variable=temp_var, value=t, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(side="left", padx=12)
         
