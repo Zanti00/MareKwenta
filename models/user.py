@@ -18,7 +18,7 @@ try:
             employee_id INTEGER PRIMARY KEY AUTOINCREMENT,
             first_name VARCHAR(255) NOT NULL,
             last_name VARCHAR(255) NOT NULL,
-            is_admin BOOLEAN NOT NULL DEFAULT 0,
+            user_role VARCHAR(255) NOT NULL DEFAULT 'employee',
             password VARCHAR(255) NOT NULL,
             username VARCHAR(255) NOT NULL UNIQUE
         )

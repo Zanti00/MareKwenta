@@ -3,6 +3,7 @@ import datetime
 from .staff_card import StaffTimeCard
 from nav_bar import Navbar
 from staff.staff_employee_controller import StaffEmployeeController
+from staff.staff_admin import StaffPageAdmin
 
 class StaffPageEmployee(ctk.CTk):
     def __init__(self, user_role="employee"):
@@ -75,7 +76,6 @@ class StaffPageEmployee(ctk.CTk):
         self.right_panel = ctk.CTkFrame(content_container, fg_color="transparent", corner_radius=20) # Made scrollable
         self.right_panel.grid(row=0, column=1, sticky="nsew", padx=(10, 0)) # Adjusted padx
         self.right_panel.grid_columnconfigure(0, weight=1) # Ensure cards expand within scrollable frame
-
 
     def build_date_list(self):
         today = datetime.date.today()
@@ -174,7 +174,12 @@ class StaffPageEmployee(ctk.CTk):
         self.destroy()
         InventoryManagement(user_role=self.user_role).mainloop()
     def show_staff(self):
-        pass
+        if self.user_role == "admin":
+            self.destroy()
+            StaffPageAdmin(user_role="admin").run()
+        else:
+            self.destroy()
+            StaffPageEmployee(user_role="employee").run()
     def show_cashbox(self):
         from cash_box.cashbox_page import CashBoxApp
         self.destroy()

@@ -15,6 +15,9 @@ class Navbar(ctk.CTkFrame):
         self.user_role = user_role
         self.nav_callbacks = {}
         
+        # Store reference to parent window for logout functionality
+        self.parent_window = parent
+        
         # Setup the navbar layout
         self.active_tab = active_tab or ("inventory" if user_role == "owner" else "ticket")
         self.icon_images = {}
@@ -151,6 +154,63 @@ class Navbar(ctk.CTkFrame):
         self.nav_callbacks[nav_name] = callback
     
     def logout_clicked(self):
-        """Handle logout button click"""
-        print("Log Out clicked")
-        # You can add your logout logic here
+        """Handle logout button click - destroy current window and show login"""
+        try:
+            from tkinter import messagebox
+            
+            # Show confirmation dialog
+            result = messagebox.askyesno(
+                "Logout Confirmation", 
+                "Are you sure you want to log out?",
+                icon='question'
+            )
+            
+            if result:
+                # Get the top-level window (root window)
+                root_window = self.parent_window
+                while hasattr(root_window, 'master') and root_window.master:
+                    root_window = root_window.master
+                
+                # Import login window here to avoid circular imports
+                try:
+                    # First try to import from the current directory structure
+                    from log_in import LoginWindow
+                except ImportError:
+                    try:
+                        # Try alternative import paths
+                        from authentication.log_in import LoginWindow
+                    except ImportError:
+                        try:
+                            # Try another common structure
+                            import sys
+                            import os
+                            sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                            from log_in import LoginWindow
+                        except ImportError:
+                            messagebox.showerror("Error", "Could not import login window. Please restart the application.")
+                            return
+                
+                # Destroy the current window
+                root_window.destroy()
+                
+                # Create and show the login window
+                login_window = LoginWindow()
+                login_window.mainloop()
+                
+        except Exception as e:
+            print(f"Error during logout: {e}")
+            # Fallback: just destroy the current window
+            try:
+                root_window = self.parent_window
+                while hasattr(root_window, 'master') and root_window.master:
+                    root_window = root_window.master
+                root_window.destroy()
+            except:
+                pass
+    
+    def get_root_window(self):
+        """Helper method to get the root window"""
+        root = self.parent_window
+        while hasattr(root, 'master') and root.master:
+            root = root.master
+        return root

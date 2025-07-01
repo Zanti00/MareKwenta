@@ -55,10 +55,10 @@ class StaffEmployeeController:
                         FROM
                             staff_attendance_break
                         WHERE
-                            employee_id IN (SELECT employee_id FROM user WHERE is_admin = 0)
+                            employee_id IN (SELECT employee_id FROM user WHERE user_role = 'employee')
                     ) AS sab ON sa.attendance_id = sab.attendance_id AND sab.rn = 1
                     WHERE
-                        u.is_admin = 0
+                        u.user_role = 'employee'
                     ORDER BY
                         u.last_name, u.first_name
                 """, (target_date_str,))

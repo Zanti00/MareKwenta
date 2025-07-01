@@ -3,6 +3,7 @@ from tkinter import CENTER, messagebox
 import sys
 from inventory.inventory_page import InventoryManagement
 from . import log_in_controller
+from ticket.ticket_main import TicketMainPage
 
 class LoginWindow(ctk.CTk):
     def __init__(self):
@@ -171,18 +172,20 @@ class LoginWindow(ctk.CTk):
             self.attributes('-fullscreen', True)
     
     def handle_login(self):
-        user = log_in_controller.authenticate_user(self.username, self.password)
+        success, user_role = log_in_controller.authenticate_user(self.username, self.password)
         
-        if user:
-            self.inventory_page(user)
-        else:
-            messagebox.showerror("Login Failed", "Invalid username or password")
+        if success:
+            if user_role == "admin":
+                self.destroy()
+                InventoryManagement(user_role=user_role).mainloop()
+            else:
+                self.destroy()
+                TicketMainPage(user_role=user_role).mainloop()
 
-    def inventory_page(self, user_role):
-        """Navigate to inventory page with user role"""
-        # Close login window
-        self.destroy()
-        InventoryManagement(user_role=user_role).mainloop()
+        elif success is False: # Explicitly check for False to differentiate from None (DB error)
+            messagebox.showerror("Login Failed", "Invalid username or password")
+        else: # Handle database errors or other issues
+            messagebox.showerror("Login Error", "An error occurred during login. Please try again.")
     
     def exit_app(self):
         """Exit the application"""

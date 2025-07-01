@@ -1,7 +1,7 @@
 import customtkinter as ctk
 
-# from splash import SplashScreen
-from staff.staff_employee import StaffPageEmployee
+from splash import SplashScreen
+# from staff.staff_employee import StaffPageEmployee
 
 if __name__ == "__main__":
     # Set global appearance
@@ -9,5 +9,5 @@ if __name__ == "__main__":
     ctk.set_default_color_theme("blue")
     
     # Start the application with splash screen
-    app = StaffPageEmployee()
+    app = SplashScreen()
     app.mainloop()
