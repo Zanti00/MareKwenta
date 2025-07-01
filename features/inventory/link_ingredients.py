@@ -8,6 +8,8 @@ from staff.staff_employee import StaffPageEmployee
 import tkinter.filedialog as fd
 from PIL import Image, ImageTk
 from .product_controller import ProductController
+from .inventory_controller import InventoryController
+from .recipe_controller import RecipeController
 
 class AddProductDialog:
     def __init__(self, parent, on_save=None):
@@ -81,7 +83,7 @@ class AddProductDialog:
         button_frame.grid(row=card_row, column=0, pady=18)
         save_button = ctk.CTkButton(button_frame, text="Save", width=110, height=38, 
                                    font=ctk.CTkFont("Inter", 14, "bold"), fg_color="#4e2d18", 
-                                   hover_color="#3a1f0f", corner_radius=12, command=self.save_product)
+                                   hover_color="#3a1f0d", corner_radius=12, command=self.save_product)
         save_button.grid(row=0, column=0, padx=(0, 10))
         cancel_button = ctk.CTkButton(button_frame, text="Cancel", width=110, height=38, 
                                      font=ctk.CTkFont("Inter", 14), fg_color="#666666", 
@@ -122,7 +124,7 @@ class AddProductDialog:
         self.dialog.destroy()
 
 class SizeTempPopup(ctk.CTkToplevel):
-    def __init__(self, parent, on_next, disabled_combinations=None):
+    def __init__(self, parent, product, on_next, disabled_combinations=None):
         super().__init__(parent)
         self.title("Select Size & Temperature")
         self.geometry("300x260")
@@ -133,38 +135,49 @@ class SizeTempPopup(ctk.CTkToplevel):
         self.center_popup(parent)
         self.size = tk.StringVar(value=None)
         self.temp = tk.StringVar(value=None)
+        self.product = product
         self.disabled_combinations = disabled_combinations or []
+        self.on_next = on_next
+        
         ctk.CTkLabel(self, text="Select Size", font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4e2d18").pack(pady=(18, 4))
         size_frame = ctk.CTkFrame(self, fg_color="transparent")
         size_frame.pack(pady=2)
         for s in ["Grande", "Venti"]:
             ctk.CTkRadioButton(size_frame, text=s, variable=self.size, value=s, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(side="left", padx=12)
+        
         ctk.CTkLabel(self, text="Select Temperature", font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4e2d18").pack(pady=(16, 4))
         temp_frame = ctk.CTkFrame(self, fg_color="transparent")
         temp_frame.pack(pady=2)
         for t in ["Hot", "Iced"]:
             ctk.CTkRadioButton(temp_frame, text=t, variable=self.temp, value=t, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(side="left", padx=12)
+        
         btn = ctk.CTkButton(self, text="Next", fg_color="#4e2d18", text_color="#fff", width=120, height=36, corner_radius=10, command=self._on_next)
         btn.pack(pady=18)
-        self.on_next = on_next
+
     def center_popup(self, parent):
         self.update_idletasks()
         w, h = 300, 260
         x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (w // 2)
         y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (h // 2)
         self.geometry(f"{w}x{h}+{x}+{y}")
+
     def _on_next(self):
         if not self.size.get() or not self.temp.get():
             messagebox.showwarning("Required", "Please select both size and temperature.")
             return
-        if (self.size.get(), self.temp.get()) in self.disabled_combinations:
-            messagebox.showwarning("Already Linked", "This size and temperature combination is already linked.")
-            return
+            
+        # Check if this combination already exists in database
+        existing_types = ProductController.get_product_types_by_product_id(self.product['product_id'])
+        for ptype in existing_types:
+            if ptype['size'] == self.size.get() and ptype['temperature'] == self.temp.get():
+                messagebox.showwarning("Already Exists", "This size and temperature combination already exists.")
+                return
+                
         self.on_next(self.size.get(), self.temp.get())
         self.destroy()
 
 class LinkIngredientFinalPopup(ctk.CTkToplevel):
-    def __init__(self, parent, product_name, summary, inventory_list, on_save_link=None):
+    def __init__(self, parent, product, size=None, temperature=None, on_save_link=None):
         super().__init__(parent)
         self.title("Link Ingredients")
         self.geometry("500x600")
@@ -173,13 +186,23 @@ class LinkIngredientFinalPopup(ctk.CTkToplevel):
         self.grab_set()
         self.resizable(False, False)
         self.center_popup(parent)
-        self.inventory_list = inventory_list
+        self.product = product
+        self.size = size
+        self.temperature = temperature
         self.entries = []
-        self.product_name = product_name
-        self.summary = summary
         self.on_save_link = on_save_link
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
+        
+        # Load inventory from database
+        self.inventory_list = self.load_inventory()
+        
+        # Create summary text
+        if size and temperature:
+            summary = f"{product['name']} | {product['category']} {size} {temperature}"
+        else:
+            summary = f"{product['name']} | {product['category']}"
+            
         ctk.CTkLabel(self, text=summary, font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4d2d18").grid(row=0, column=0, pady=(18, 10), sticky="n")
         self.entries_scroll = ctk.CTkScrollableFrame(self, fg_color="#ffffff", corner_radius=14, width=440, height=340)
         self.entries_scroll.grid(row=1, column=0, padx=18, pady=10, sticky="nsew")
@@ -191,9 +214,18 @@ class LinkIngredientFinalPopup(ctk.CTkToplevel):
         save_btn = ctk.CTkButton(self, text="Save", fg_color="#4e2d18", text_color="#fff", width=140, height=48, corner_radius=12, font=ctk.CTkFont("Unbounded", 16, "bold"), command=self._on_save)
         save_btn.grid(row=3, column=0, pady=18)
 
+    def load_inventory(self):
+        """Load inventory names from database"""
+        try:
+            inventory_data = InventoryController.get_all_inventory()
+            return [item['ingredient'] for item in inventory_data] if inventory_data else ["No ingredients available"]
+        except Exception as e:
+            print(f"Error loading inventory: {e}")
+            return ["Error loading inventory"]
+
     def center_popup(self, parent):
         self.update_idletasks()
-        w, h = 480, 420
+        w, h = 500, 600
         x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (w // 2)
         y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (h // 2)
         self.geometry(f"{w}x{h}+{x}+{y}")
@@ -215,10 +247,20 @@ class LinkIngredientFinalPopup(ctk.CTkToplevel):
         for qty_entry, ingredient_combo in self.entries:
             qty = qty_entry.get().strip()
             ingredient = ingredient_combo.get().strip()
-            if qty and ingredient:
-                ingredients.append((qty, ingredient))
-        if self.on_save_link and ingredients:
-            self.on_save_link(self.product_name, self.summary, ingredients)
+            if qty and ingredient and ingredient != "No ingredients available":
+                try:
+                    float(qty)  # Validate quantity is numeric
+                    ingredients.append((qty, ingredient))
+                except ValueError:
+                    messagebox.showerror("Error", f"Invalid quantity: {qty}")
+                    return
+        
+        if not ingredients:
+            messagebox.showwarning("No Ingredients", "Please add at least one ingredient with quantity.")
+            return
+            
+        if self.on_save_link:
+            self.on_save_link(self.product, self.size, self.temperature, ingredients)
         self.destroy()
 
 class ViewLinkedIngredientsPopup(ctk.CTkToplevel):
@@ -508,28 +550,36 @@ class LinkIngredientsPage:
         if action == "Link Ingredients":
             category = product.get("category", "")
             if category in ["Coffee", "Non-Coffee"]:
-                linked_data = self.linked_ingredients.get(product['name'], [])
-                disabled_combos = []
-                for group in linked_data:
-                    parts = group['summary'].split()
-                    if len(parts) >= 4:
-                        size = parts[-2]
-                        temp = parts[-1]
-                        disabled_combos.append((size, temp))
                 def after_size_temp(size, temp):
-                    summary = f"{product['name']} | {category} {size} {temp}"
-                    inventory_list = ["Milk", "Sugar", "Espresso"]
-                    LinkIngredientFinalPopup(self.root, product['name'], summary, inventory_list, on_save_link=self.save_linked_ingredients)
-                SizeTempPopup(self.root, after_size_temp, disabled_combinations=disabled_combos)
-            else:
-                summary = f"{product['name']} | {category}"
-                inventory_list = ["Milk", "Sugar", "Espresso"]
-                LinkIngredientFinalPopup(self.root, product['name'], summary, inventory_list, on_save_link=self.save_linked_ingredients)
+                    LinkIngredientFinalPopup(self.root, product, size, temp, on_save_link=self.save_linked_ingredients)
+                SizeTempPopup(self.root, product, after_size_temp)
+            else:  # Food category
+                # Check if this Food product already has linked ingredients
+                product_types = ProductController.get_product_types_by_product_id(product['product_id'])
+                food_type = None
+                for ptype in product_types:
+                    if ptype['size'] is None and ptype['temperature'] is None:
+                        food_type = ptype
+                        break
+                
+                if food_type:
+                    # Check if this product_type already has recipe ingredients
+                    existing_recipes = RecipeController.get_recipes_by_product_type_id(food_type['product_type_id'])
+                    if existing_recipes:
+                        messagebox.showwarning(
+                            "Already Linked", 
+                            f"This food item '{product['name']}' already has linked ingredients. Use 'View' to see them or 'Edit' to modify them."
+                        )
+                        return
+                
+                # If no existing recipes, proceed with linking
+                LinkIngredientFinalPopup(self.root, product, on_save_link=self.save_linked_ingredients)
+                
         elif action == "View":
-            linked_data = self.linked_ingredients.get(product['name'], [])
+            # Get linked data from database
+            linked_data = self.get_linked_data_from_db(product)
             ViewLinkedIngredientsPopup(self.root, product['name'], linked_data)
         elif action == "Edit":
-            # TODO: Implement edit product functionality
             messagebox.showinfo("Edit", f"Edit functionality for '{product['name']}' will be implemented next")
         elif action == "Delete":
             result = messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{product['name']}'?")
@@ -541,37 +591,113 @@ class LinkIngredientsPage:
                 else:
                     messagebox.showerror("Error", "Failed to delete product from database")
 
+    def get_linked_data_from_db(self, product):
+        """Get linked ingredients data from database"""
+        try:
+            product_types = ProductController.get_product_types_by_product_id(product['product_id'])
+            linked_data = []
+            
+            for ptype in product_types:
+                if ptype['size'] and ptype['temperature']:
+                    summary = f"{product['name']} | {product['category']} {ptype['size']} {ptype['temperature']}"
+                else:
+                    summary = f"{product['name']} | {product['category']}"
+                    
+                ingredients = RecipeController.get_recipes_by_product_type_id(ptype['product_type_id'])
+                
+                if ingredients:
+                    linked_data.append({
+                        'summary': summary,
+                        'ingredients': ingredients
+                    })
+            
+            return linked_data
+        except Exception as e:
+            print(f"Error getting linked data: {e}")
+            return []
+
+    def save_linked_ingredients(self, product, size, temperature, ingredients):
+        """Save linked ingredients to database"""
+        try:
+            # Create product_type entry
+            if size and temperature:
+                product_type_id = ProductController.create_product_type(
+                    product['product_id'], size, temperature, product['selling_price']
+                )
+            else:
+                # For Food items, find the existing product_type with NULL size/temp
+                product_types = ProductController.get_product_types_by_product_id(product['product_id'])
+                product_type_id = None
+                for ptype in product_types:
+                    if ptype['size'] is None and ptype['temperature'] is None:
+                        product_type_id = ptype['product_type_id']
+                        break
+                        
+            if not product_type_id:
+                messagebox.showerror("Error", "Failed to create or find product type")
+                return
+                
+            # Prepare ingredients data for recipe
+            ingredients_data = []
+            for qty, ingredient_name in ingredients:
+                inventory_id = RecipeController.get_inventory_id_by_name(ingredient_name)
+                if inventory_id:
+                    ingredients_data.append((float(qty), inventory_id))
+                else:
+                    messagebox.showerror("Error", f"Ingredient '{ingredient_name}' not found in inventory")
+                    return
+                    
+            # Save recipe ingredients
+            success = RecipeController.add_recipe_ingredients(product_type_id, ingredients_data)
+            
+            if success:
+                if size and temperature:
+                    summary = f"{product['name']} | {product['category']} {size} {temperature}"
+                else:
+                    summary = f"{product['name']} | {product['category']}"
+                messagebox.showinfo("Success", f"Ingredients linked successfully for {summary}!")
+            else:
+                messagebox.showerror("Error", "Failed to save recipe ingredients")
+                
+        except Exception as e:
+            print(f"Error saving linked ingredients: {e}")
+            messagebox.showerror("Error", f"Failed to save linked ingredients: {e}")
+
     def show_inventory(self):
-        self.root.destroy()
-        from .inventory_page import InventoryManagement
-        InventoryManagement(user_role=self.user_role).run()
-
-    def show_staff(self):
-        self.root.destroy()
-        if self.user_role == "admin":
-            StaffPageAdmin(user_role="admin").run()
-        else:
-            StaffPageEmployee(user_role="employee").run()
-
-    def show_receipt(self):
-        from receipt.sales_history import SalesHistoryMain
-        self.root.destroy()
-        SalesHistoryMain(user_role=self.user_role).mainloop()
-
-    def show_cashbox(self):
-        self.root.destroy()
-        from cash_box.cashbox_page import CashBoxApp
-        CashBoxApp(user_role=self.user_role).mainloop()
-
+        from inventory.inventory_page import InventoryPage
+        self.root.withdraw()
+        inventory_page = InventoryPage(self.root, self.user_role)
+        inventory_page.run()
+        
     def show_ticket(self):
-        from ticket.ticket_main import TicketMainPage
-        self.root.destroy()
-        TicketMainPage(user_role=self.user_role).mainloop()
-
+        from ticket.ticket_page import TicketPage
+        self.root.withdraw()
+        ticket_page = TicketPage(self.root, self.user_role)
+        ticket_page.run()
+        
+    def show_receipt(self):
+        from receipt.receipt_page import ReceiptPage
+        self.root.withdraw()
+        receipt_page = ReceiptPage(self.root, self.user_role)
+        receipt_page.run()
+        
+    def show_staff(self):
+        from staff.staff_page import StaffPage
+        self.root.withdraw()
+        staff_page = StaffPage(self.root, self.user_role)
+        staff_page.run()
+        
+    def show_cashbox(self):
+        from cashbox.cashbox_page import CashboxPage
+        self.root.withdraw()
+        cashbox_page = CashboxPage(self.root, self.user_role)
+        cashbox_page.run()
+        
     def show_dashboard(self):
-        from dashboard.sales_dashboard import SalesDashboard
-        self.root.destroy()
-        SalesDashboard(user_role=self.user_role).mainloop()
+        from dashboard.dashboard_page import DashboardPage
+        self.root.withdraw()
+        dashboard_page = DashboardPage(self.root, self.user_role)
+        dashboard_page.run()
 
     def run(self):
         try:
@@ -587,11 +713,3 @@ class LinkIngredientsPage:
     
     def mainloop(self):
         self.root.mainloop()
-
-    def save_linked_ingredients(self, product_name, summary, ingredients):
-        if product_name not in self.linked_ingredients:
-            self.linked_ingredients[product_name] = []
-        self.linked_ingredients[product_name].append({
-            'summary': summary,
-            'ingredients': ingredients
-        })
