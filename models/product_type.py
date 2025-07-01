@@ -22,6 +22,7 @@ try:
             temperature VARCHAR(50),
             product_id INTEGER NOT NULL,
             unit_price DECIMAL(10,2) NOT NULL,
+            selling_price DECIMAL(10,2) NOT NULL,
             FOREIGN KEY (product_id) REFERENCES products(product_id)
         )
     """)
