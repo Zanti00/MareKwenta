@@ -625,14 +625,30 @@ class LinkIngredientsPage:
                 info_frame,
                 text=product["name"],
                 font=ctk.CTkFont("Unbounded", size=16, weight="bold"),
-                text_color="#4e2d18"
+                text_color="#4d2d18"
             )
             name_label.grid(row=0, column=0, sticky="w")
+            
+            # Get all product types for this product to show pricing info
+            product_types = ProductController.get_product_types_by_product_id(product['product_id'])
+            
+            if product_types:
+                # Show all variants with their prices
+                price_info_parts = []
+                for ptype in product_types:
+                    if ptype['size'] and ptype['temperature']:
+                        price_info_parts.append(f"{ptype['size']} {ptype['temperature']}: ₱{ptype['selling_price']:.2f}")
+                    else:
+                        price_info_parts.append(f"₱{ptype['selling_price']:.2f}")
+                
+                price_display = f"{product['category']} • " + " | ".join(price_info_parts)
+            else:
+                price_display = f"{product['category']} • No pricing set"
             
             # Category and price info
             details_label = ctk.CTkLabel(
                 info_frame,
-                text=f"{product['category']} • ₱{product['selling_price']:.2f}",
+                text=price_display,
                 font=ctk.CTkFont("Inter", size=12),
                 text_color="#666666"
             )
@@ -656,60 +672,35 @@ class LinkIngredientsPage:
             action_combo.set("Action")
             action_combo.grid(row=0, column=1, padx=(10, 20), pady=0)
 
-    def load_products_from_db(self):
-        """Load products from database"""
-        try:
-            self.products = ProductController.get_all_products()
-            self.refresh_product_list()
-        except Exception as e:
-            print(f"Error loading products: {e}")
-            messagebox.showerror("Error", f"Failed to load products: {e}")
-
-    def setup_fab(self):
-        # Floating Action Button (FAB) with a plus sign
-        self.fab = ctk.CTkButton(
-            self.root,
-            text="+",
-            font=ctk.CTkFont("Unbounded", size=36, weight="bold"),
-            fg_color="#4e2d18",
-            hover_color="#3d2414",
-            text_color="#ffffff",
-            width=40,
-            height=40,
-            corner_radius=20,
-            command=self.on_fab_click
-        )
-        # Place at bottom right, above padding
-        self.fab.place(relx=0.97, rely=0.96, anchor="se")
-
-    def on_fab_click(self):
-        def on_save(product):
-            self.load_products_from_db()  # Reload from database
-        AddProductDialog(self.root, on_save=on_save)
-
     def handle_action(self, product, action):
+        """Handle actions with specific product type context"""
         if action == "Link Ingredients":
             category = product.get("category", "")
             if category in ["Coffee", "Non-Coffee"]:
-                def after_size_temp(size, temp):
-                    LinkIngredientFinalPopup(self.root, product, size, temp, on_save_link=self.save_linked_ingredients)
-                SizeTempPopup(self.root, product, after_size_temp)
-            else:  # Food category
-                # Check if this Food product already has linked ingredients
-                product_types = ProductController.get_product_types_by_product_id(product['product_id'])
-                food_type = None
-                for ptype in product_types:
-                    if ptype['size'] is None and ptype['temperature'] is None:
-                        food_type = ptype
-                        break
-                
-                if food_type:
-                    # Check if this product_type already has recipe ingredients
-                    existing_recipes = RecipeController.get_recipes_by_product_type_id(food_type['product_type_id'])
+                if product_type:
+                    # If we already have a specific product type, check if it has recipes
+                    existing_recipes = RecipeController.get_recipes_by_product_type_id(product_type['product_type_id'])
                     if existing_recipes:
                         messagebox.showwarning(
                             "Already Linked", 
-                            f"This food item '{product['name']}' already has linked ingredients. Use 'View' to see them or 'Edit' to modify them."
+                            f"This variant '{product['name']} {product_type['size']} {product_type['temperature']}' already has linked ingredients. Use 'Edit' to modify them."
+                        )
+                        return
+                    else:
+                        # Link ingredients for this specific variant
+                        LinkIngredientFinalPopup(self.root, product, product_type['size'], product_type['temperature'], on_save_link=self.save_linked_ingredients)
+                else:
+                    # No product type yet, show size/temp selection
+                    def after_size_temp(size, temp):
+                        LinkIngredientFinalPopup(self.root, product, size, temp, on_save_link=self.save_linked_ingredients)
+                    SizeTempPopup(self.root, product, after_size_temp)
+            else:  # Food category
+                if product_type:
+                    existing_recipes = RecipeController.get_recipes_by_product_type_id(product_type['product_type_id'])
+                    if existing_recipes:
+                        messagebox.showwarning(
+                            "Already Linked", 
+                            f"This food item '{product['name']}' already has linked ingredients. Use 'Edit' to modify them."
                         )
                         return
                 
@@ -717,164 +708,76 @@ class LinkIngredientsPage:
                 LinkIngredientFinalPopup(self.root, product, on_save_link=self.save_linked_ingredients)
                 
         elif action == "View":
-            # Get linked data from database
+            # Get linked data from database for this specific product
             linked_data = self.get_linked_data_from_db(product)
             ViewLinkedIngredientsPopup(self.root, product['name'], linked_data)
             
         elif action == "Edit":
-            # Get all product types for this product
-            product_types = ProductController.get_product_types_by_product_id(product['product_id'])
-            
-            if not product_types:
-                messagebox.showinfo("No Data", f"No ingredient links found for '{product['name']}'")
-                return
-            
-            # If it's a food item, directly edit the single recipe
-            if product['category'] == "Food":
-                # Get the default product_type (index 0) since Food only has one
-                food_type = product_types[0] if product_types else None
-                
-                if food_type:
-                    existing_recipes = RecipeController.get_recipes_by_product_type_id(food_type['product_type_id'])
-                    if existing_recipes:
+            if product_type:
+                # Edit this specific product type
+                existing_recipes = RecipeController.get_recipes_by_product_type_id(product_type['product_type_id'])
+                if existing_recipes:
+                    if product_type['size'] and product_type['temperature']:
+                        summary = f"{product['name']} | {product['category']} {product_type['size']} {product_type['temperature']}"
+                    else:
                         summary = f"{product['name']} | {product['category']}"
-                        inventory_data = InventoryController.get_all_inventory()
-                        inventory_list = [item['ingredient'] for item in inventory_data]
-                        
-                        def on_save_edit(product_name, summary, ingredients, unit_price, selling_price):
-                            self.update_recipe_ingredients(food_type['product_type_id'], ingredients, unit_price, selling_price)
-                        
-                        EditLinkedIngredientsPopup(
-                            self.root, product['name'], summary, inventory_list, 
-                            existing_recipes, food_type, on_save_edit=on_save_edit
-                        )
-                    else:
-                        messagebox.showinfo("No Data", f"No ingredients linked for '{product['name']}'")
-                else:
-                    messagebox.showinfo("No Data", f"No product type found for '{product['name']}'")
-            
-            # If it's Coffee/Non-Coffee, show size/temperature selection first
-            else:
-                variants_with_recipes = []
-                for ptype in product_types:
-                    if ptype['size'] and ptype['temperature']:
-                        recipes = RecipeController.get_recipes_by_product_type_id(ptype['product_type_id'])
-                        if recipes:
-                            variants_with_recipes.append({
-                                'product_type': ptype,
-                                'recipes': recipes,
-                                'summary': f"{product['name']} | {product['category']} {ptype['size']} {ptype['temperature']}"
-                            })
-                
-                if not variants_with_recipes:
-                    messagebox.showinfo("No Data", f"No ingredients linked for any variant of '{product['name']}'")
-                    return
-                
-                # Show size/temperature selection popup for editing
-                def after_size_temp_for_edit(size, temp):
-                    # Find the matching variant
-                    target_variant = None
-                    for variant in variants_with_recipes:
-                        ptype = variant['product_type']
-                        if ptype['size'] == size and ptype['temperature'] == temp:
-                            target_variant = variant
-                            break
                     
-                    if target_variant:
-                        inventory_data = InventoryController.get_all_inventory()
-                        inventory_list = [item['ingredient'] for item in inventory_data]
-                        
-                        def on_save_edit(product_name, summary, ingredients, unit_price, selling_price):
-                            self.update_recipe_ingredients(target_variant['product_type']['product_type_id'], ingredients, unit_price, selling_price)
-                        
-                        EditLinkedIngredientsPopup(
-                            self.root, product['name'], target_variant['summary'], 
-                            inventory_list, target_variant['recipes'], target_variant['product_type'], 
-                            on_save_edit=on_save_edit
-                        )
-                    else:
-                        messagebox.showerror("Error", f"No ingredients found for {product['name']} {size} {temp}")
-                
-                # Create a custom SizeTempPopup that only shows variants with recipes
-                self.show_size_temp_for_edit(product, variants_with_recipes, after_size_temp_for_edit)
+                    inventory_data = InventoryController.get_all_inventory()
+                    inventory_list = [item['ingredient'] for item in inventory_data]
+                    
+                    def on_save_edit(product_name, summary, ingredients, unit_price, selling_price):
+                        self.update_recipe_ingredients(product_type['product_type_id'], ingredients, unit_price, selling_price)
+                    
+                    EditLinkedIngredientsPopup(
+                        self.root, product['name'], summary, inventory_list, 
+                        existing_recipes, product_type, on_save_edit=on_save_edit
+                    )
+                else:
+                    messagebox.showinfo("No Data", f"No ingredients linked for this variant")
+            else:
+                # No product type selected, use original edit logic
+                self.handle_action(product, action)
 
         elif action == "Delete":
-            result = messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{product['name']}'?")
-            if result:
-                success = ProductController.delete_product_by_id(product['product_id'])
-                if success:
-                    self.load_products_from_db()
-                    messagebox.showinfo("Success", "Product deleted successfully!")
+            if product_type:
+                # Delete this specific product type
+                if product_type['size'] and product_type['temperature']:
+                    variant_name = f"{product['name']} {product_type['size']} {product_type['temperature']}"
                 else:
-                    messagebox.showerror("Error", "Failed to delete product from database")
+                    variant_name = product['name']
+                    
+                result = messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{variant_name}'?")
+                if result:
+                    # Delete the product type and its recipes
+                    success = self.delete_product_type(product_type['product_type_id'])
+                    if success:
+                        self.load_products_from_db()
+                        messagebox.showinfo("Success", "Product variant deleted successfully!")
+                    else:
+                        messagebox.showerror("Error", "Failed to delete product variant")
+            else:
+                # Delete entire product
+                self.handle_action(product, action)
 
-    def show_size_temp_for_edit(self, product, variants_with_recipes, on_next):
-        """Show size/temperature selection popup for editing, only showing variants with recipes"""
-        popup = ctk.CTkToplevel(self.root)
-        popup.title("Select Size & Temperature to Edit")
-        popup.geometry("300x260")
-        popup.configure(fg_color="#f2efea")
-        popup.transient(self.root)
-        popup.grab_set()
-        popup.resizable(False, False)
-        
-        # Center the popup
-        popup.update_idletasks()
-        w, h = 300, 260
-        x = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - (w // 2)
-        y = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - (h // 2)
-        popup.geometry(f"{w}x{h}+{x}+{y}")
-        
-        size_var = tk.StringVar(value=None)
-        temp_var = tk.StringVar(value=None)
-        
-        ctk.CTkLabel(popup, text="Select Size", font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4e2d18").pack(pady=(18, 4))
-        size_frame = ctk.CTkFrame(popup, fg_color="transparent")
-        size_frame.pack(pady=2)
-        
-        # Get unique sizes from variants with recipes and sort them properly
-        available_sizes = list(set(variant['product_type']['size'] for variant in variants_with_recipes))
-        # Sort sizes: Grande first, then Venti
-        size_order = {"Grande": 1, "Venti": 2}
-        available_sizes.sort(key=lambda x: size_order.get(x, 999))
-        
-        for s in available_sizes:
-            ctk.CTkRadioButton(size_frame, text=s, variable=size_var, value=s, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(side="left", padx=12)
-        
-        ctk.CTkLabel(popup, text="Select Temperature", font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4e2d18").pack(pady=(16, 4))
-        temp_frame = ctk.CTkFrame(popup, fg_color="transparent")
-        temp_frame.pack(pady=2)
-        
-        # Get unique temperatures from variants with recipes and sort them properly
-        available_temps = list(set(variant['product_type']['temperature'] for variant in variants_with_recipes))
-        # Sort temperatures: Hot first, then Iced
-        temp_order = {"Hot": 1, "Iced": 2}
-        available_temps.sort(key=lambda x: temp_order.get(x, 999))
-        
-        for t in available_temps:
-            ctk.CTkRadioButton(temp_frame, text=t, variable=temp_var, value=t, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(side="left", padx=12)
-        
-        def on_next_click():
-            if not size_var.get() or not temp_var.get():
-                messagebox.showwarning("Required", "Please select both size and temperature.")
-                return
-                
-            # Check if this combination has recipes
-            has_recipes = any(
-                variant['product_type']['size'] == size_var.get() and 
-                variant['product_type']['temperature'] == temp_var.get() 
-                for variant in variants_with_recipes
-            )
+    def delete_product_type(self, product_type_id):
+        """Delete a specific product type and its associated recipes"""
+        try:
+            # First delete associated recipes
+            RecipeController.delete_recipes_by_product_type_id(product_type_id)
             
-            if not has_recipes:
-                messagebox.showwarning("No Recipes", "No ingredients found for this size and temperature combination.")
-                return
-                
-            on_next(size_var.get(), temp_var.get())
-            popup.destroy()
-        
-        btn = ctk.CTkButton(popup, text="Next", fg_color="#4e2d18", text_color="#fff", width=120, height=36, corner_radius=10, command=on_next_click)
-        btn.pack(pady=18)
+            # Then delete the product type
+            conn = ProductController.connect_db()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM product_type WHERE product_type_id = ?", (product_type_id,))
+                conn.commit()
+                cursor.close()
+                conn.close()
+                return True
+            return False
+        except Exception as e:
+            print(f"Error deleting product type: {e}")
+            return False
 
     def show_inventory(self):
         try:
@@ -1102,3 +1005,224 @@ class LinkIngredientsPage:
         except Exception as e:
             print(f"Error updating recipe ingredients: {e}")
             messagebox.showerror("Error", f"Failed to update ingredients: {e}")
+
+    def load_products_from_db(self):
+        """Load products from database"""
+        try:
+            self.products = ProductController.get_all_products()
+            self.refresh_product_list()
+        except Exception as e:
+            print(f"Error loading products: {e}")
+            messagebox.showerror("Error", f"Failed to load products: {e}")
+
+    def setup_fab(self):
+        # Floating Action Button (FAB) with a plus sign
+        self.fab = ctk.CTkButton(
+            self.root,
+            text="+",
+            font=ctk.CTkFont("Unbounded", size=36, weight="bold"),
+            fg_color="#4e2d18",
+            hover_color="#3d2414",
+            text_color="#ffffff",
+            width=40,
+            height=40,
+            corner_radius=20,
+            command=self.on_fab_click
+        )
+        # Place at bottom right, above padding
+        self.fab.place(relx=0.97, rely=0.96, anchor="se")
+
+    def on_fab_click(self):
+        def on_save(product):
+            self.load_products_from_db()  # Reload from database
+        AddProductDialog(self.root, on_save=on_save)
+
+    def handle_action(self, product, action):
+        """Original handle_action method for fallback"""
+        if action == "Link Ingredients":
+            category = product.get("category", "")
+            if category in ["Coffee", "Non-Coffee"]:
+                def after_size_temp(size, temp):
+                    LinkIngredientFinalPopup(self.root, product, size, temp, on_save_link=self.save_linked_ingredients)
+                SizeTempPopup(self.root, product, after_size_temp)
+            else:  # Food category
+                # Check if this Food product already has linked ingredients
+                product_types = ProductController.get_product_types_by_product_id(product['product_id'])
+                food_type = None
+                for ptype in product_types:
+                    if ptype['size'] is None and ptype['temperature'] is None:
+                        food_type = ptype
+                        break
+                
+                if food_type:
+                    # Check if this product_type already has recipe ingredients
+                    existing_recipes = RecipeController.get_recipes_by_product_type_id(food_type['product_type_id'])
+                    if existing_recipes:
+                        messagebox.showwarning(
+                            "Already Linked", 
+                            f"This food item '{product['name']}' already has linked ingredients. Use 'View' to see them or 'Edit' to modify them."
+                        )
+                        return
+                
+                # If no existing recipes, proceed with linking
+                LinkIngredientFinalPopup(self.root, product, on_save_link=self.save_linked_ingredients)
+                
+        elif action == "View":
+            # Get linked data from database
+            linked_data = self.get_linked_data_from_db(product)
+            ViewLinkedIngredientsPopup(self.root, product['name'], linked_data)
+            
+        elif action == "Edit":
+            # Get all product types for this product
+            product_types = ProductController.get_product_types_by_product_id(product['product_id'])
+            
+            if not product_types:
+                messagebox.showinfo("No Data", f"No ingredient links found for '{product['name']}'")
+                return
+            
+            # If it's a food item, directly edit the single recipe
+            if product['category'] == "Food":
+                # Get the default product_type (index 0) since Food only has one
+                food_type = product_types[0] if product_types else None
+                
+                if food_type:
+                    existing_recipes = RecipeController.get_recipes_by_product_type_id(food_type['product_type_id'])
+                    if existing_recipes:
+                        summary = f"{product['name']} | {product['category']}"
+                        inventory_data = InventoryController.get_all_inventory()
+                        inventory_list = [item['ingredient'] for item in inventory_data]
+                        
+                        def on_save_edit(product_name, summary, ingredients, unit_price, selling_price):
+                            self.update_recipe_ingredients(food_type['product_type_id'], ingredients, unit_price, selling_price)
+                        
+                        EditLinkedIngredientsPopup(
+                            self.root, product['name'], summary, inventory_list, 
+                            existing_recipes, food_type, on_save_edit=on_save_edit
+                        )
+                    else:
+                        messagebox.showinfo("No Data", f"No ingredients linked for '{product['name']}'")
+                else:
+                    messagebox.showinfo("No Data", f"No product type found for '{product['name']}'")
+            
+            # If it's Coffee/Non-Coffee, show size/temperature selection first
+            else:
+                variants_with_recipes = []
+                for ptype in product_types:
+                    if ptype['size'] and ptype['temperature']:
+                        recipes = RecipeController.get_recipes_by_product_type_id(ptype['product_type_id'])
+                        if recipes:
+                            variants_with_recipes.append({
+                                'product_type': ptype,
+                                'recipes': recipes,
+                                'summary': f"{product['name']} | {product['category']} {ptype['size']} {ptype['temperature']}"
+                            })
+                
+                if not variants_with_recipes:
+                    messagebox.showinfo("No Data", f"No ingredients linked for any variant of '{product['name']}'")
+                    return
+                
+                # Show size/temperature selection popup for editing
+                def after_size_temp_for_edit(size, temp):
+                    # Find the matching variant
+                    target_variant = None
+                    for variant in variants_with_recipes:
+                        ptype = variant['product_type']
+                        if ptype['size'] == size and ptype['temperature'] == temp:
+                            target_variant = variant
+                            break
+                    
+                    if target_variant:
+                        inventory_data = InventoryController.get_all_inventory()
+                        inventory_list = [item['ingredient'] for item in inventory_data]
+                        
+                        def on_save_edit(product_name, summary, ingredients, unit_price, selling_price):
+                            self.update_recipe_ingredients(target_variant['product_type']['product_type_id'], ingredients, unit_price, selling_price)
+                        
+                        EditLinkedIngredientsPopup(
+                            self.root, product['name'], target_variant['summary'], 
+                            inventory_list, target_variant['recipes'], target_variant['product_type'], 
+                            on_save_edit=on_save_edit
+                        )
+                    else:
+                        messagebox.showerror("Error", f"No ingredients found for {product['name']} {size} {temp}")
+                
+                # Create a custom SizeTempPopup that only shows variants with recipes
+                self.show_size_temp_for_edit(product, variants_with_recipes, after_size_temp_for_edit)
+
+        elif action == "Delete":
+            result = messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{product['name']}'?")
+            if result:
+                success = ProductController.delete_product_by_id(product['product_id'])
+                if success:
+                    self.load_products_from_db()
+                    messagebox.showinfo("Success", "Product deleted successfully!")
+                else:
+                    messagebox.showerror("Error", "Failed to delete product from database")
+
+    def show_size_temp_for_edit(self, product, variants_with_recipes, on_next):
+        """Show size/temperature selection popup for editing, only showing variants with recipes"""
+        popup = ctk.CTkToplevel(self.root)
+        popup.title("Select Size & Temperature to Edit")
+        popup.geometry("300x260")
+        popup.configure(fg_color="#f2efea")
+        popup.transient(self.root)
+        popup.grab_set()
+        popup.resizable(False, False)
+        
+        # Center the popup
+        popup.update_idletasks()
+        w, h = 300, 260
+        x = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - (w // 2)
+        y = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - (h // 2)
+        popup.geometry(f"{w}x{h}+{x}+{y}")
+        
+        size_var = tk.StringVar(value=None)
+        temp_var = tk.StringVar(value=None)
+        
+        ctk.CTkLabel(popup, text="Select Size", font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4e2d18").pack(pady=(18, 4))
+        size_frame = ctk.CTkFrame(popup, fg_color="transparent")
+        size_frame.pack(pady=2)
+        
+        # Get unique sizes from variants with recipes and sort them properly
+        available_sizes = list(set(variant['product_type']['size'] for variant in variants_with_recipes))
+        # Sort sizes: Grande first, then Venti
+        size_order = {"Grande": 1, "Venti": 2}
+        available_sizes.sort(key=lambda x: size_order.get(x, 999))
+        
+        for s in available_sizes:
+            ctk.CTkRadioButton(size_frame, text=s, variable=size_var, value=s, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(side="left", padx=12)
+        
+        ctk.CTkLabel(popup, text="Select Temperature", font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4e2d18").pack(pady=(16, 4))
+        temp_frame = ctk.CTkFrame(popup, fg_color="transparent")
+        temp_frame.pack(pady=2)
+        
+        # Get unique temperatures from variants with recipes and sort them properly
+        available_temps = list(set(variant['product_type']['temperature'] for variant in variants_with_recipes))
+        # Sort temperatures: Hot first, then Iced
+        temp_order = {"Hot": 1, "Iced": 2}
+        available_temps.sort(key=lambda x: temp_order.get(x, 999))
+        
+        for t in available_temps:
+            ctk.CTkRadioButton(temp_frame, text=t, variable=temp_var, value=t, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(side="left", padx=12)
+        
+        def on_next_click():
+            if not size_var.get() or not temp_var.get():
+                messagebox.showwarning("Required", "Please select both size and temperature.")
+                return
+                
+            # Check if this combination has recipes
+            has_recipes = any(
+                variant['product_type']['size'] == size_var.get() and 
+                variant['product_type']['temperature'] == temp_var.get() 
+                for variant in variants_with_recipes
+            )
+            
+            if not has_recipes:
+                messagebox.showwarning("No Recipes", "No ingredients found for this size and temperature combination.")
+                return
+                
+            on_next(size_var.get(), temp_var.get())
+            popup.destroy()
+        
+        btn = ctk.CTkButton(popup, text="Next", fg_color="#4e2d18", text_color="#fff", width=120, height=36, corner_radius=10, command=on_next_click)
+        btn.pack(pady=18)

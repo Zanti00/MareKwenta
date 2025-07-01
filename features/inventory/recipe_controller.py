@@ -86,21 +86,17 @@ class RecipeController:
 
     @staticmethod
     def delete_recipes_by_product_type_id(product_type_id):
-        """Delete all recipe ingredients for a product type"""
+        """Delete all recipes for a specific product type"""
         conn = RecipeController.connect_db()
         if conn:
             try:
                 cursor = conn.cursor()
-                cursor.execute("""
-                    DELETE FROM product_ingredients_recipe 
-                    WHERE product_type_id = ?
-                """, (product_type_id,))
+                cursor.execute("DELETE FROM product_ingredients_recipe WHERE product_type_id = ?", (product_type_id,))
                 conn.commit()
                 cursor.close()
                 return True
             except Exception as e:
-                print("Error deleting recipe ingredients:", e)
-                conn.rollback()
+                print("Error deleting recipes:", e)
                 return False
             finally:
                 conn.close()
