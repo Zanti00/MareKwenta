@@ -1,7 +1,9 @@
 import customtkinter as ctk
-from tkinter import CENTER
+from tkinter import CENTER, messagebox
 import sys
 from inventory.inventory_page import InventoryManagement
+from . import log_in_controller
+from ticket.ticket_main import TicketMainPage
 
 class LoginWindow(ctk.CTk):
     def __init__(self):
@@ -170,51 +172,20 @@ class LoginWindow(ctk.CTk):
             self.attributes('-fullscreen', True)
     
     def handle_login(self):
-        """Handle login button click"""
-        username = self.username.get()
-        password = self.password.get()
+        success, user_role = log_in_controller.authenticate_user(self.username, self.password)
         
-        # Basic validation
-        if not username or not password:
-            print("Please enter both username and password")
-            return
-        
-        # Add your login validation logic here
-        print(f"Login attempted with username: {username}")
-        
-        # Simple role-based authentication (you can replace this with your actual authentication logic)
-        user_role = self.authenticate_user(username, password)
-        
-        if user_role:
-            print(f"Login successful! User role: {user_role}")
-            self.inventory_page(user_role)
-        else:
-            print("Invalid credentials")
+        if success:
+            if user_role == "admin":
+                self.destroy()
+                InventoryManagement(user_role=user_role).mainloop()
+            else:
+                self.destroy()
+                TicketMainPage(user_role=user_role).mainloop()
 
-    def authenticate_user(self, username, password):
-        """Simple authentication logic - replace with your actual authentication system"""
-        # Example credentials (in a real app, this would be in a database)
-        users = {
-            "owner": {"password": "owner123", "role": "admin"},
-            "employee": {"password": "emp123", "role": "employee"},
-            "admin": {"password": "admin123", "role": "admin"},
-            "staff": {"password": "staff123", "role": "employee"}
-        }
-        
-        if username in users and users[username]["password"] == password:
-            return users[username]["role"]
-        return None
-
-    def inventory_page(self, user_role):
-        """Navigate to inventory page with user role"""
-        # Close login window
-        self.destroy()
-        if user_role == "admin":
-            from inventory.inventory_page import InventoryManagement
-            InventoryManagement(user_role=user_role).run()
-        else:
-            from ticket.ticket_main import TicketMainPage
-            TicketMainPage(user_role=user_role).run()
+        elif success is False: # Explicitly check for False to differentiate from None (DB error)
+            messagebox.showerror("Login Failed", "Invalid username or password")
+        else: # Handle database errors or other issues
+            messagebox.showerror("Login Error", "An error occurred during login. Please try again.")
     
     def exit_app(self):
         """Exit the application"""

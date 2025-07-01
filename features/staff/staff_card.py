@@ -1,31 +1,42 @@
 import customtkinter as ctk
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Optional
 
 class StaffTimeCard(ctk.CTkFrame):
-    def __init__(self, master, employee_name, **kwargs):
+    def __init__(self, master, employee_id, employee_name, initial_time_in, initial_time_out, initial_break_in, initial_break_out, on_time_update_callback, verify_password_callback, **kwargs):
         super().__init__(master, **kwargs, fg_color="#ffffff", corner_radius=20, height=120)
-        self.pack_propagate(False)  # Prevent frame from shrinking
+        self.pack_propagate(False)
 
+        self.employee_id = employee_id
         self.employee_name = employee_name
-        self.login_time = None
-        self.time_in = "--"
-        self.time_out = "--"
-        self.has_timed_in = False
-        self.has_taken_break = False
-        self.has_timed_out = False
+        self._on_time_update_callback = on_time_update_callback
+        self._verify_password_callback = verify_password_callback
+
+        self.login_time = None # This will store the datetime object for actual calculation if needed later
+
+        # Initialize times from fetched data
+        self.time_in = self._format_time_for_display(initial_time_in)
+        self.time_out = self._format_time_for_display(initial_time_out)
+        self.break_in = self._format_time_for_display(initial_break_in)
+        self.break_out = self._format_time_for_display(initial_break_out)
+
+        # State flags
+        self.has_timed_in = (self.time_in != "--")
+        self.has_timed_out = (self.time_out != "--")
+        # is_on_break: True if employee is currently on break (break_in recorded, but break_out not yet)
+        self.is_on_break = (initial_break_in != '--' and initial_break_out == '--')
 
         # Configure grid weights
-        self.grid_columnconfigure(0, weight=1)  # Left side (name and time)
-        self.grid_columnconfigure(1, weight=0)  # Right side (buttons)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=0)
 
         # Left side - Employee info
         self.left_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.left_frame.grid(row=0, column=0, sticky="nsew", padx=20, pady=15)
         self.left_frame.grid_columnconfigure(0, weight=1)
 
-        # Employee name with big font
-        self.name_label = ctk.CTkLabel(self.left_frame, 
-                                      text=self.employee_name, 
+        self.name_label = ctk.CTkLabel(self.left_frame,
+                                      text=self.employee_name,
                                       font=("Unbounded", 24, "bold"),
                                       text_color="#4e2d18",
                                       anchor="w")
@@ -36,26 +47,26 @@ class StaffTimeCard(ctk.CTkFrame):
         self.time_frame.grid(row=1, column=0, sticky="w")
 
         # Time in label
-        self.time_in_label = ctk.CTkLabel(self.time_frame, 
-                                         text=f"In: {self.time_in}", 
+        self.time_in_label = ctk.CTkLabel(self.time_frame,
+                                         text=f"In: {self.time_in}",
                                          font=("Inter", 14),
                                          text_color="#4e2d18",
                                          anchor="w")
         self.time_in_label.grid(row=0, column=0, sticky="w", padx=(0, 20))
 
-        # Break label (initially hidden)
-        self.break_time = None
-        self.break_label = ctk.CTkLabel(self.time_frame, 
-                                        text="", 
+        # Break info label
+        # This label will show either "Break In: HH:MM AM/PM" (if break started) or "Break: --" (if break ended/not started)
+        self.break_label = ctk.CTkLabel(self.time_frame,
+                                        text=self._get_break_display_text(),
                                         font=("Inter", 14),
                                         text_color="#b38f00",
                                         anchor="w")
         self.break_label.grid(row=0, column=1, sticky="w", padx=(0, 20))
-        self.break_label.grid_remove()
+
 
         # Time out label
-        self.time_out_label = ctk.CTkLabel(self.time_frame, 
-                                          text=f"Out: {self.time_out}", 
+        self.time_out_label = ctk.CTkLabel(self.time_frame,
+                                          text=f"Out: {self.time_out}",
                                           font=("Inter", 14),
                                           text_color="#4e2d18",
                                           anchor="w")
@@ -65,14 +76,12 @@ class StaffTimeCard(ctk.CTkFrame):
         self.right_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.right_frame.grid(row=0, column=1, sticky="e", padx=20, pady=15)
 
-        # Button frame for side-by-side buttons
         self.button_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
         self.button_frame.pack(expand=True)
 
-        # IN button
-        self.in_button = ctk.CTkButton(self.button_frame, 
-                                      text="IN", 
-                                      width=80, 
+        self.in_button = ctk.CTkButton(self.button_frame,
+                                      text="IN",
+                                      width=80,
                                       height=50,
                                       font=("Unbounded", 16, "bold"),
                                       fg_color="#d4ffda",
@@ -84,10 +93,9 @@ class StaffTimeCard(ctk.CTkFrame):
                                       command=self.on_in)
         self.in_button.pack(side="left", padx=(0, 10))
 
-        # BREAK button
-        self.break_button = ctk.CTkButton(self.button_frame, 
-                                      text="BREAK", 
-                                      width=80, 
+        self.break_button = ctk.CTkButton(self.button_frame,
+                                      text="BREAK",
+                                      width=80,
                                       height=50,
                                       font=("Unbounded", 16, "bold"),
                                       fg_color="#fff7cc",
@@ -99,10 +107,9 @@ class StaffTimeCard(ctk.CTkFrame):
                                       command=self.on_break)
         self.break_button.pack(side="left", padx=(10, 10))
 
-        # OUT button
-        self.out_button = ctk.CTkButton(self.button_frame, 
-                                       text="OUT", 
-                                       width=80, 
+        self.out_button = ctk.CTkButton(self.button_frame,
+                                       text="OUT",
+                                       width=80,
                                        height=50,
                                        font=("Unbounded", 16, "bold"),
                                        fg_color="#fadddd",
@@ -114,53 +121,148 @@ class StaffTimeCard(ctk.CTkFrame):
                                        command=self.on_out)
         self.out_button.pack(side="left", padx=(10, 0))
 
+        self._update_button_states() # Initialize button states
+
+    def _format_time_for_display(self, time_str: Optional[str]) -> str:
+        """
+        Formats a time string (e.g., 'HH:MM:SS') into 'HH:MM AM/PM' format for display.
+        Returns '--' if the input is None, empty, or '00:00:00'.
+        """
+        if not time_str or time_str == '00:00:00' or time_str == '--':
+            return "--"
+        try:
+            dummy_datetime = datetime.strptime(time_str, "%H:%M:%S")
+            return dummy_datetime.strftime("%I:%M %p")
+        except ValueError:
+            return "--"
+
+    def _get_break_display_text(self) -> str:
+        """Determines the text for the break label."""
+        if self.is_on_break:
+            return f"Break In: {self.break_in}"
+        elif self.break_in != "--" and self.break_out != "--":
+            # Assuming one break per day, this shows the completed break duration
+            # You might want to calculate the duration here or just show the start/end
+            return f"Break: {self.break_in} - {self.break_out}"
+        else:
+            return "Break: --"
+
+    def _update_button_states(self):
+        """Internal helper to set button states based on current attendance status."""
+        if not self.has_timed_in:
+            # Not timed in yet
+            self.in_button.configure(state="normal", fg_color="#d4ffda", text_color="#03590f")
+            self.break_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
+            self.out_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
+        elif self.has_timed_out:
+            # Timed out for the day
+            self.in_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
+            self.break_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
+            self.out_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
+        elif self.is_on_break:
+            # Currently on break
+            self.in_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
+            self.out_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
+            
+            # Break button becomes "End Break"
+            self.break_button.configure(state="normal", text="END BREAK",
+                                        fg_color="#fadddd", text_color="#860707",
+                                        border_color="#860707", hover_color="#f0c8c8")
+        else:
+            # Timed in, not on break, not timed out
+            self.in_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
+            self.out_button.configure(state="normal", fg_color="#fadddd", text_color="#860707")
+            
+            # Enable break button only if no open break AND no completed break for the day.
+            # This logic assumes only one break cycle (in/out) per attendance_id.
+            # If multiple breaks allowed, this logic needs to change.
+            if self.break_in == "--" or (self.break_in != "--" and self.break_out != "--"): # Allow if no break started or a previous break completed
+                self.break_button.configure(state="normal", text="BREAK",
+                                            fg_color="#fff7cc", text_color="#b38f00",
+                                            border_color="#b38f00", hover_color="#ffe066")
+            else: # A full break cycle has been recorded (break_in and break_out are present)
+                self.break_button.configure(state="disabled", text="BREAK",
+                                            fg_color="#e0e0e0", text_color="#888888")
+
+
     def on_in(self):
         if self.has_timed_in:
-            return  # Already timed in, do nothing
-        self.show_password_popup("clock in")
-        # In real logic: verify password then set time
-        self.login_time = datetime.now()
-        self.time_in = self.login_time.strftime("%I:%M %p")
-        self.time_in_label.configure(text=f"Time In: {self.time_in}")
-        self.has_timed_in = True
-        self.in_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
-        # Enable break and out buttons after timing in
-        if not self.has_taken_break:
-            self.break_button.configure(state="normal", fg_color="#fff7cc", text_color="#b38f00")
-        if not self.has_timed_out:
-            self.out_button.configure(state="normal", fg_color="#fadddd", text_color="#860707")
+            return
+        self.show_password_popup("clock in", self._do_time_in)
+
+    def _do_time_in(self):
+        current_time = datetime.now()
+        success = self._on_time_update_callback(self.employee_id, 'time_in', current_time)
+        if success:
+            self.time_in = self._format_time_for_display(current_time.strftime("%H:%M:%S"))
+            self.time_in_label.configure(text=f"In: {self.time_in}")
+            self.has_timed_in = True
+            self._update_button_states()
+        else:
+            print("Failed to clock in.")
 
     def on_out(self):
-        if not self.has_timed_in or self.has_timed_out:
-            return  # Can't out before time in or more than once
-        self.show_password_popup("clock out")
-        if self.login_time:
-            self.time_out = datetime.now().strftime("%I:%M %p")
-            self.time_out_label.configure(text=f"Time Out: {self.time_out}")
+        # Cannot out if not timed in, already timed out, or currently on break
+        if not self.has_timed_in or self.has_timed_out or self.is_on_break: 
+            return
+        self.show_password_popup("clock out", self._do_time_out)
+
+    def _do_time_out(self):
+        current_time = datetime.now()
+        success = self._on_time_update_callback(self.employee_id, 'time_out', current_time)
+        if success:
+            self.time_out = self._format_time_for_display(current_time.strftime("%H:%M:%S"))
+            self.time_out_label.configure(text=f"Out: {self.time_out}")
             self.has_timed_out = True
-            self.out_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
-            # Calculate duration
-            duration = datetime.now() - self.login_time
-            hrs, remainder = divmod(duration.total_seconds(), 3600)
-            mins = remainder // 60
-            print(f"Total time worked: {int(hrs)} hrs {int(mins)} mins")
+            self._update_button_states()
         else:
-            self.time_out_label.configure(text="Time Out: --")
+            print("Failed to clock out.")
 
     def on_break(self):
-        if not self.has_timed_in or self.has_taken_break:
-            return  # Can't break before time in or more than once
-        # Toggle break label
-        def after_password():
-            self.break_time = datetime.now().strftime("%I:%M %p")
-            self.break_label.configure(text=f"Break: {self.break_time}")
-            self.break_label.grid()
-            self.has_taken_break = True
-            self.break_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
-        self.show_password_popup("break", after_password)
+        # Prevent starting break if not timed in or already timed out
+        if not self.has_timed_in or self.has_timed_out:
+            return
 
-    def show_password_popup(self, action, on_success=None):
-        """Show password popup for clock in/out/break actions. Calls on_success if password is entered."""
+        if self.is_on_break:
+            # Employee is currently on break, so this click is to end the break
+            self.show_password_popup("end break", self._do_end_break)
+        else:
+            # Employee is not on break, so this click is to start a break
+            # Only allow starting a break if break_in hasn't been recorded yet for the day
+            # or if break_in exists but break_out also exists (meaning a break was completed and another can start if multiple breaks are allowed).
+            # For now, let's stick to the assumption of one break-in, one break-out cycle per attendance_id.
+            if self.break_in == "--" or (self.break_in != "--" and self.break_out != "--"): # Allow if no break started or a previous break completed
+                self.show_password_popup("start break", self._do_start_break)
+            else:
+                print("Break already in progress or completed for today.")
+                # You might want to show a message to the user that they can't take another break
+                self._update_button_states() # Ensure button is disabled if break already completed
+
+    def _do_start_break(self):
+        current_time = datetime.now()
+        success = self._on_time_update_callback(self.employee_id, 'break_in', current_time)
+        if success:
+            self.break_in = self._format_time_for_display(current_time.strftime("%H:%M:%S"))
+            self.is_on_break = True
+            self.break_label.configure(text=self._get_break_display_text())
+            self._update_button_states()
+        else:
+            print("Failed to start break.")
+
+    def _do_end_break(self):
+        current_time = datetime.now()
+        success = self._on_time_update_callback(self.employee_id, 'break_out', current_time)
+        if success:
+            self.break_out = self._format_time_for_display(current_time.strftime("%H:%M:%S"))
+            self.is_on_break = False
+            self.break_label.configure(text=self._get_break_display_text())
+            self._update_button_states()
+        else:
+            print("Failed to end break.")
+
+
+    def show_password_popup(self, action, on_success_callback):
+        """Show password popup for clock in/out/break actions. Calls on_success_callback if password is correct."""
         popup = ctk.CTkToplevel(self)
         popup.title(f"Enter Password to {action.title()}")
         popup.geometry("350x280")
@@ -200,7 +302,7 @@ class StaffTimeCard(ctk.CTkFrame):
                                      corner_radius=6,
                                      height=35)
         password_entry.pack(pady=(0, 25))
-        password_entry.focus()  # Auto-focus on password field
+        password_entry.focus()
 
         # Button frame
         button_frame = ctk.CTkFrame(popup, fg_color="transparent")
@@ -208,20 +310,20 @@ class StaffTimeCard(ctk.CTkFrame):
 
         def submit_password():
             password = password_entry.get().strip()
-            if password:
-                # TODO: Add actual password verification here
-                print(f"Password entered for {self.employee_name} to {action}")
-                popup.destroy()
-                if on_success:
-                    on_success()
-            else:
-                # Show error message
+            if not password:
                 error_label.configure(text="Please enter a password")
+                return
+
+            if self._verify_password_callback(self.employee_id, password):
+                print(f"Password accepted for {self.employee_name} to {action}")
+                popup.destroy()
+                on_success_callback()
+            else:
+                error_label.configure(text="Incorrect password")
 
         def cancel():
             popup.destroy()
 
-        # Submit button
         submit_btn = ctk.CTkButton(button_frame, 
                                   text="Submit", 
                                   fg_color="green", 
@@ -233,7 +335,6 @@ class StaffTimeCard(ctk.CTkFrame):
                                   command=submit_password)
         submit_btn.pack(side="left", padx=(0, 10))
 
-        # Cancel button
         cancel_btn = ctk.CTkButton(button_frame, 
                                   text="Cancel", 
                                   fg_color="#f2efea", 
@@ -247,35 +348,51 @@ class StaffTimeCard(ctk.CTkFrame):
                                   command=cancel)
         cancel_btn.pack(side="left", padx=(10, 0))
 
-        # Error label (initially empty)
         error_label = ctk.CTkLabel(popup, 
                                   text="", 
                                   font=("Inter", 12), 
                                   text_color="#ff0000")
         error_label.pack(pady=(10, 0))
 
-        # Bind Enter key to submit
         password_entry.bind("<Return>", lambda event: submit_password())
-        
-        # Bind Escape key to cancel
         popup.bind("<Escape>", lambda event: cancel())
 
     def set_enabled(self, enabled):
-        """Enable or disable the IN/OUT/BREAK buttons and reset state for a new day if enabled is True"""
+        """
+        Enable or disable the IN/OUT/BREAK buttons based on 'enabled' status (for current/past date).
+        Also re-evaluates internal state based on current attendance data.
+        """
         if enabled:
-            # Reset state for a new day
-            self.has_timed_in = False
-            self.has_taken_break = False
-            self.has_timed_out = False
-            self.in_button.configure(state="normal", fg_color="#d4ffda", text_color="#03590f")
-            self.break_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
-            self.out_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
+            # Re-evaluate states for the current day based on existing data
+            self.has_timed_in = (self.time_in != "--")
+            self.has_timed_out = (self.time_out != "--")
+            # If break_in is present but break_out is not, assume employee is on break
+            self.is_on_break = (self.break_in != "--" and self.break_out == "--")
+            
+            self._update_button_states()
         else:
-            # Disable buttons - past date
+            # Disable all buttons for past dates
             self.in_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
             self.out_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
             self.break_button.configure(state="disabled", fg_color="#e0e0e0", text_color="#888888")
 
-    def update_time_label(self):
-        self.time_in_label.configure(text="Time In: --")
-        self.time_out_label.configure(text="Time Out: --")
+    def update_time_label(self, time_in="--", time_out="--", break_in="--", break_out="--"):
+        """
+        Updates the time labels on the card and re-evaluates button states.
+        This is called by the parent (StaffPageEmployee) when refreshing cards.
+        """
+        self.time_in = self._format_time_for_display(time_in)
+        self.time_out = self._format_time_for_display(time_out)
+        self.break_in = self._format_time_for_display(break_in)
+        self.break_out = self._format_time_for_display(break_out)
+
+        self.time_in_label.configure(text=f"In: {self.time_in}")
+        self.time_out_label.configure(text=f"Out: {self.time_out}")
+        self.break_label.configure(text=self._get_break_display_text())
+
+        # Update internal state flags
+        self.has_timed_in = (self.time_in != "--")
+        self.has_timed_out = (self.time_out != "--")
+        self.is_on_break = (self.break_in != "--" and self.break_out == "--")
+
+        self._update_button_states()

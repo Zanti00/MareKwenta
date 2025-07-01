@@ -7,17 +7,20 @@ db_name = "mare_kwenta.db"
 if not os.path.exists(db_name):
     print("Database doesn't exist. Creating a new one.")
 else:
-    print("Database exists. Proceeding with migration.")
+    print("Database exists. Proceeding with table creation.")
 
 try:
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS inventory (
-            inventory_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ingredient_name VARCHAR(255) NOT NULL,
-            quantity INTEGER NOT NULL
+        CREATE TABLE IF NOT EXISTS user (
+            employee_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            first_name VARCHAR(255) NOT NULL,
+            last_name VARCHAR(255) NOT NULL,
+            user_role VARCHAR(255) NOT NULL DEFAULT 'employee',
+            password VARCHAR(255) NOT NULL,
+            username VARCHAR(255) NOT NULL UNIQUE
         )
     """)
 

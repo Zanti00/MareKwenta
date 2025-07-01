@@ -2,6 +2,8 @@ import customtkinter as ctk
 import datetime
 from .staff_card import StaffTimeCard
 from nav_bar import Navbar
+from staff.staff_employee_controller import StaffEmployeeController
+from staff.staff_admin import StaffPageAdmin
 
 class StaffPageEmployee(ctk.CTk):
     def __init__(self, user_role="employee"):
@@ -17,6 +19,8 @@ class StaffPageEmployee(ctk.CTk):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
+        self.controller = StaffEmployeeController()
+
         # Navbar
         self.navbar = Navbar(self, width=124, user_role=self.user_role, active_tab="staff")
         self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
@@ -28,8 +32,8 @@ class StaffPageEmployee(ctk.CTk):
         self.navbar.set_nav_callback("dashboard", self.show_dashboard)
 
         # Main content frame
-        self.main_frame = ctk.CTkFrame(self, fg_color="#f2efea")
-        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(20, 20), pady=20)
+        self.main_frame = ctk.CTkScrollableFrame(self, fg_color="#f2efea")
+        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(20, 20), pady=(10, 20)) 
         self.main_frame.grid_columnconfigure(0, weight=1)
 
         # Track selected date and employee cards
@@ -48,7 +52,6 @@ class StaffPageEmployee(ctk.CTk):
         self.build_employee_view()
 
     def create_header(self):
-        """Create the header with title and date"""
         header_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         header_frame.pack(fill="x", padx=40, pady=(10, 0))
 
@@ -60,23 +63,26 @@ class StaffPageEmployee(ctk.CTk):
         date_label.pack(side="right", pady=20)
 
     def create_main_layout(self):
-        """Create the main layout with left and right panels"""
-        # Left Panel - Date selection
-        self.left_panel = ctk.CTkFrame(self.main_frame, width=220, fg_color="#f2efea", corner_radius=0)
-        self.left_panel.pack(side="left", fill="y", padx=(20, 10), pady=(5, 20))
+        # Using a container frame for left and right panels to manage packing
+        content_container = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        content_container.pack(fill="both", expand=True, padx=20, pady=(5, 20))
+        content_container.grid_columnconfigure(0, weight=0) # Left panel fixed width
+        content_container.grid_columnconfigure(1, weight=1) # Right panel expands
+        content_container.grid_rowconfigure(0, weight=1)
 
-        # Right Panel - Employee cards
-        self.right_panel = ctk.CTkFrame(self.main_frame, fg_color="transparent", corner_radius=20)
-        self.right_panel.pack(side="left", fill="both", expand=True, padx=(20,15), pady=(5, 20))
+        self.left_panel = ctk.CTkFrame(content_container, width=220, fg_color="#f2efea", corner_radius=0)
+        self.left_panel.grid(row=0, column=0, sticky="ns", padx=(0, 10)) # Adjusted padx
+
+        self.right_panel = ctk.CTkFrame(content_container, fg_color="transparent", corner_radius=20) # Made scrollable
+        self.right_panel.grid(row=0, column=1, sticky="nsew", padx=(10, 0)) # Adjusted padx
+        self.right_panel.grid_columnconfigure(0, weight=1) # Ensure cards expand within scrollable frame
 
     def build_date_list(self):
-        """Build the date selection buttons on the left panel"""
         today = datetime.date.today()
         for i in range(10):
             day = today - datetime.timedelta(days=i)
             label = day.strftime("%a, %b %d")
             
-            # Determine initial button state
             is_selected = (day == self.selected_date)
             is_past_date = (day < today)
             
@@ -96,44 +102,65 @@ class StaffPageEmployee(ctk.CTk):
             self.date_buttons.append((day, btn))
 
     def select_date(self, selected_date):
-        """Handle date selection and update button states"""
         self.selected_date = selected_date
         
-        # Update button appearances
         for date, btn in self.date_buttons:
             is_selected = (date == selected_date)
-            is_past_date = (date < datetime.date.today())
+            is_current_date = (date == datetime.date.today())
             
             if is_selected:
                 btn.configure(fg_color="#4e2d18", text_color="#f2efea", border_color="#4e2d18", hover_color="#6b3b1f")
             else:
-                btn.configure(fg_color="#f8f8f8", text_color="#666666", border_color="#e0e0e0", hover_color="#6b3b1f" if not is_past_date else "#f2efea")
-        
-        # Update employee card states
-        self.update_employee_card_states()
+                btn.configure(fg_color="#f8f8f8", text_color="#666666", border_color="#e0e0e0", hover_color="#6b3b1f" if is_current_date else "#f2efea")
 
-    def update_employee_card_states(self):
-        """Enable/disable employee cards based on selected date"""
-        is_current_date = (self.selected_date == datetime.date.today())
-        
-        for card in self.employee_cards:
-            if hasattr(card, 'set_enabled'):
-                card.set_enabled(is_current_date)
+        self.build_employee_view()
+
+    def _on_card_time_update(self, employee_id: int, action_type: str, time_value: datetime.datetime) -> bool:
+        success = self.controller.update_attendance_time(employee_id, action_type, time_value)
+        if success:
+            self.build_employee_view() # Rebuild all cards to reflect latest state
+        return success
+
+    def _verify_employee_password(self, employee_id: int, password: str) -> bool:
+        return self.controller.verify_password(employee_id, password)
 
     def build_employee_view(self):
-        """Build the employee time cards on the right panel"""
-        # Example: 3 employee cards - in real app, this would load from database
-        employee_names = ["John Doe", "Jane Smith", "Mike Johnson"]
+        # Clear existing cards
+        for card in self.employee_cards:
+            card.destroy()
+        self.employee_cards = []
+
+        employees_data = self.controller.fetch_all_employees(self.selected_date)
         
-        for name in employee_names:
-            card = StaffTimeCard(self.right_panel, employee_name=name)
+        if not employees_data:
+            no_employee_label = ctk.CTkLabel(self.right_panel, text="No employees found.", font=("Inter", 16), text_color="#666666")
+            no_employee_label.pack(pady=20)
+            return
+
+        is_current_date = (self.selected_date == datetime.date.today())
+
+        for emp in employees_data:
+            employee_name = f"{emp['first_name']} {emp['last_name']}"
+            
+            # Pass all relevant time data to the card
+            card = StaffTimeCard(
+                self.right_panel, 
+                employee_id=emp['employee_id'],
+                employee_name=employee_name,
+                initial_time_in=emp.get('time_in'),
+                initial_time_out=emp.get('time_out'),
+                initial_break_in=emp.get('break_in'),    # Pass break_in
+                initial_break_out=emp.get('break_out'),  # Pass break_out
+                on_time_update_callback=self._on_card_time_update,
+                verify_password_callback=self._verify_employee_password
+            )
             card.pack(pady=10, fill="x", padx=10)
             self.employee_cards.append(card)
-        
-        # Set initial card states
-        self.update_employee_card_states()
+            
+            card.set_enabled(is_current_date)
 
-    # Navigation callbacks
+
+    # Navigation callbacks (unchanged)
     def show_ticket(self):
         from ticket.ticket_main import TicketMainPage
         self.destroy()
@@ -147,7 +174,12 @@ class StaffPageEmployee(ctk.CTk):
         self.destroy()
         InventoryManagement(user_role=self.user_role).mainloop()
     def show_staff(self):
-        pass
+        if self.user_role == "admin":
+            self.destroy()
+            StaffPageAdmin(user_role="admin").run()
+        else:
+            self.destroy()
+            StaffPageEmployee(user_role="employee").run()
     def show_cashbox(self):
         from cash_box.cashbox_page import CashBoxApp
         self.destroy()

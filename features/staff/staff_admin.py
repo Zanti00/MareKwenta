@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import datetime
 from nav_bar import Navbar
+from staff.staff_admin_controller import StaffAdminController
 
 class StaffPageAdmin(ctk.CTk):
     def __init__(self, user_role="admin"):
@@ -34,11 +35,7 @@ class StaffPageAdmin(ctk.CTk):
         self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(20, 20), pady=20)
         self.main_frame.grid_columnconfigure(0, weight=1)
 
-        # Initialize employee data structure for database integration
-        self.employees = [
-            {"id": 1, "first_name": "Aliah", "last_name": "Del Rosario", "time_in": "08:00 AM", "time_out": "05:00 PM"},
-            {"id": 2, "first_name": "Jane", "last_name": "Doe", "time_in": "09:00 AM", "time_out": "--"}
-        ]
+        self.employees = [] # This list will hold the fetched attendance data
         self.table_rows = []  # Store references to table row widgets
         self.table_container = None
 
@@ -99,8 +96,10 @@ class StaffPageAdmin(ctk.CTk):
             label = ctk.CTkLabel(header_row, text=col, font=("Inter", 14, "bold"), text_color="#4e2d18")
             label.grid(row=0, column=i, sticky="nsew", padx=10, pady=10)
             header_row.grid_columnconfigure(i, weight=1, uniform="col")
-        # Initialize table with data
+        
+        # Initialize table with data by calling refresh_table
         self.refresh_table()
+
         # Buttons
         button_frame = ctk.CTkFrame(container, fg_color="transparent")
         button_frame.grid(row=1, column=0, sticky="ew", pady=(10, 20), padx=20)
@@ -111,10 +110,14 @@ class StaffPageAdmin(ctk.CTk):
         reset_button.grid(row=0, column=0, padx=10, sticky="e")
 
     def refresh_table(self):
-        """Refresh the table display with current employee data"""
+        """Refresh the table display with current employee attendance data"""
         for row in self.table_rows:
             row.destroy()
         self.table_rows.clear()
+        
+        # Fetch data using the controller
+        self.employees = StaffAdminController.get_all_staff_attendance() #
+
         for row_idx, employee in enumerate(self.employees):
             row = ctk.CTkFrame(self.table_container, fg_color="#ffffff" if row_idx % 2 == 0 else "#f8f8f8", height=50)
             row.grid(row=row_idx+1, column=0, sticky="ew", pady=1)
@@ -181,7 +184,7 @@ class StaffPageAdmin(ctk.CTk):
             self.destroy()
             StaffPageAdmin(user_role="admin").run()
         else:
-            from .staff_employee import StaffPageEmployee
+            from staff.staff_employee import StaffPageEmployee
             self.destroy()
             StaffPageEmployee(user_role="employee").run()
     def show_cashbox(self):
@@ -193,26 +196,19 @@ class StaffPageAdmin(ctk.CTk):
         self.destroy()
         SalesDashboard(user_role=self.user_role).mainloop()
 
+    # The add_employee method now uses the controller
     def add_employee(self, first_name, last_name, username, password):
-        """Add a new employee to the data structure"""
-        new_id = max([emp["id"] for emp in self.employees], default=0) + 1
-        new_employee = {
-            "id": new_id,
-            "first_name": first_name,
-            "last_name": last_name,
-            "username": username,
-            "time_in": "--",
-            "time_out": "--",
-            "password": password  # In real app, this should be hashed
-        }
-        self.employees.append(new_employee)
-        self.refresh_table()
-        # TODO: Add database insert here
-        return new_employee
+        """Add a new employee using the staff_admin_controller."""
+        employee_id = StaffAdminController.add_new_employee(first_name, last_name, username, password)
+        if employee_id:
+            self.refresh_table() # Refresh table to show newly added employee (without attendance yet)
+            return True
+        else:
+            return False
 
     def edit_employee(self, employee):
         """Edit an existing employee"""
-        # TODO: Implement edit functionality
+        # TODO: Implement edit functionality (will also use the controller)
         self.custom_messagebox("Edit Employee", f"Edit functionality for {employee['first_name']} {employee['last_name']}")
 
     def open_add_employee_popup(self):
@@ -278,16 +274,19 @@ class StaffPageAdmin(ctk.CTk):
         pass_entry.grid(row=4, column=0, padx=20, pady=(5, 0), sticky="ew")
 
         def submit():
-            if (first_entry.get().strip() and last_entry.get().strip() and 
-                username_entry.get().strip() and pass_entry.get().strip()):
-                new_employee = self.add_employee(
-                    first_entry.get().strip(), 
-                    last_entry.get().strip(), 
-                    username_entry.get().strip(),
-                    pass_entry.get()
-                )
-                self.custom_messagebox("Employee Added", f"Added {new_employee['first_name']} {new_employee['last_name']}!")
-                popup.destroy()
+            first_name = first_entry.get().strip()
+            last_name = last_entry.get().strip()
+            username = username_entry.get().strip()
+            password = pass_entry.get()
+
+            if first_name and last_name and username and password:
+                # Call the controller function to add the employee
+                success = self.add_employee(first_name, last_name, username, password)
+                if success:
+                    self.custom_messagebox("Employee Added", f"Added {first_name} {last_name}!")
+                    popup.destroy()
+                else:
+                    self.custom_messagebox("Error", "Failed to add employee. Username might already exist or a database error occurred.")
             else:
                 self.custom_messagebox("Error", "All fields are required!")
 
@@ -311,8 +310,8 @@ class StaffPageAdmin(ctk.CTk):
         popup.configure(fg_color="#f2efea")
         popup.grab_set()
 
-        ctk.CTkLabel(popup, text="Employee Name:", font=("Inter", 12, "bold"), text_color="#4e2d18").grid(row=0, column=0, sticky="w", padx=20, pady=(20, 0))
-        id_entry = ctk.CTkEntry(popup, 
+        ctk.CTkLabel(popup, text="Employee Username:", font=("Inter", 12, "bold"), text_color="#4e2d18").grid(row=0, column=0, sticky="w", padx=20, pady=(20, 0))
+        username_entry = ctk.CTkEntry(popup, 
                                fg_color="#ffffff",
                                text_color="#4e2d18",
                                border_color="lightgray",
@@ -320,7 +319,7 @@ class StaffPageAdmin(ctk.CTk):
                                corner_radius=6,
                                width=200,
                                height=35)
-        id_entry.grid(row=1, column=0, padx=20, pady=(5, 0), sticky="ew")
+        username_entry.grid(row=1, column=0, padx=20, pady=(5, 0), sticky="ew")
 
         ctk.CTkLabel(popup, text="New Password:", font=("Inter", 12, "bold"), text_color="#4e2d18").grid(row=2, column=0, sticky="w", padx=20, pady=(15, 0))
         pass_entry = ctk.CTkEntry(popup, 
@@ -335,9 +334,19 @@ class StaffPageAdmin(ctk.CTk):
         pass_entry.grid(row=3, column=0, padx=20, pady=(5, 0), sticky="ew")
 
         def reset():
-            # TODO: Add database password reset here
-            self.custom_messagebox("Password Reset", f"Password reset for {id_entry.get()}!")
-            popup.destroy()
+            username = username_entry.get().strip()
+            new_password = pass_entry.get()
+
+            if username and new_password:
+                # Call the controller function to reset the password
+                success = StaffAdminController.reset_employee_password(username, new_password)
+                if success:
+                    self.custom_messagebox("Password Reset", f"Password reset for {username}!")
+                    popup.destroy()
+                else:
+                    self.custom_messagebox("Error", f"Username '{username}' not found or database error.")
+            else:
+                self.custom_messagebox("Error", "Both username and new password are required!")
 
         reset_btn = ctk.CTkButton(popup, text="Reset", 
                                  fg_color="green", 
@@ -351,4 +360,3 @@ class StaffPageAdmin(ctk.CTk):
     
     def run(self):
         self.mainloop()
-

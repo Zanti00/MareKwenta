@@ -2,6 +2,7 @@ import customtkinter as ctk
 import sys
 
 from splash import SplashScreen
+# from staff.staff_employee import StaffPageEmployee
 
 def main():
     # Initialize database first
