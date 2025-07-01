@@ -115,7 +115,7 @@ class EditInventoryPopup(ctk.CTkToplevel):
             corner_radius=8,
             text_color="#4e2d18"
         )
-        self.cost_entry.grid(row=row, column=0, sticky="ew", pady=(0, 12))
+        self.cost_entry.grid(row=row, column=0, sticky="ew", pady=(0, 12))  # Reduced from (0, 24)
         self.cost_entry.insert(0, item_data.get("cost", ""))
         row += 1
 

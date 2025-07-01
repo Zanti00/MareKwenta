@@ -6,6 +6,8 @@ import threading
 import time
 from .add_quantity import AddQuantityPopup
 from .edit import EditInventoryPopup
+from .inventory_controller import InventoryController
+
 from staff.staff_admin import StaffPageAdmin
 from staff.staff_employee import StaffPageEmployee
 from .inventory_controller import InventoryController
