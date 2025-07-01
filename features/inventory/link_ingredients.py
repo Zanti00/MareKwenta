@@ -231,29 +231,56 @@ class LinkIngredientFinalPopup(ctk.CTkToplevel):
         self.geometry(f"{w}x{h}+{x}+{y}")
 
     def add_entry_row(self):
-        row = len(self.entries)
         row_frame = ctk.CTkFrame(self.entries_scroll, fg_color="transparent")
         row_frame.pack(pady=4, anchor="center")
+        
         qty_entry = ctk.CTkEntry(row_frame, width=80, height=32, font=ctk.CTkFont("Inter", 13), placeholder_text="Qty")
         qty_entry.pack(side="left", padx=(0, 10))
+        
         ingredient_combo = ctk.CTkOptionMenu(row_frame, values=self.inventory_list, width=180, height=32, font=ctk.CTkFont("Inter", 13),
             fg_color="#4e2d18", button_color="#4e2d18", button_hover_color="#3d2414", dropdown_fg_color="#ffffff", dropdown_text_color="#4e2d18", text_color="#ffffff", corner_radius=8)
-        ingredient_combo.pack(side="left")
+        ingredient_combo.pack(side="left", padx=(0, 10))
         ingredient_combo.set(self.inventory_list[0] if self.inventory_list else "")
+        
+        # Add X button to remove row
+        remove_btn = ctk.CTkButton(row_frame, text="✕", width=30, height=30, font=ctk.CTkFont("Inter", 14, "bold"), 
+                                  fg_color="#dc3545", hover_color="#c82333", corner_radius=15,
+                                  command=lambda: self.remove_entry_row(row_frame, qty_entry, ingredient_combo))
+        remove_btn.pack(side="left")
+        
         self.entries.append((qty_entry, ingredient_combo))
+
+    def remove_entry_row(self, row_frame, qty_entry, ingredient_combo):
+        """Remove an ingredient row"""
+        if len(self.entries) > 1:  # Keep at least one row
+            row_frame.destroy()
+            self.entries.remove((qty_entry, ingredient_combo))
+        else:
+            messagebox.showwarning("Cannot Remove", "At least one ingredient must remain.")
+
     def _on_save(self):
-        # Collect the data and call on_save_link
         ingredients = []
+        used_ingredients = set()
+        
         for qty_entry, ingredient_combo in self.entries:
             qty = qty_entry.get().strip()
             ingredient = ingredient_combo.get().strip()
-            if qty and ingredient and ingredient != "No ingredients available":
+            
+            if qty and ingredient:
+                # Validate quantity is numeric
                 try:
-                    float(qty)  # Validate quantity is numeric
-                    ingredients.append((qty, ingredient))
+                    float(qty)
                 except ValueError:
                     messagebox.showerror("Error", f"Invalid quantity: {qty}")
                     return
+                
+                # Check for duplicate ingredients
+                if ingredient in used_ingredients:
+                    messagebox.showerror("Duplicate Ingredient", f"Ingredient '{ingredient}' is already added. Please remove duplicates.")
+                    return
+                
+                used_ingredients.add(ingredient)
+                ingredients.append((qty, ingredient))
         
         if not ingredients:
             messagebox.showwarning("No Ingredients", "Please add at least one ingredient with quantity.")
@@ -283,7 +310,7 @@ class ViewLinkedIngredientsPopup(ctk.CTkToplevel):
                 ctk.CTkLabel(scroll, text=group['summary'], font=ctk.CTkFont("Unbounded", 15, "bold"), text_color="#4d2d18").pack(anchor="w", pady=(12, 2), padx=10)
                 for qty, ingredient in group['ingredients']:
                     row = f"{qty:<8} {ingredient}"
-                    ctk.CTkLabel(scroll, text=row, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18", anchor="w").pack(anchor="w", padx=30)
+                    ctk.CTkLabel(scroll, text=row, font=ctk.CTkFont("Inter", 14), text_color="#4d2d18", anchor="w").pack(anchor="w", padx=30)
     
     def center_popup(self, parent):
         self.update_idletasks()
@@ -309,50 +336,94 @@ class EditLinkedIngredientsPopup(ctk.CTkToplevel):
         self.on_save_edit = on_save_edit
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
+        
         ctk.CTkLabel(self, text=summary, font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4d2d18").grid(row=0, column=0, pady=(18, 10), sticky="n")
         self.entries_scroll = ctk.CTkScrollableFrame(self, fg_color="#ffffff", corner_radius=14, width=440, height=340)
         self.entries_scroll.grid(row=1, column=0, padx=18, pady=10, sticky="nsew")
+        
         for qty, ingredient in initial_ingredients:
             self.add_entry_row(qty, ingredient)
         if not initial_ingredients:
             self.add_entry_row()
+            
         plus_btn_frame = ctk.CTkFrame(self, fg_color="transparent")
         plus_btn_frame.grid(row=2, column=0, sticky="ew", padx=18)
         plus_btn = ctk.CTkButton(plus_btn_frame, text="+", width=36, height=36, font=ctk.CTkFont("Unbounded", 18, "bold"), fg_color="#4e2d18", text_color="#fff", corner_radius=18, command=self.add_entry_row)
         plus_btn.pack(side="right", pady=(8, 0))
         save_btn = ctk.CTkButton(self, text="Save", fg_color="#4e2d18", text_color="#fff", width=140, height=48, corner_radius=12, font=ctk.CTkFont("Unbounded", 16, "bold"), command=self._on_save)
         save_btn.grid(row=3, column=0, pady=18)
-    def add_entry_row(self, qty_val="", ingredient_val=None):
-        row_frame = ctk.CTkFrame(self.entries_scroll, fg_color="transparent")
-        row_frame.pack(pady=4, anchor="center")
-        qty_entry = ctk.CTkEntry(row_frame, width=80, height=32, font=ctk.CTkFont("Inter", 13), placeholder_text="Qty")
-        qty_entry.pack(side="left", padx=(0, 10))
-        if qty_val:
-            qty_entry.insert(0, qty_val)
-        ingredient_combo = ctk.CTkOptionMenu(row_frame, values=self.inventory_list, width=180, height=32, font=ctk.CTkFont("Inter", 13),
-            fg_color="#4e2d18", button_color="#4e2d18", button_hover_color="#3d2414", dropdown_fg_color="#ffffff", dropdown_text_color="#4e2d18", text_color="#ffffff", corner_radius=8)
-        ingredient_combo.pack(side="left")
-        if ingredient_val:
-            ingredient_combo.set(ingredient_val)
-        else:
-            ingredient_combo.set(self.inventory_list[0] if self.inventory_list else "")
-        self.entries.append((qty_entry, ingredient_combo))
-    def _on_save(self):
-        ingredients = []
-        for qty_entry, ingredient_combo in self.entries:
-            qty = qty_entry.get().strip()
-            ingredient = ingredient_combo.get().strip()
-            if qty and ingredient:
-                ingredients.append((qty, ingredient))
-        if self.on_save_edit:
-            self.on_save_edit(self.product_name, self.summary, ingredients)
-        self.destroy()
+
     def center_popup(self, parent):
         self.update_idletasks()
         w, h = 500, 600
         x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (w // 2)
         y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (h // 2)
         self.geometry(f"{w}x{h}+{x}+{y}")
+
+    def add_entry_row(self, qty_val="", ingredient_val=None):
+        row_frame = ctk.CTkFrame(self.entries_scroll, fg_color="transparent")
+        row_frame.pack(pady=4, anchor="center")
+        
+        qty_entry = ctk.CTkEntry(row_frame, width=80, height=32, font=ctk.CTkFont("Inter", 13), placeholder_text="Qty")
+        qty_entry.pack(side="left", padx=(0, 10))
+        if qty_val:
+            qty_entry.insert(0, qty_val)
+            
+        ingredient_combo = ctk.CTkOptionMenu(row_frame, values=self.inventory_list, width=180, height=32, font=ctk.CTkFont("Inter", 13),
+            fg_color="#4e2d18", button_color="#4e2d18", button_hover_color="#3d2414", dropdown_fg_color="#ffffff", dropdown_text_color="#4e2d18", text_color="#ffffff", corner_radius=8)
+        ingredient_combo.pack(side="left", padx=(0, 10))
+        if ingredient_val:
+            ingredient_combo.set(ingredient_val)
+        else:
+            ingredient_combo.set(self.inventory_list[0] if self.inventory_list else "")
+            
+        # Add X button to remove row
+        remove_btn = ctk.CTkButton(row_frame, text="✕", width=30, height=30, font=ctk.CTkFont("Inter", 14, "bold"), 
+                                  fg_color="#dc3545", hover_color="#c82333", corner_radius=15,
+                                  command=lambda: self.remove_entry_row(row_frame, qty_entry, ingredient_combo))
+        remove_btn.pack(side="left")
+        
+        self.entries.append((qty_entry, ingredient_combo))
+
+    def remove_entry_row(self, row_frame, qty_entry, ingredient_combo):
+        """Remove an ingredient row"""
+        if len(self.entries) > 1:  # Keep at least one row
+            row_frame.destroy()
+            self.entries.remove((qty_entry, ingredient_combo))
+        else:
+            messagebox.showwarning("Cannot Remove", "At least one ingredient must remain.")
+
+    def _on_save(self):
+        ingredients = []
+        used_ingredients = set()
+        
+        for qty_entry, ingredient_combo in self.entries:
+            qty = qty_entry.get().strip()
+            ingredient = ingredient_combo.get().strip()
+            
+            if qty and ingredient:
+                # Validate quantity is numeric
+                try:
+                    float(qty)
+                except ValueError:
+                    messagebox.showerror("Error", f"Invalid quantity: {qty}")
+                    return
+                
+                # Check for duplicate ingredients
+                if ingredient in used_ingredients:
+                    messagebox.showerror("Duplicate Ingredient", f"Ingredient '{ingredient}' is already added. Please remove duplicates.")
+                    return
+                
+                used_ingredients.add(ingredient)
+                ingredients.append((qty, ingredient))
+        
+        if not ingredients:
+            messagebox.showwarning("No Ingredients", "Please add at least one ingredient with quantity.")
+            return
+            
+        if self.on_save_edit:
+            self.on_save_edit(self.product_name, self.summary, ingredients)
+        self.destroy()
 
 class LinkIngredientsPage:
     def __init__(self, user_role="admin"):
@@ -439,7 +510,7 @@ class LinkIngredientsPage:
             text_color="#4e2d18"
         )
         link_ingredients_tab.pack()
-        separator = ctk.CTkFrame(link_ingredients_tab_frame, width=270, height=4, fg_color="#4e2d18")
+        separator = ctk.CTkFrame(link_ingredients_tab_frame, width=270, height=4, fg_color="#4d2d18")
         separator.pack(pady=(2, 0))
 
     def setup_product_list(self):
@@ -579,8 +650,83 @@ class LinkIngredientsPage:
             # Get linked data from database
             linked_data = self.get_linked_data_from_db(product)
             ViewLinkedIngredientsPopup(self.root, product['name'], linked_data)
+            
         elif action == "Edit":
-            messagebox.showinfo("Edit", f"Edit functionality for '{product['name']}' will be implemented next")
+            # Get all product types for this product
+            product_types = ProductController.get_product_types_by_product_id(product['product_id'])
+            
+            if not product_types:
+                messagebox.showinfo("No Data", f"No ingredient links found for '{product['name']}'")
+                return
+            
+            # If it's a food item, directly edit the single recipe
+            if product['category'] == "Food":
+                # Get the default product_type (index 0) since Food only has one
+                food_type = product_types[0] if product_types else None
+                
+                if food_type:
+                    existing_recipes = RecipeController.get_recipes_by_product_type_id(food_type['product_type_id'])
+                    if existing_recipes:
+                        summary = f"{product['name']} | {product['category']}"
+                        inventory_data = InventoryController.get_all_inventory()
+                        inventory_list = [item['ingredient'] for item in inventory_data]
+                        
+                        def on_save_edit(product_name, summary, ingredients):
+                            self.update_recipe_ingredients(food_type['product_type_id'], ingredients)
+                        
+                        EditLinkedIngredientsPopup(
+                            self.root, product['name'], summary, inventory_list, 
+                            existing_recipes, on_save_edit=on_save_edit
+                        )
+                    else:
+                        messagebox.showinfo("No Data", f"No ingredients linked for '{product['name']}'")
+                else:
+                    messagebox.showinfo("No Data", f"No product type found for '{product['name']}'")
+            
+            # If it's Coffee/Non-Coffee, show size/temperature selection first
+            else:
+                variants_with_recipes = []
+                for ptype in product_types:
+                    if ptype['size'] and ptype['temperature']:
+                        recipes = RecipeController.get_recipes_by_product_type_id(ptype['product_type_id'])
+                        if recipes:
+                            variants_with_recipes.append({
+                                'product_type': ptype,
+                                'recipes': recipes,
+                                'summary': f"{product['name']} | {product['category']} {ptype['size']} {ptype['temperature']}"
+                            })
+                
+                if not variants_with_recipes:
+                    messagebox.showinfo("No Data", f"No ingredients linked for any variant of '{product['name']}'")
+                    return
+                
+                # Show size/temperature selection popup for editing
+                def after_size_temp_for_edit(size, temp):
+                    # Find the matching variant
+                    target_variant = None
+                    for variant in variants_with_recipes:
+                        ptype = variant['product_type']
+                        if ptype['size'] == size and ptype['temperature'] == temp:
+                            target_variant = variant
+                            break
+                    
+                    if target_variant:
+                        inventory_data = InventoryController.get_all_inventory()
+                        inventory_list = [item['ingredient'] for item in inventory_data]
+                        
+                        def on_save_edit(product_name, summary, ingredients):
+                            self.update_recipe_ingredients(target_variant['product_type']['product_type_id'], ingredients)
+                        
+                        EditLinkedIngredientsPopup(
+                            self.root, product['name'], target_variant['summary'], 
+                            inventory_list, target_variant['recipes'], on_save_edit=on_save_edit
+                        )
+                    else:
+                        messagebox.showerror("Error", f"No ingredients found for {product['name']} {size} {temp}")
+                
+                # Create a custom SizeTempPopup that only shows variants with recipes
+                self.show_size_temp_for_edit(product, variants_with_recipes, after_size_temp_for_edit)
+
         elif action == "Delete":
             result = messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{product['name']}'?")
             if result:
@@ -590,6 +736,186 @@ class LinkIngredientsPage:
                     messagebox.showinfo("Success", "Product deleted successfully!")
                 else:
                     messagebox.showerror("Error", "Failed to delete product from database")
+
+    def show_size_temp_for_edit(self, product, variants_with_recipes, on_next):
+        """Show size/temperature selection popup for editing, only showing variants with recipes"""
+        popup = ctk.CTkToplevel(self.root)
+        popup.title("Select Size & Temperature to Edit")
+        popup.geometry("300x260")
+        popup.configure(fg_color="#f2efea")
+        popup.transient(self.root)
+        popup.grab_set()
+        popup.resizable(False, False)
+        
+        # Center the popup
+        popup.update_idletasks()
+        w, h = 300, 260
+        x = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - (w // 2)
+        y = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - (h // 2)
+        popup.geometry(f"{w}x{h}+{x}+{y}")
+        
+        size_var = tk.StringVar(value=None)
+        temp_var = tk.StringVar(value=None)
+        
+        ctk.CTkLabel(popup, text="Select Size", font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4e2d18").pack(pady=(18, 4))
+        size_frame = ctk.CTkFrame(popup, fg_color="transparent")
+        size_frame.pack(pady=2)
+        
+        # Get unique sizes from variants with recipes
+        available_sizes = list(set(variant['product_type']['size'] for variant in variants_with_recipes))
+        for s in available_sizes:
+            ctk.CTkRadioButton(size_frame, text=s, variable=size_var, value=s, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(side="left", padx=12)
+        
+        ctk.CTkLabel(popup, text="Select Temperature", font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4e2d18").pack(pady=(16, 4))
+        temp_frame = ctk.CTkFrame(popup, fg_color="transparent")
+        temp_frame.pack(pady=2)
+        
+        # Get unique temperatures from variants with recipes
+        available_temps = list(set(variant['product_type']['temperature'] for variant in variants_with_recipes))
+        for t in available_temps:
+            ctk.CTkRadioButton(temp_frame, text=t, variable=temp_var, value=t, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(side="left", padx=12)
+        
+        def on_next_click():
+            if not size_var.get() or not temp_var.get():
+                messagebox.showwarning("Required", "Please select both size and temperature.")
+                return
+                
+            # Check if this combination has recipes
+            has_recipes = any(
+                variant['product_type']['size'] == size_var.get() and 
+                variant['product_type']['temperature'] == temp_var.get() 
+                for variant in variants_with_recipes
+            )
+            
+            if not has_recipes:
+                messagebox.showwarning("No Recipes", "No ingredients found for this size and temperature combination.")
+                return
+                
+            on_next(size_var.get(), temp_var.get())
+            popup.destroy()
+        
+        btn = ctk.CTkButton(popup, text="Next", fg_color="#4e2d18", text_color="#fff", width=120, height=36, corner_radius=10, command=on_next_click)
+        btn.pack(pady=18)
+
+    def show_inventory(self):
+        try:
+            from inventory.inventory_page import InventoryManagement
+            self.root.withdraw()  # Hide current window first
+            self.root.after(100, lambda: self._delayed_inventory_launch())  # Delay the launch
+        except Exception as e:
+            print(f"Error navigating to inventory: {e}")
+            messagebox.showerror("Navigation Error", f"Failed to open inventory page: {e}")
+
+    def _delayed_inventory_launch(self):
+        """Launch inventory page with delay to prevent image conflicts"""
+        try:
+            from inventory.inventory_page import InventoryManagement
+            self.root.destroy()  # Destroy after withdrawal
+            inventory_page = InventoryManagement(self.user_role)
+            inventory_page.run()
+        except Exception as e:
+            print(f"Error launching inventory page: {e}")
+            messagebox.showerror("Navigation Error", f"Failed to launch inventory page: {e}")
+        
+    def show_ticket(self):
+        try:
+            from ticket.ticket_main import TicketMainPage
+            self.root.withdraw()
+            self.root.after(100, lambda: self._delayed_ticket_launch())
+        except Exception as e:
+            print(f"Error navigating to ticket: {e}")
+
+    def _delayed_ticket_launch(self):
+        try:
+            from ticket.ticket_main import TicketMainPage
+            self.root.destroy()
+            ticket_page = TicketMainPage(self.user_role)
+            ticket_page.run()
+        except Exception as e:
+            print(f"Error launching ticket page: {e}")
+        
+    def show_receipt(self):
+        try:
+            from receipt.sales_history import SalesHistoryMain
+            self.root.withdraw()
+            self.root.after(100, lambda: self._delayed_receipt_launch())
+        except Exception as e:
+            print(f"Error navigating to receipt: {e}")
+
+    def _delayed_receipt_launch(self):
+        try:
+            from receipt.sales_history import SalesHistoryMain
+            self.root.destroy()
+            receipt_page = SalesHistoryMain(self.user_role)
+            receipt_page.run()
+        except Exception as e:
+            print(f"Error launching receipt page: {e}")
+        
+    def show_staff(self):
+        try:
+            self.root.withdraw()
+            self.root.after(100, lambda: self._delayed_staff_launch())
+        except Exception as e:
+            print(f"Error navigating to staff: {e}")
+
+    def _delayed_staff_launch(self):
+        try:
+            self.root.destroy()
+            if self.user_role == "admin":
+                StaffPageAdmin(user_role="admin").run()
+            else:
+                StaffPageEmployee(user_role="employee").run()
+        except Exception as e:
+            print(f"Error launching staff page: {e}")
+        
+    def show_cashbox(self):
+        try:
+            from cash_box.cashbox_page import CashBoxApp
+            self.root.withdraw()
+            self.root.after(100, lambda: self._delayed_cashbox_launch())
+        except Exception as e:
+            print(f"Error navigating to cashbox: {e}")
+
+    def _delayed_cashbox_launch(self):
+        try:
+            from cash_box.cashbox_page import CashBoxApp
+            self.root.destroy()
+            cashbox_page = CashBoxApp(self.user_role)
+            cashbox_page.run()
+        except Exception as e:
+            print(f"Error launching cashbox page: {e}")
+        
+    def show_dashboard(self):
+        try:
+            from dashboard.sales_dashboard import SalesDashboard
+            self.root.withdraw()
+            self.root.after(100, lambda: self._delayed_dashboard_launch())
+        except Exception as e:
+            print(f"Error navigating to dashboard: {e}")
+
+    def _delayed_dashboard_launch(self):
+        try:
+            from dashboard.sales_dashboard import SalesDashboard
+            self.root.destroy()
+            dashboard_page = SalesDashboard(self.user_role)
+            dashboard_page.run()
+        except Exception as e:
+            print(f"Error launching dashboard page: {e}")
+
+    def run(self):
+        try:
+            self.root.mainloop()
+        except Exception as e:
+            print(f"Error running LinkIngredientsPage: {e}")
+            messagebox.showerror("Fatal Error", f"Application failed to start: {e}")
+        finally:
+            try:
+                self.root.destroy()
+            except:
+                pass
+    
+    def mainloop(self):
+        self.root.mainloop()
 
     def get_linked_data_from_db(self, product):
         """Get linked ingredients data from database"""
@@ -663,53 +989,27 @@ class LinkIngredientsPage:
             print(f"Error saving linked ingredients: {e}")
             messagebox.showerror("Error", f"Failed to save linked ingredients: {e}")
 
-    def show_inventory(self):
-        from inventory.inventory_page import InventoryPage
-        self.root.withdraw()
-        inventory_page = InventoryPage(self.root, self.user_role)
-        inventory_page.run()
-        
-    def show_ticket(self):
-        from ticket.ticket_page import TicketPage
-        self.root.withdraw()
-        ticket_page = TicketPage(self.root, self.user_role)
-        ticket_page.run()
-        
-    def show_receipt(self):
-        from receipt.receipt_page import ReceiptPage
-        self.root.withdraw()
-        receipt_page = ReceiptPage(self.root, self.user_role)
-        receipt_page.run()
-        
-    def show_staff(self):
-        from staff.staff_page import StaffPage
-        self.root.withdraw()
-        staff_page = StaffPage(self.root, self.user_role)
-        staff_page.run()
-        
-    def show_cashbox(self):
-        from cashbox.cashbox_page import CashboxPage
-        self.root.withdraw()
-        cashbox_page = CashboxPage(self.root, self.user_role)
-        cashbox_page.run()
-        
-    def show_dashboard(self):
-        from dashboard.dashboard_page import DashboardPage
-        self.root.withdraw()
-        dashboard_page = DashboardPage(self.root, self.user_role)
-        dashboard_page.run()
-
-    def run(self):
+    def update_recipe_ingredients(self, product_type_id, ingredients):
+        """Update recipe ingredients in database"""
         try:
-            self.root.mainloop()
+            # Prepare ingredients data for recipe
+            ingredients_data = []
+            for qty, ingredient_name in ingredients:
+                inventory_id = RecipeController.get_inventory_id_by_name(ingredient_name)
+                if inventory_id:
+                    ingredients_data.append((float(qty), inventory_id))
+                else:
+                    messagebox.showerror("Error", f"Ingredient '{ingredient_name}' not found in inventory")
+                    return
+            
+            # Update recipe ingredients in database
+            success = RecipeController.update_recipe_ingredients(product_type_id, ingredients_data)
+            
+            if success:
+                messagebox.showinfo("Success", "Ingredients updated successfully!")
+            else:
+                messagebox.showerror("Error", "Failed to update recipe ingredients")
+                
         except Exception as e:
-            print(f"Error running LinkIngredientsPage: {e}")
-            messagebox.showerror("Fatal Error", f"Application failed to start: {e}")
-        finally:
-            try:
-                self.root.destroy()
-            except:
-                pass
-    
-    def mainloop(self):
-        self.root.mainloop()
+            print(f"Error updating recipe ingredients: {e}")
+            messagebox.showerror("Error", f"Failed to update ingredients: {e}")
