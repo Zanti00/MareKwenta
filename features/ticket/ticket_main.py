@@ -1,199 +1,247 @@
 import customtkinter as ctk
-from .product_panel import ProductPanel
-from .ticket_panel import TicketPanel
-from .components.modifier_popup import ModifierPopup
+from tkinter import messagebox
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # Add view folder to path
-from nav_bar import Navbar
 
-class TicketMainPage(ctk.CTk):
-    def __init__(self, user_role="employee"):
-        super().__init__()
-        taskbar_height = 70  # Adjust this value as needed
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        usable_height = screen_height - taskbar_height
-        self.geometry(f"{screen_width}x{usable_height}+0+0")
-        self.title("MareKwenta POS")
-        self.configure(fg_color="#f2efea")
+# Add navigation imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from nav_bar import Navbar
+from .product_panel import ProductPanel
+from .components.ticket_panel import TicketPanel
+from .components.item_detail import ItemDetail
+
+class TicketMainPage:
+    def __init__(self, user_role="admin"):
+        self.root = ctk.CTk()
+        self.root.title("MareKwenta POS")
         
-        # Store user role
+        # Set window to fullscreen
+        taskbar_height = 70
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        usable_height = screen_height - taskbar_height
+        self.root.geometry(f"{screen_width}x{usable_height}+0+0")
+        self.root.configure(fg_color="#f2efea")
+        
         self.user_role = user_role
         
-        # Flag to prevent recursive calls
-        self._switching_page = False
+        # Configure appearance
+        ctk.set_appearance_mode("light")
+        ctk.set_default_color_theme("blue")
+        
+        # Configure grid
+        self.root.grid_columnconfigure(1, weight=1)
+        self.root.grid_rowconfigure(0, weight=1)
+        
+        # Bind window close event
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
+        # Initialize cart items list
+        self.cart_items = []
+        self.current_total = 0.0
+        
+        self.setup_ui()
 
-        # === MAIN WRAPPER FRAME ===
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
+    def on_closing(self):
+        """Handle window closing"""
+        try:
+            self.root.quit()
+            self.root.destroy()
+        except:
+            pass
 
-        self.navbar = Navbar(self, width=124, user_role=self.user_role, active_tab="ticket")
-        self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
+    def setup_ui(self):
+        # Create navbar
+        self.navbar = Navbar(self.root, width=124, user_role=self.user_role, active_tab="ticket")
+        self.navbar.grid(row=0, column=0, sticky="ns")
+        
+        # Set navigation callbacks
         self.navbar.set_nav_callback("ticket", self.show_ticket)
         self.navbar.set_nav_callback("receipt", self.show_receipt)
         self.navbar.set_nav_callback("inventory", self.show_inventory)
         self.navbar.set_nav_callback("staff", self.show_staff)
         self.navbar.set_nav_callback("cashbox", self.show_cashbox)
         self.navbar.set_nav_callback("dashboard", self.show_dashboard)
+        
+        # Main content area
+        self.main_frame = ctk.CTkFrame(self.root, fg_color="#f2efea")
+        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 0), pady=0)
+        self.main_frame.grid_columnconfigure(0, weight=2)  # Product panel takes more space
+        self.main_frame.grid_columnconfigure(1, weight=1)  # Ticket panel
+        self.main_frame.grid_rowconfigure(0, weight=1)
+        
+        # Product panel (left side)
+        self.product_panel = ProductPanel(self.main_frame, on_product_click=self.handle_product_click)
+        self.product_panel.grid(row=0, column=0, sticky="nsew", padx=(10, 5), pady=10)
+        
+        # Ticket panel (right side)
+        self.ticket_panel = TicketPanel(self.main_frame)
+        self.ticket_panel.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
 
-        main_frame = ctk.CTkFrame(self, fg_color="transparent")
-        main_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 0), pady=0)
-
-        # === LEFT COLUMN (Header + Product Panel) ===
-        left_column = ctk.CTkFrame(main_frame, fg_color="transparent")
-        left_column.pack(side="left", fill="both", expand=True, padx=(5, 20), pady=30)
-
-        # === HEADER ===
-        header_frame = ctk.CTkFrame(left_column, fg_color="transparent")
-        header_frame.pack(fill="x", pady=(0, 10),padx=20)
-
-        hello_label = ctk.CTkLabel(header_frame, text="Hello,", font=("Unbounded", 36), text_color="#4e2d18")
-        hello_label.pack(side="left")
-
-        self.user_label = ctk.CTkLabel(header_frame, text="User", font=("Unbounded", 36), text_color="#4e2d18")
-        self.user_label.pack(side="left", padx=(10, 0))
-
-        # === PRODUCT PANEL ===
-        self.product_panel = ProductPanel(left_column, on_product_click=self.handle_product_click)
-        self.product_panel.pack(fill="both", expand=True)
-
-        # === RIGHT PANEL ===
-        self.ticket_panel = TicketPanel(main_frame, on_split_popup=self.handle_split_popup)
-        self.ticket_panel.pack(side="right", fill="y")
-
-    def show_ticket(self):
-        pass  # Already on this page, do nothing!
-
-    def show_receipt(self):
-        if self._switching_page:
-            return
-        self._switching_page = True
+    def handle_product_click(self, cart_item):
+        """Handle product selection from product panel"""
+        print(f"Product clicked: {cart_item}")  # Debug print
         
         try:
-            # Use after_idle to prevent recursion issues
-            self.after_idle(self._switch_to_receipt)
-        except Exception as e:
-            print(f"Error switching to receipt: {e}")
-            self._switching_page = False
-
-    def _switch_to_receipt(self):
-        try:
-            from receipt.sales_history import SalesHistoryMain
-            self.destroy()
-            app = SalesHistoryMain(user_role=self.user_role)
-            app.mainloop()
-        except Exception as e:
-            print(f"Error loading receipt page: {e}")
-
-    def show_inventory(self):
-        if self._switching_page:
-            return
-        self._switching_page = True
-        
-        try:
-            self.after_idle(self._switch_to_inventory)
-        except Exception as e:
-            print(f"Error switching to inventory: {e}")
-            self._switching_page = False
-
-    def _switch_to_inventory(self):
-        try:
-            from inventory.inventory_page import InventoryManagement
-            self.destroy()
-            app = InventoryManagement(user_role=self.user_role)
-            app.mainloop()
-        except Exception as e:
-            print(f"Error loading inventory page: {e}")
-
-    def show_staff(self):
-        from staff.staff_admin import StaffPageAdmin
-        from staff.staff_employee import StaffPageEmployee
-        self.destroy()
-        if self.user_role == "admin":
-            StaffPageAdmin(user_role="admin").run()
-        else:
-            StaffPageEmployee(user_role="employee").run()
-
-    def show_cashbox(self):
-        if self._switching_page:
-            return
-        self._switching_page = True
-        
-        try:
-            self.after_idle(self._switch_to_cashbox)
-        except Exception as e:
-            print(f"Error switching to cashbox: {e}")
-            self._switching_page = False
-
-    def _switch_to_cashbox(self):
-        try:
-            from cash_box.cashbox_page import CashBoxApp
-            self.destroy()
-            app = CashBoxApp(user_role=self.user_role)
-            app.run()
-        except Exception as e:
-            print(f"Error loading cashbox page: {e}")
-
-    def show_dashboard(self):
-        from dashboard.sales_dashboard import SalesDashboard
-        self.destroy()
-        SalesDashboard(user_role=self.user_role).mainloop()
-
-    def handle_product_click(self, product_name, product_type):
-        print(f"Clicked: {product_name} ({product_type})")
-        try:
-            # Open modifier popup when product is clicked
-            ModifierPopup(self, product_name=product_name, product_type=product_type, on_submit=self.handle_modifier_submit)
-        except Exception as e:
-            print(f"Error opening modifier popup: {e}")
-
-    def handle_modifier_submit(self, product_name, quantity, size, temperature, extras):
-        print(f"Adding to cart: {product_name} - Qty: {quantity}, Size: {size}, Temp: {temperature}, Extras: {extras}")
-        try:
-            # TODO: Add the item to the cart in ticket_panel
-            # self.ticket_panel.add_item_detail(product_name, quantity, size, temperature, extras, price)
-            pass
+            # Add item to cart list
+            self.cart_items.append(cart_item)
+            
+            # Create item detail widget for display
+            item_detail = ItemDetail(
+                self.ticket_panel.scrollable_frame,
+                product_name=cart_item["name"],
+                quantity=cart_item["quantity"],
+                size_drink=cart_item.get("size", ""),
+                item_info=cart_item.get("temperature", ""),
+                extras=cart_item.get("extras", []),
+                extras_cost=cart_item.get("extras_cost", 0),
+                unit_price=cart_item["unit_price"],
+                on_remove=self.remove_item
+            )
+            
+            # Add to ticket panel
+            self.ticket_panel.add_item(item_detail)
+            
+            # Update total (includes extras cost)
+            item_total = (cart_item["quantity"] * cart_item["unit_price"]) + (cart_item["quantity"] * cart_item.get("extras_cost", 0))
+            self.current_total += item_total
+            self.ticket_panel.update_total(self.current_total)
+            
+            print(f"Item added to cart. New total: ₱{self.current_total:.2f}")
+            
         except Exception as e:
             print(f"Error adding item to cart: {e}")
+            messagebox.showerror("Error", f"Failed to add item to cart: {e}")
 
-    def handle_split_popup(self, total):
+    def remove_item(self, product_name, item_total):
+        """Handle item removal from cart"""
         try:
-            self.ticket_panel.open_split_popup(total)
+            # Update total
+            self.current_total -= item_total
+            self.ticket_panel.update_total(self.current_total)
+            
+            # Remove from cart items list
+            self.cart_items = [item for item in self.cart_items if not (
+                item["name"] == product_name and 
+                (item["quantity"] * item["unit_price"]) == item_total
+            )]
+            
+            print(f"Item removed. New total: ₱{self.current_total:.2f}")
+            
         except Exception as e:
-            print(f"Error opening split popup: {e}")
-        
+            print(f"Error removing item: {e}")
+
+    # Navigation methods
+    def show_ticket(self):
+        """Already on ticket page"""
+        pass
+
+    def show_receipt(self):
+        """Navigate to receipt page"""
+        try:
+            from receipt.sales_history import SalesHistoryMain
+            self.root.withdraw()
+            self.root.after(100, lambda: self._delayed_receipt_launch())
+        except Exception as e:
+            print(f"Error navigating to receipt: {e}")
+
+    def _delayed_receipt_launch(self):
+        try:
+            from receipt.sales_history import SalesHistoryMain
+            self.root.destroy()
+            receipt_page = SalesHistoryMain(self.user_role)
+            receipt_page.run()
+        except Exception as e:
+            print(f"Error launching receipt page: {e}")
+
+    def show_inventory(self):
+        """Navigate to inventory page"""
+        try:
+            from inventory.inventory_page import InventoryManagement
+            self.root.withdraw()
+            self.root.after(100, lambda: self._delayed_inventory_launch())
+        except Exception as e:
+            print(f"Error navigating to inventory: {e}")
+
+    def _delayed_inventory_launch(self):
+        try:
+            from inventory.inventory_page import InventoryManagement
+            self.root.destroy()
+            inventory_page = InventoryManagement(self.user_role)
+            inventory_page.run()
+        except Exception as e:
+            print(f"Error launching inventory page: {e}")
+
+    def show_staff(self):
+        """Navigate to staff page"""
+        try:
+            self.root.withdraw()
+            self.root.after(100, lambda: self._delayed_staff_launch())
+        except Exception as e:
+            print(f"Error navigating to staff: {e}")
+
+    def _delayed_staff_launch(self):
+        try:
+            self.root.destroy()
+            if self.user_role == "admin":
+                from staff.staff_admin import StaffPageAdmin
+                StaffPageAdmin(user_role="admin").run()
+            else:
+                from staff.staff_employee import StaffPageEmployee
+                StaffPageEmployee(user_role="employee").run()
+        except Exception as e:
+            print(f"Error launching staff page: {e}")
+
+    def show_cashbox(self):
+        """Navigate to cashbox page"""
+        try:
+            from cash_box.cashbox_page import CashBoxApp
+            self.root.withdraw()
+            self.root.after(100, lambda: self._delayed_cashbox_launch())
+        except Exception as e:
+            print(f"Error navigating to cashbox: {e}")
+
+    def _delayed_cashbox_launch(self):
+        try:
+            from cash_box.cashbox_page import CashBoxApp
+            self.root.destroy()
+            cashbox_page = CashBoxApp(self.user_role)
+            cashbox_page.run()
+        except Exception as e:
+            print(f"Error launching cashbox page: {e}")
+
+    def show_dashboard(self):
+        """Navigate to dashboard page"""
+        try:
+            from dashboard.sales_dashboard import SalesDashboard
+            self.root.withdraw()
+            self.root.after(100, lambda: self._delayed_dashboard_launch())
+        except Exception as e:
+            print(f"Error navigating to dashboard: {e}")
+
+    def _delayed_dashboard_launch(self):
+        try:
+            from dashboard.sales_dashboard import SalesDashboard
+            self.root.destroy()
+            dashboard_page = SalesDashboard(self.user_role)
+            dashboard_page.run()
+        except Exception as e:
+            print(f"Error launching dashboard page: {e}")
+
     def run(self):
-        """Start the application with error handling"""
+        """Start the application"""
         try:
-            print("Starting Ticket Page Application...")
-            self.mainloop()
+            self.root.mainloop()
         except Exception as e:
-            print(f"Error running application: {e}")
+            print(f"Error running TicketMainPage: {e}")
+            messagebox.showerror("Fatal Error", f"Application failed to start: {e}")
         finally:
             try:
-                if not self._switching_page:
-                    self.destroy()
+                self.root.destroy()
             except:
                 pass
-    
-    def mainloop(self):
-        """Override mainloop to handle recursion issues"""
-        try:
-            super().mainloop()
-        except RecursionError as e:
-            print(f"Recursion error caught: {e}")
-            print("This usually indicates circular imports or infinite callback loops")
-        except Exception as e:
-            print(f"Error in mainloop: {e}")
 
-# Alternative entry point function to avoid recursion issues
-def create_ticket_app(user_role="employee"):
-    """Factory function to create the ticket application"""
-    try:
-        app = TicketMainPage(user_role=user_role)
-        return app
-    except Exception as e:
-        print(f"Error creating ticket app: {e}")
-        return None
+    def mainloop(self):
+        """Alternative method name for compatibility"""
+        self.run()
 

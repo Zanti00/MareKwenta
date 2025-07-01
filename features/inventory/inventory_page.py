@@ -6,6 +6,8 @@ import threading
 import time
 from .add_quantity import AddQuantityPopup
 from .edit import EditInventoryPopup
+from .inventory_controller import InventoryController
+
 from staff.staff_admin import StaffPageAdmin
 from staff.staff_employee import StaffPageEmployee
 
@@ -29,9 +31,7 @@ class InventoryManagement:
         ctk.set_default_color_theme("blue")
         
         # Sample data for demonstration
-        self.inventory_data = [
-            {"ingredient": "Milk", "quantity": "123", "measurement": "ml", "cost": "25.50", "status": "In Stock", "color": "#0a8a06"}
-        ]
+        self.inventory_data = []
         
         # Performance tracking
         self.is_updating = False
@@ -45,7 +45,8 @@ class InventoryManagement:
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
         self.setup_ui()
-        
+        self.load_inventory_from_db()  # <-- Add this line
+    
     def on_closing(self):
         """Handle window closing"""
         try:
@@ -336,9 +337,9 @@ class InventoryManagement:
                     status_label = ctk.CTkLabel(
                         self.inventory_container,
                         text=item["status"],
-                        font=ctk.CTkFont("Inter", size=15, weight="bold"),
-                        text_color="#0a8a06",
-                        anchor="center"  # Center align like create ingredient panel
+                        font=ctk.CTkFont("Inter", size=12, weight="bold"),
+                        text_color=item["color"],
+                        anchor="center"
                     )
                     status_label.grid(row=2*i, column=3, pady=8, padx=self.header_padx, sticky="ew")
                     
@@ -382,57 +383,45 @@ class InventoryManagement:
             cost = self.cost_entry.get().strip()
             restock_point = self.restock_point_entry.get().strip()
             measurement = self.measurement_combo.get()
-            
+            restock_point = self.restock_point_entry.get().strip()
+
             # Validate input
             if not ingredient_name:
                 messagebox.showwarning("Validation Error", "Please enter an ingredient name")
                 return
-                
             if not amount_stock:
                 messagebox.showwarning("Validation Error", "Please enter amount in stock")
                 return
-                
             if not cost:
                 messagebox.showwarning("Validation Error", "Please enter cost")
                 return
-
+            if measurement == "Unit":
+                messagebox.showwarning("Validation Error", "Please select a unit of measurement")
+                return
             if not restock_point:
                 messagebox.showwarning("Validation Error", "Please enter restock point")
                 return
-                
-            if measurement not in ["mg", "ml", "grams", "oz", "pcs"]:
-                messagebox.showwarning("Validation Error", "Please select a unit of measurement")
-                return
-            
+
             # Validate numeric values
             try:
                 float(amount_stock)
                 float(cost)
-                float(restock_point)
+                int(restock_point)
             except ValueError:
                 messagebox.showerror("Validation Error", "Amount, cost, and restock point must be valid numbers")
                 return
-            
-            # Add new ingredient to data
-            new_ingredient = {
-                "ingredient": ingredient_name,
-                "quantity": amount_stock,
-                "measurement": measurement,
-                "cost": cost,
-                "restock_point": restock_point,
-                "status": "In Stock",
-                "color": "#0a8a06"
-            }
-            self.inventory_data.append(new_ingredient)
-            
-            # Clear input fields
-            self.clear_input_fields()
-            
-            # Refresh the inventory display
-            self.display_inventory_items()
-            
-            messagebox.showinfo("Success", f"Ingredient '{ingredient_name}' saved successfully!")
-            
+
+            # Add new ingredient to database via controller
+            success = InventoryController.add_inventory(
+                ingredient_name, amount_stock, measurement, cost, restock_point
+            )
+            if success:
+                self.clear_input_fields()
+                self.load_inventory_from_db()  # Reload from DB
+                messagebox.showinfo("Success", f"Ingredient '{ingredient_name}' saved successfully!")
+            else:
+                messagebox.showerror("Error", "Failed to save ingredient to database.")
+
         except Exception as e:
             print(f"Error saving ingredient: {e}")
             messagebox.showerror("Error", f"Failed to save ingredient: {e}")
@@ -443,8 +432,8 @@ class InventoryManagement:
             self.ingredient_name_entry.delete(0, 'end')
             self.amount_stock_entry.delete(0, 'end')
             self.cost_entry.delete(0, 'end')
+            self.measurement_combo.set("Unit")
             self.restock_point_entry.delete(0, 'end')
-            self.measurement_combo.set("mg")
         except Exception as e:
             print(f"Error clearing input fields: {e}")
     
@@ -461,7 +450,6 @@ class InventoryManagement:
                         if not qty:
                             messagebox.showwarning("Validation Error", "Please enter a quantity")
                             return
-                        # Try to add as float, fallback to int
                         try:
                             qty_val = float(qty)
                         except ValueError:
@@ -473,35 +461,56 @@ class InventoryManagement:
                         except ValueError:
                             current_qty_val = 0
                         new_qty = current_qty_val + qty_val
-                        # If original was int, keep as int
-                        if current_qty.isdigit() and qty.isdigit():
-                            new_qty = int(new_qty)
-                        self.inventory_data[index]["quantity"] = str(new_qty)
-                        self.display_inventory_items()
-                        messagebox.showinfo("Success", f"Added {qty} to {self.inventory_data[index]['ingredient']}. New quantity: {new_qty}")
+
+                        inventory_id = self.inventory_data[index].get("inventory_id")
+                        if inventory_id is not None:
+                            success = InventoryController.update_quantity_by_id(inventory_id, new_qty)
+                            if success:
+                                self.load_inventory_from_db()
+                                messagebox.showinfo("Success", "Quantity updated successfully!")
+                            else:
+                                messagebox.showerror("Error", "Failed to update quantity in database.")
+                        else:
+                            messagebox.showerror("Error", "No inventory_id found for this item.")
                     except Exception as e:
-                        print(f"Error adding quantity: {e}")
-                        messagebox.showerror("Error", f"Failed to add quantity: {e}")
+                        print(f"Error updating quantity: {e}")
+                        messagebox.showerror("Error", f"Failed to update quantity: {e}")
+
                 AddQuantityPopup(self.root, on_save=on_save)
             elif action == "Edit":
                 item_data = self.inventory_data[index].copy()
-                def on_edit_save(name, qty, measurement, cost, status):
-                    self.inventory_data[index]["ingredient"] = name
-                    self.inventory_data[index]["quantity"] = qty
-                    self.inventory_data[index]["measurement"] = measurement
-                    self.inventory_data[index]["cost"] = cost
-                    self.inventory_data[index]["status"] = status
-                    self.display_inventory_items()
-                    messagebox.showinfo("Success", f"Ingredient '{name}' updated successfully!")
+                def on_edit_save(name, qty, measurement, cost, restock_point):
+                    inventory_id = self.inventory_data[index].get("inventory_id")
+                    if inventory_id is not None:
+                        success = InventoryController.update_inventory_by_id(
+                            inventory_id, name, qty, measurement, cost, restock_point
+                        )
+                        if success:
+                            self.load_inventory_from_db()
+                            messagebox.showinfo("Success", f"Ingredient '{name}' updated successfully!")
+                        else:
+                            messagebox.showerror("Error", "Failed to update ingredient in database.")
+                    else:
+                        messagebox.showerror("Error", "No inventory_id found for this item.")
                 EditInventoryPopup(self.root, item_data, on_save=on_edit_save)
             elif action == "Delete":
-                result = messagebox.askyesno("Confirm Delete", 
-                                           f"Are you sure you want to delete '{self.inventory_data[index]['ingredient']}'?")
+                result = messagebox.askyesno(
+                    "Confirm Delete",
+                    f"Are you sure you want to delete '{self.inventory_data[index]['ingredient']}'?"
+                )
                 if result:
-                    print(f"Delete ingredient at index {index}: {self.inventory_data[index]['ingredient']}")
-                    self.inventory_data.pop(index)
-                    self.display_inventory_items()
-                    messagebox.showinfo("Success", "Ingredient deleted successfully!")
+                    inventory_id = self.inventory_data[index].get("inventory_id")
+                    if inventory_id is not None:
+                        success = InventoryController.delete_inventory_by_id(inventory_id)
+                        if success:
+                            print(f"Deleted ingredient with id {inventory_id}")
+                            self.inventory_data.pop(index)
+                            self.display_inventory_items()
+                            messagebox.showinfo("Success", "Ingredient deleted successfully!")
+                        else:
+                            messagebox.showerror("Error", "Failed to delete ingredient from database.")
+                    else:
+                        messagebox.showerror("Error", "No inventory_id found for this item.")
         except Exception as e:
             print(f"Error handling action: {e}")
             messagebox.showerror("Error", f"Failed to perform action: {e}")
@@ -559,3 +568,34 @@ class InventoryManagement:
     def mainloop(self):
         """Alternative method name for compatibility"""
         self.run()
+
+    def load_inventory_from_db(self):
+        """Fetch inventory from DB and update the UI."""
+        try:
+            raw_data = InventoryController.get_all_inventory()
+            self.inventory_data = []
+            for item in raw_data:
+                try:
+                    qty = float(item["quantity"])
+                    rpoint = float(item["restock_point"])
+                    if qty < rpoint:
+                        status = "Restock Needed"
+                        color = "#f73e3e"
+                    elif rpoint <= qty <= rpoint + (rpoint * 0.3):
+                        status = "Low Stock"
+                        color = "#e8bb6d"
+                    else:
+                        status = "In Stock"
+                        color = "#0a8a06"
+                    item["status"] = status
+                    item["color"] = color
+                    self.inventory_data.append(item)
+                except Exception as e:
+                    print(f"Error computing status/color: {e}")
+                    item["status"] = "Unknown"
+                    item["color"] = "#a00"
+                    self.inventory_data.append(item)
+            self.display_inventory_items()
+        except Exception as e:
+            print(f"Error loading inventory from DB: {e}")
+            messagebox.showerror("Error", f"Failed to load inventory from database: {e}")

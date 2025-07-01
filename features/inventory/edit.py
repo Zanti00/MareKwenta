@@ -4,7 +4,7 @@ class EditInventoryPopup(ctk.CTkToplevel):
     def __init__(self, parent, item_data, on_save=None):
         super().__init__(parent)
         self.title("Edit Inventory Item")
-        self.geometry("350x450")
+        self.geometry("370x500")
         self.resizable(False, False)
         self.configure(fg_color="#f7f4f1", border_width=1, border_color="#7c5a3a")
         self.grab_set()  # Modal
@@ -114,13 +114,35 @@ class EditInventoryPopup(ctk.CTkToplevel):
             corner_radius=8,
             text_color="#4e2d18"
         )
-        self.cost_entry.grid(row=row, column=0, sticky="ew", pady=(0, 12))
+        self.cost_entry.grid(row=row, column=0, sticky="ew", pady=(0, 12))  # Reduced from (0, 24)
         self.cost_entry.insert(0, item_data.get("cost", ""))
+        row += 1
+
+        # Restock Point
+        restock_label = ctk.CTkLabel(
+            main_frame,
+            text="Restock Point",
+            font=ctk.CTkFont("Inter", size=14, weight="bold"),
+            text_color="#4e2d18"
+        )
+        restock_label.grid(row=row, column=0, sticky="w")
+        row += 1
+        self.restock_entry = ctk.CTkEntry(
+            main_frame,
+            placeholder_text="Restock Point",
+            font=ctk.CTkFont("Inter", size=13),
+            fg_color="#ffffff",
+            border_color="#d1d5db",
+            corner_radius=8,
+            text_color="#4e2d18"
+        )
+        self.restock_entry.grid(row=row, column=0, sticky="ew", pady=(0, 12))  # Reduced from (0, 24)
+        self.restock_entry.insert(0, item_data.get("restock_point", ""))
         row += 1
 
         # Button frame
         btn_frame = ctk.CTkFrame(main_frame, fg_color="#f7f4f1")
-        btn_frame.grid(row=row, column=0, sticky="ew", pady=(10, 0))
+        btn_frame.grid(row=row, column=0, sticky="ew", pady=(6, 0))  # Reduced top padding
         btn_frame.grid_columnconfigure(0, weight=1)
         btn_frame.grid_columnconfigure(1, weight=1)
 
@@ -155,6 +177,7 @@ class EditInventoryPopup(ctk.CTkToplevel):
         qty = self.qty_entry.get().strip()
         measurement = self.measurement_combo.get()
         cost = self.cost_entry.get().strip()
+        restock_point = self.restock_entry.get().strip()
         if self.on_save:
-            self.on_save(name, qty, measurement, cost)
+            self.on_save(name, qty, measurement, cost, restock_point)
         self.destroy()

@@ -1,2 +1,6 @@
 *.db
 *.pyc
+*/venv/
+*venv/
+/venv
+venv/
