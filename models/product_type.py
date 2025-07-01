@@ -18,8 +18,8 @@ try:
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS product_type (
             product_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            size VARCHAR(50) NOT NULL,
-            temperature VARCHAR(50) NOT NULL,
+            size VARCHAR(50),
+            temperature VARCHAR(50),
             product_id INTEGER NOT NULL,
             unit_price DECIMAL(10,2) NOT NULL,
             FOREIGN KEY (product_id) REFERENCES products(product_id)

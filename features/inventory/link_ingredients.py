@@ -7,24 +7,7 @@ from staff.staff_admin import StaffPageAdmin
 from staff.staff_employee import StaffPageEmployee
 import tkinter.filedialog as fd
 from PIL import Image, ImageTk
-
-# Product list copied from ticket/product_panel.py
-PRODUCTS = [
-    {"name": "Americano", "image": "americano.png", "category": "Coffee", "type": "Coffee"},
-    {"name": "Cafe Latte", "image": "cafe_latte.png", "category": "Coffee", "type": "Coffee"},
-    {"name": "Caramel Macchiato", "image": "caramel_macc.png", "category": "Coffee", "type": "Coffee"},
-    {"name": "Mocha", "image": "mocha.png", "category": "Coffee", "type": "Coffee"},
-    {"name": "Cappuccino", "image": "cappuccino.png", "category": "Coffee", "type": "Coffee"},
-    {"name": "Matcha Latte", "image": "matcha.png", "category": "Non-Coffee", "type": "Matcha"},
-    {"name": "Chocolate", "image": "chocolate.png", "category": "Non-Coffee", "type": "Chocolate"},
-    {"name": "Strawberry Frappe", "image": "sb_frappe.png", "category": "Non-Coffee", "type": "Frappe"},
-    {"name": "Caramel Frappe", "image": "caramel_frappe.png", "category": "Non-Coffee", "type": "Frappe"},
-    {"name": "Chocolate Chip Frappe", "image": "choc_chip_frappe.png", "category": "Non-Coffee", "type": "Frappe"},
-    {"name": "Tocilog", "image": "tocilog.png", "category": "Food", "type": "Food"},
-    {"name": "Garlic Rice", "image": "garlic_rice.png", "category": "Food", "type": "Food"},
-    {"name": "Pork Siomai Rice", "image": "pork_siomai_rice.png", "category": "Food", "type": "Food"},
-    {"name": "Hamsilog", "image": "hamsilog.png", "category": "Food", "type": "Food"},
-]
+from .product_controller import ProductController
 
 class AddProductDialog:
     def __init__(self, parent, on_save=None):
@@ -32,7 +15,7 @@ class AddProductDialog:
         self.on_save = on_save
         self.dialog = ctk.CTkToplevel(parent)
         self.dialog.title("Add Product")
-        self.dialog.geometry("420x580")
+        self.dialog.geometry("420x480")
         self.dialog.configure(fg_color="#f2efea")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -46,27 +29,24 @@ class AddProductDialog:
     def center_popup(self, parent):
         self.dialog.update_idletasks()
         w = 420
-        h = 580
+        h = 480
         x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (w // 2)
         y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (h // 2)
         self.dialog.geometry(f"{w}x{h}+{x}+{y}")
 
     def setup_form(self):
         self.dialog.grid_columnconfigure(0, weight=1)
-        row = 0
         card = ctk.CTkFrame(self.dialog, fg_color="#ffffff", corner_radius=20)
         card.grid(row=0, column=0, padx=24, pady=24, sticky="nsew")
         card.grid_columnconfigure(0, weight=1)
-        card.grid_rowconfigure(99, weight=1)
         card_row = 0
-        self.image_label = ctk.CTkLabel(card, text="No Image", width=120, height=120, fg_color="#e0e0e0", corner_radius=16)
-        self.image_label.grid(row=card_row, column=0, pady=(18, 8))
-        upload_btn = ctk.CTkButton(
-            card, text="Upload Image", width=120, height=32, fg_color="#4e2d18", hover_color="#3a1f0f",
-            font=ctk.CTkFont(family="Inter", size=12, weight="bold"), corner_radius=12, command=self.upload_image
-        )
-        upload_btn.grid(row=card_row+1, column=0, pady=(0, 16))
-        card_row += 2
+
+        # Note about image (since CTK image is having issues)
+        note_label = ctk.CTkLabel(card, text="(Image upload temporarily disabled)", 
+                                 font=ctk.CTkFont("Inter", size=11), text_color="#666666")
+        note_label.grid(row=card_row, column=0, pady=(18, 16))
+        card_row += 1
+
         # Category selection
         cat_label = ctk.CTkLabel(card, text="Category", font=ctk.CTkFont("Unbounded", 15, "bold"), text_color="#4d2d18")
         cat_label.grid(row=card_row, column=0, sticky="w", padx=16, pady=(8, 2))
@@ -74,58 +54,45 @@ class AddProductDialog:
         cat_frame = ctk.CTkFrame(card, fg_color="transparent")
         cat_frame.grid(row=card_row, column=0, sticky="w", padx=16, pady=(0, 10))
         for cat in ["Coffee", "Non-Coffee", "Food"]:
-            ctk.CTkRadioButton(cat_frame, text=cat, variable=self.category, value=cat, font=ctk.CTkFont("Inter", 13), text_color="#4e2d18").pack(side="left", padx=8)
+            ctk.CTkRadioButton(cat_frame, text=cat, variable=self.category, value=cat, 
+                             font=ctk.CTkFont("Inter", 13), text_color="#4e2d18").pack(side="left", padx=8)
         card_row += 1
-        name_label = ctk.CTkLabel(
-            card, text="Product Name", font=ctk.CTkFont(family="Unbounded", size=15, weight="bold"), text_color="#4d2d18"
-        )
+
+        # Product name
+        name_label = ctk.CTkLabel(card, text="Product Name", font=ctk.CTkFont("Unbounded", 15, "bold"), text_color="#4d2d18")
         name_label.grid(row=card_row, column=0, sticky="w", padx=16, pady=(8, 2))
         card_row += 1
-        self.name_entry = ctk.CTkEntry(
-            card, width=300, height=38, font=ctk.CTkFont(family="Inter", size=14), corner_radius=10, fg_color="#f7f3ee"
-        )
+        self.name_entry = ctk.CTkEntry(card, width=300, height=38, font=ctk.CTkFont("Inter", 14), 
+                                      corner_radius=10, fg_color="#f7f3ee")
         self.name_entry.grid(row=card_row, column=0, padx=16, pady=(0, 10), sticky="ew")
         card_row += 1
-        price_label = ctk.CTkLabel(
-            card, text="Selling Price", font=ctk.CTkFont(family="Unbounded", size=15, weight="bold"), text_color="#4d2d18"
-        )
+
+        # Selling price
+        price_label = ctk.CTkLabel(card, text="Selling Price", font=ctk.CTkFont("Unbounded", 15, "bold"), text_color="#4d2d18")
         price_label.grid(row=card_row, column=0, sticky="w", padx=16, pady=(8, 2))
         card_row += 1
-        self.price_entry = ctk.CTkEntry(
-            card, width=300, height=38, font=ctk.CTkFont(family="Inter", size=14), corner_radius=10, fg_color="#f7f3ee"
-        )
+        self.price_entry = ctk.CTkEntry(card, width=300, height=38, font=ctk.CTkFont("Inter", 14), 
+                                       corner_radius=10, fg_color="#f7f3ee")
         self.price_entry.grid(row=card_row, column=0, padx=16, pady=(0, 10), sticky="ew")
         card_row += 1
+
+        # Buttons
         button_frame = ctk.CTkFrame(card, fg_color="transparent")
         button_frame.grid(row=card_row, column=0, pady=18)
-        save_button = ctk.CTkButton(
-            button_frame, text="Save", width=110, height=38, font=ctk.CTkFont(family="Inter", size=14, weight="bold"),
-            fg_color="#4e2d18", hover_color="#3a1f0f", corner_radius=12, command=self.save_product
-        )
+        save_button = ctk.CTkButton(button_frame, text="Save", width=110, height=38, 
+                                   font=ctk.CTkFont("Inter", 14, "bold"), fg_color="#4e2d18", 
+                                   hover_color="#3a1f0f", corner_radius=12, command=self.save_product)
         save_button.grid(row=0, column=0, padx=(0, 10))
-        cancel_button = ctk.CTkButton(
-            button_frame, text="Cancel", width=110, height=38, font=ctk.CTkFont(family="Inter", size=14),
-            fg_color="#666666", hover_color="#555555", corner_radius=12, command=self.cancel
-        )
+        cancel_button = ctk.CTkButton(button_frame, text="Cancel", width=110, height=38, 
+                                     font=ctk.CTkFont("Inter", 14), fg_color="#666666", 
+                                     hover_color="#555555", corner_radius=12, command=self.cancel)
         cancel_button.grid(row=0, column=1)
-
-    def upload_image(self):
-        filetypes = [
-            ("Image files", "*.png *.jpg *.jpeg *.gif *.bmp"),
-            ("All files", "*.*")
-        ]
-        path = fd.askopenfilename(title="Select Product Image", filetypes=filetypes)
-        if path:
-            self.image_path = path
-            img = Image.open(path)
-            img.thumbnail((120, 120))
-            self.tk_img = ImageTk.PhotoImage(img)
-            self.image_label.configure(image=self.tk_img, text="")
 
     def save_product(self):
         name = self.name_entry.get().strip()
         price_str = self.price_entry.get().strip()
         category = self.category.get()
+        
         if not name:
             messagebox.showerror("Error", "Please enter a product name")
             return
@@ -139,15 +106,17 @@ class AddProductDialog:
         except ValueError:
             messagebox.showerror("Error", "Please enter a valid positive price")
             return
-        self.result = {
-            "name": name,
-            "price": price,
-            "category": category,
-            "image_path": self.image_path
-        }
-        if self.on_save:
-            self.on_save(self.result)
-        self.dialog.destroy()
+
+        # Save to database
+        success = ProductController.add_product(name, price, category, None)
+        if success:
+            self.result = {"name": name, "price": price, "category": category, "image_path": None}
+            if self.on_save:
+                self.on_save(self.result)
+            messagebox.showinfo("Success", f"Product '{name}' added successfully!")
+            self.dialog.destroy()
+        else:
+            messagebox.showerror("Error", "Failed to save product to database")
 
     def cancel(self):
         self.dialog.destroy()
@@ -211,7 +180,7 @@ class LinkIngredientFinalPopup(ctk.CTkToplevel):
         self.on_save_link = on_save_link
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        ctk.CTkLabel(self, text=summary, font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4e2d18").grid(row=0, column=0, pady=(18, 10), sticky="n")
+        ctk.CTkLabel(self, text=summary, font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4d2d18").grid(row=0, column=0, pady=(18, 10), sticky="n")
         self.entries_scroll = ctk.CTkScrollableFrame(self, fg_color="#ffffff", corner_radius=14, width=440, height=340)
         self.entries_scroll.grid(row=1, column=0, padx=18, pady=10, sticky="nsew")
         self.add_entry_row()
@@ -262,14 +231,14 @@ class ViewLinkedIngredientsPopup(ctk.CTkToplevel):
         self.grab_set()
         self.resizable(False, False)
         self.center_popup(parent)
-        ctk.CTkLabel(self, text=product_name, font=ctk.CTkFont("Unbounded", 18, "bold"), text_color="#4e2d18").pack(pady=(18, 10))
+        ctk.CTkLabel(self, text=product_name, font=ctk.CTkFont("Unbounded", 18, "bold"), text_color="#4d2d18").pack(pady=(18, 10))
         scroll = ctk.CTkScrollableFrame(self, fg_color="#ffffff", corner_radius=14, width=440, height=400)
         scroll.pack(padx=18, pady=10, fill="both", expand=True)
         if not linked_data:
             ctk.CTkLabel(scroll, text="No linked ingredients.", font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(pady=20)
         else:
             for group in linked_data:
-                ctk.CTkLabel(scroll, text=group['summary'], font=ctk.CTkFont("Unbounded", 15, "bold"), text_color="#4e2d18").pack(anchor="w", pady=(12, 2), padx=10)
+                ctk.CTkLabel(scroll, text=group['summary'], font=ctk.CTkFont("Unbounded", 15, "bold"), text_color="#4d2d18").pack(anchor="w", pady=(12, 2), padx=10)
                 for qty, ingredient in group['ingredients']:
                     row = f"{qty:<8} {ingredient}"
                     ctk.CTkLabel(scroll, text=row, font=ctk.CTkFont("Inter", 14), text_color="#4e2d18", anchor="w").pack(anchor="w", padx=30)
@@ -298,7 +267,7 @@ class EditLinkedIngredientsPopup(ctk.CTkToplevel):
         self.on_save_edit = on_save_edit
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        ctk.CTkLabel(self, text=summary, font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4e2d18").grid(row=0, column=0, pady=(18, 10), sticky="n")
+        ctk.CTkLabel(self, text=summary, font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4d2d18").grid(row=0, column=0, pady=(18, 10), sticky="n")
         self.entries_scroll = ctk.CTkScrollableFrame(self, fg_color="#ffffff", corner_radius=14, width=440, height=340)
         self.entries_scroll.grid(row=1, column=0, padx=18, pady=10, sticky="nsew")
         for qty, ingredient in initial_ingredients:
@@ -359,9 +328,10 @@ class LinkIngredientsPage:
         self.root.grid_columnconfigure(1, weight=1)
         self.root.grid_rowconfigure(0, weight=1)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-        self.products = PRODUCTS.copy()  # Make products dynamic
-        self.linked_ingredients = {}  # {product_name: [{summary, ingredients: [(qty, ingredient), ...]}, ...]}
+        self.products = []  # Will be loaded from database
+        self.linked_ingredients = {}
         self.setup_ui()
+        self.load_products_from_db()
 
     def on_closing(self):
         try:
@@ -395,7 +365,7 @@ class LinkIngredientsPage:
             header_frame,
             text="Link Ingredient",
             font=ctk.CTkFont("Unbounded", size=36, weight="bold"),
-            text_color="#4e2d18"
+            text_color="#4d2d18"
         )
         header_label.grid(row=0, column=0, sticky="w")
 
@@ -431,35 +401,60 @@ class LinkIngredientsPage:
         separator.pack(pady=(2, 0))
 
     def setup_product_list(self):
-        # Remove old list_frame if it exists
         if hasattr(self, 'list_frame'):
             self.list_frame.destroy()
         self.list_frame = ctk.CTkFrame(self.main_frame, fg_color="#f2efea", corner_radius=16)
         self.list_frame.grid(row=2, column=0, sticky="nsew", padx=0, pady=(0, 20))
         self.list_frame.grid_columnconfigure(0, weight=1)
         self.main_frame.grid_rowconfigure(2, weight=1)
-        # Set scrollable to a fixed, smaller width and center it
+        
         self.scrollable = ctk.CTkScrollableFrame(self.list_frame, fg_color="#f2efea", height=500, width=950)
         self.scrollable.grid(row=0, column=0, sticky="n", pady=(20, 20))
         self.scrollable.grid_columnconfigure(0, weight=1)
         self.refresh_product_list()
 
     def refresh_product_list(self):
-        # Clear current widgets
         for widget in self.scrollable.winfo_children():
             widget.destroy()
+            
+        if not self.products:
+            # Show message when no products
+            no_products_label = ctk.CTkLabel(
+                self.scrollable,
+                text="No products found. Click the + button to add a product.",
+                font=ctk.CTkFont("Inter", size=16),
+                text_color="#666666"
+            )
+            no_products_label.grid(row=0, column=0, pady=50)
+            return
+            
         for idx, product in enumerate(self.products):
             container = ctk.CTkFrame(self.scrollable, fg_color="#ffffff", corner_radius=16)
             container.grid(row=idx, column=0, sticky="ew", pady=8, padx=10)
             container.grid_columnconfigure(0, weight=1)
             container.grid_rowconfigure(0, minsize=100)
+            
+            # Product info frame
+            info_frame = ctk.CTkFrame(container, fg_color="transparent")
+            info_frame.grid(row=0, column=0, sticky="w", padx=(20, 10), pady=10)
+            
             name_label = ctk.CTkLabel(
-                container,
+                info_frame,
                 text=product["name"],
                 font=ctk.CTkFont("Unbounded", size=16, weight="bold"),
                 text_color="#4e2d18"
             )
-            name_label.grid(row=0, column=0, sticky="w", padx=(20, 10), pady=0)
+            name_label.grid(row=0, column=0, sticky="w")
+            
+            # Category and price info
+            details_label = ctk.CTkLabel(
+                info_frame,
+                text=f"{product['category']} • ₱{product['selling_price']:.2f}",
+                font=ctk.CTkFont("Inter", size=12),
+                text_color="#666666"
+            )
+            details_label.grid(row=1, column=0, sticky="w", pady=(2, 0))
+            
             action_combo = ctk.CTkOptionMenu(
                 container,
                 values=["Link Ingredients", "View", "Edit", "Delete"],
@@ -477,6 +472,15 @@ class LinkIngredientsPage:
             )
             action_combo.set("Action")
             action_combo.grid(row=0, column=1, padx=(10, 20), pady=0)
+
+    def load_products_from_db(self):
+        """Load products from database"""
+        try:
+            self.products = ProductController.get_all_products()
+            self.refresh_product_list()
+        except Exception as e:
+            print(f"Error loading products: {e}")
+            messagebox.showerror("Error", f"Failed to load products: {e}")
 
     def setup_fab(self):
         # Floating Action Button (FAB) with a plus sign
@@ -497,15 +501,13 @@ class LinkIngredientsPage:
 
     def on_fab_click(self):
         def on_save(product):
-            self.products.append(product)
-            self.refresh_product_list()
+            self.load_products_from_db()  # Reload from database
         AddProductDialog(self.root, on_save=on_save)
 
     def handle_action(self, product, action):
         if action == "Link Ingredients":
             category = product.get("category", "")
             if category in ["Coffee", "Non-Coffee"]:
-                # Find already-linked (size, temp) combinations for this product
                 linked_data = self.linked_ingredients.get(product['name'], [])
                 disabled_combos = []
                 for group in linked_data:
@@ -527,47 +529,17 @@ class LinkIngredientsPage:
             linked_data = self.linked_ingredients.get(product['name'], [])
             ViewLinkedIngredientsPopup(self.root, product['name'], linked_data)
         elif action == "Edit":
-            category = product.get("category", "")
-            if category in ["Coffee", "Non-Coffee"]:
-                def after_size_temp(size, temp):
-                    summary = f"{product['name']} | {category} {size} {temp}"
-                    inventory_list = ["Milk", "Sugar", "Espresso"]
-                    # Find the linked group for this summary
-                    linked_data = self.linked_ingredients.get(product['name'], [])
-                    group = next((g for g in linked_data if g['summary'] == summary), None)
-                    initial_ingredients = group['ingredients'] if group else []
-                    def on_save_edit(product_name, summary, ingredients):
-                        # Replace the group in linked_ingredients
-                        if product_name in self.linked_ingredients:
-                            for g in self.linked_ingredients[product_name]:
-                                if g['summary'] == summary:
-                                    g['ingredients'] = ingredients
-                                    break
-                            else:
-                                self.linked_ingredients[product_name].append({'summary': summary, 'ingredients': ingredients})
-                        else:
-                            self.linked_ingredients[product_name] = [{'summary': summary, 'ingredients': ingredients}]
-                    EditLinkedIngredientsPopup(self.root, product['name'], summary, inventory_list, initial_ingredients, on_save_edit=on_save_edit)
-                SizeTempPopup(self.root, after_size_temp)
-            else:
-                summary = f"{product['name']} | {category}"
-                inventory_list = ["Milk", "Sugar", "Espresso"]
-                linked_data = self.linked_ingredients.get(product['name'], [])
-                group = next((g for g in linked_data if g['summary'] == summary), None)
-                initial_ingredients = group['ingredients'] if group else []
-                def on_save_edit(product_name, summary, ingredients):
-                    if product_name in self.linked_ingredients:
-                        for g in self.linked_ingredients[product_name]:
-                            if g['summary'] == summary:
-                                g['ingredients'] = ingredients
-                                break
-                        else:
-                            self.linked_ingredients[product_name].append({'summary': summary, 'ingredients': ingredients})
-                    else:
-                        self.linked_ingredients[product_name] = [{'summary': summary, 'ingredients': ingredients}]
-                EditLinkedIngredientsPopup(self.root, product['name'], summary, inventory_list, initial_ingredients, on_save_edit=on_save_edit)
-        else:
-            messagebox.showinfo("Action", f"{action} for product: {product['name']}")
+            # TODO: Implement edit product functionality
+            messagebox.showinfo("Edit", f"Edit functionality for '{product['name']}' will be implemented next")
+        elif action == "Delete":
+            result = messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{product['name']}'?")
+            if result:
+                success = ProductController.delete_product_by_id(product['product_id'])
+                if success:
+                    self.load_products_from_db()
+                    messagebox.showinfo("Success", "Product deleted successfully!")
+                else:
+                    messagebox.showerror("Error", "Failed to delete product from database")
 
     def show_inventory(self):
         self.root.destroy()

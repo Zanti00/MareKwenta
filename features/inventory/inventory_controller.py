@@ -1,11 +1,13 @@
 import sqlite3
+import os
 
 
 
 class InventoryController:
     @staticmethod
     def connect_db():
-        db_name = "mare_kwenta.db"
+        base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        db_name = os.path.join(base_path, "mare_kwenta.db")
         try:
             conn = sqlite3.connect(db_name)
             return conn
