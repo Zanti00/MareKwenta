@@ -1,5 +1,6 @@
 import customtkinter as ctk
-from PIL import Image, ImageTk
+from PIL import Image
+from customtkinter import CTkImage
 import os
 
 class ProductButton(ctk.CTkFrame):
@@ -22,9 +23,9 @@ class ProductButton(ctk.CTkFrame):
 
         if self.product_image_path and os.path.exists(self.product_image_path):
             image = Image.open(self.product_image_path)
-            image = image.resize((int(self.winfo_reqwidth() * 0.9), int(self.winfo_reqheight() * 0.7)))
-            self.tk_image = ImageTk.PhotoImage(image)
-            image_label.configure(image=self.tk_image)
+            image = image.resize((int(self.winfo_reqwidth() * 0.55), int(self.winfo_reqheight() * 0.45)))
+            self.ctk_image = CTkImage(light_image=image, dark_image=image, size=image.size)
+            image_label.configure(image=self.ctk_image)
 
         # Product name label
         name_label = ctk.CTkLabel(self, text=self.product_name, text_color="#4e2d18",

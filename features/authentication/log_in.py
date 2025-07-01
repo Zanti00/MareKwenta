@@ -206,15 +206,11 @@ class LoginWindow(ctk.CTk):
         return None
 
     def inventory_page(self, user_role):
-        """Navigate to inventory page with user role"""
-        # Close login window
+        """Navigate to main app with user role"""
         self.destroy()
-        if user_role == "admin":
-            from inventory.inventory_page import InventoryManagement
-            InventoryManagement(user_role=user_role).run()
-        else:
-            from ticket.ticket_main import TicketMainPage
-            TicketMainPage(user_role=user_role).run()
+        from main_app import MainApp
+        app = MainApp(user_role=user_role)
+        app.mainloop()
     
     def exit_app(self):
         """Exit the application"""

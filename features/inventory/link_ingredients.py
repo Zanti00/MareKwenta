@@ -7,6 +7,7 @@ from staff.staff_admin import StaffPageAdmin
 from staff.staff_employee import StaffPageEmployee
 import tkinter.filedialog as fd
 from PIL import Image, ImageTk
+from customtkinter import CTkImage
 
 # Product list copied from ticket/product_panel.py
 PRODUCTS = [
@@ -119,8 +120,8 @@ class AddProductDialog:
             self.image_path = path
             img = Image.open(path)
             img.thumbnail((120, 120))
-            self.tk_img = ImageTk.PhotoImage(img)
-            self.image_label.configure(image=self.tk_img, text="")
+            self.ctk_img = CTkImage(light_image=img, dark_image=img, size=img.size)
+            self.image_label.configure(image=self.ctk_img, text="")
 
     def save_product(self):
         name = self.name_entry.get().strip()
@@ -343,52 +344,26 @@ class EditLinkedIngredientsPopup(ctk.CTkToplevel):
         y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (h // 2)
         self.geometry(f"{w}x{h}+{x}+{y}")
 
-class LinkIngredientsPage:
-    def __init__(self, user_role="admin"):
-        self.root = ctk.CTk()
-        self.root.title("MareKwenta POS")
-        taskbar_height = 70
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        usable_height = screen_height - taskbar_height
-        self.root.geometry(f"{screen_width}x{usable_height}+0+0")
-        self.root.configure(fg_color="#f2efea")
+class LinkIngredientsPage(ctk.CTkFrame):
+    def __init__(self, parent, main_app, user_role="admin"):
+        super().__init__(parent)
+        self.main_app = main_app
         self.user_role = user_role
-        ctk.set_appearance_mode("light")
-        ctk.set_default_color_theme("blue")
-        self.root.grid_columnconfigure(1, weight=1)
-        self.root.grid_rowconfigure(0, weight=1)
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.products = PRODUCTS.copy()  # Make products dynamic
         self.linked_ingredients = {}  # {product_name: [{summary, ingredients: [(qty, ingredient), ...]}, ...]}
+        self.configure(fg_color="#f2efea")
         self.setup_ui()
 
-    def on_closing(self):
-        try:
-            self.root.quit()
-            self.root.destroy()
-        except:
-            pass
-
     def setup_ui(self):
-        self.navbar = Navbar(self.root, width=124, user_role=self.user_role, active_tab="inventory")
-        self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
-        self.navbar.set_nav_callback("ticket", self.show_ticket)
-        self.navbar.set_nav_callback("receipt", self.show_receipt)
-        self.navbar.set_nav_callback("inventory", self.show_inventory)
-        self.navbar.set_nav_callback("staff", self.show_staff)
-        self.navbar.set_nav_callback("cashbox", self.show_cashbox)
-        self.navbar.set_nav_callback("dashboard", self.show_dashboard)
-        self.main_frame = ctk.CTkFrame(self.root, fg_color="#f2efea", width=700, corner_radius=24)
-        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 0), pady=20)
-        self.root.grid_columnconfigure(1, weight=1)
-        self.main_frame.grid_columnconfigure(0, weight=1)
-        self.setup_header()
-        self.setup_navigation()
+        # Main frame for content (like inventory_page.py)
+        self.main_frame = ctk.CTkFrame(self, fg_color="#f2efea")
+        self.main_frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.9, relheight=0.9)
+        self.setup_header_and_nav()
         self.setup_product_list()
         self.setup_fab()
 
-    def setup_header(self):
+    def setup_header_and_nav(self):
+        # Header (title)
         header_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         header_frame.grid(row=0, column=0, sticky="w", pady=(10, 5))
         header_label = ctk.CTkLabel(
@@ -399,13 +374,12 @@ class LinkIngredientsPage:
         )
         header_label.grid(row=0, column=0, sticky="w")
 
-    def setup_navigation(self):
-        nav_frame = ctk.CTkFrame(self.main_frame, fg_color="#f2efea")
-        nav_frame.grid(row=1, column=0, sticky="ew", pady=(0, 15))
-        nav_frame.grid_columnconfigure(0, weight=1)
-        nav_container = ctk.CTkFrame(nav_frame, fg_color="transparent")
+        # Navigation Tabs (identical to inventory_page.py)
+        self.nav_frame = ctk.CTkFrame(self.main_frame, fg_color="#f2efea")
+        self.nav_frame.grid(row=1, column=0, sticky="ew", pady=(0, 15))
+        self.nav_frame.grid_columnconfigure(0, weight=1)
+        nav_container = ctk.CTkFrame(self.nav_frame, fg_color="transparent")
         nav_container.grid(row=0, column=0, pady=0)
-        # Inventory tab as button
         inventory_tab = ctk.CTkButton(
             nav_container,
             text="Inventory",
@@ -417,7 +391,6 @@ class LinkIngredientsPage:
             command=self.show_inventory
         )
         inventory_tab.grid(row=0, column=0)
-        # Link Ingredients tab (active)
         link_ingredients_tab_frame = ctk.CTkFrame(nav_container, fg_color="transparent")
         link_ingredients_tab_frame.grid(row=0, column=1, padx=(60, 0))
         link_ingredients_tab = ctk.CTkLabel(
@@ -427,7 +400,7 @@ class LinkIngredientsPage:
             text_color="#4e2d18"
         )
         link_ingredients_tab.pack()
-        separator = ctk.CTkFrame(link_ingredients_tab_frame, width=270, height=4, fg_color="#4e2d18")
+        separator = ctk.CTkFrame(link_ingredients_tab_frame, width=300, height=4, fg_color="#4e2d18")
         separator.pack(pady=(2, 0))
 
     def setup_product_list(self):
@@ -435,12 +408,14 @@ class LinkIngredientsPage:
         if hasattr(self, 'list_frame'):
             self.list_frame.destroy()
         self.list_frame = ctk.CTkFrame(self.main_frame, fg_color="#f2efea", corner_radius=16)
-        self.list_frame.grid(row=2, column=0, sticky="nsew", padx=0, pady=(0, 20))
+        self.list_frame.grid(row=3, column=0, sticky="nsew", padx=(70, 40))
         self.list_frame.grid_columnconfigure(0, weight=1)
-        self.main_frame.grid_rowconfigure(2, weight=1)
-        # Set scrollable to a fixed, smaller width and center it
-        self.scrollable = ctk.CTkScrollableFrame(self.list_frame, fg_color="#f2efea", height=500, width=950)
-        self.scrollable.grid(row=0, column=0, sticky="n", pady=(20, 20))
+        self.list_frame.grid_columnconfigure(1, weight=0)
+        self.list_frame.grid_columnconfigure(2, weight=1)
+        self.main_frame.grid_rowconfigure(3, weight=1)
+        # Center the scrollable frame
+        self.scrollable = ctk.CTkScrollableFrame(self.list_frame, fg_color="#ffffff", height=500, width=950)
+        self.scrollable.grid(row=0, column=1, sticky="n", pady=(20, 20))
         self.scrollable.grid_columnconfigure(0, weight=1)
         self.refresh_product_list()
 
@@ -481,7 +456,7 @@ class LinkIngredientsPage:
     def setup_fab(self):
         # Floating Action Button (FAB) with a plus sign
         self.fab = ctk.CTkButton(
-            self.root,
+            self,
             text="+",
             font=ctk.CTkFont("Unbounded", size=36, weight="bold"),
             fg_color="#4e2d18",
@@ -499,7 +474,7 @@ class LinkIngredientsPage:
         def on_save(product):
             self.products.append(product)
             self.refresh_product_list()
-        AddProductDialog(self.root, on_save=on_save)
+        AddProductDialog(self, on_save=on_save)
 
     def handle_action(self, product, action):
         if action == "Link Ingredients":
@@ -517,15 +492,15 @@ class LinkIngredientsPage:
                 def after_size_temp(size, temp):
                     summary = f"{product['name']} | {category} {size} {temp}"
                     inventory_list = ["Milk", "Sugar", "Espresso"]
-                    LinkIngredientFinalPopup(self.root, product['name'], summary, inventory_list, on_save_link=self.save_linked_ingredients)
-                SizeTempPopup(self.root, after_size_temp, disabled_combinations=disabled_combos)
+                    LinkIngredientFinalPopup(self, product['name'], summary, inventory_list, on_save_link=self.save_linked_ingredients)
+                SizeTempPopup(self, after_size_temp, disabled_combinations=disabled_combos)
             else:
                 summary = f"{product['name']} | {category}"
                 inventory_list = ["Milk", "Sugar", "Espresso"]
-                LinkIngredientFinalPopup(self.root, product['name'], summary, inventory_list, on_save_link=self.save_linked_ingredients)
+                LinkIngredientFinalPopup(self, product['name'], summary, inventory_list, on_save_link=self.save_linked_ingredients)
         elif action == "View":
             linked_data = self.linked_ingredients.get(product['name'], [])
-            ViewLinkedIngredientsPopup(self.root, product['name'], linked_data)
+            ViewLinkedIngredientsPopup(self, product['name'], linked_data)
         elif action == "Edit":
             category = product.get("category", "")
             if category in ["Coffee", "Non-Coffee"]:
@@ -547,8 +522,8 @@ class LinkIngredientsPage:
                                 self.linked_ingredients[product_name].append({'summary': summary, 'ingredients': ingredients})
                         else:
                             self.linked_ingredients[product_name] = [{'summary': summary, 'ingredients': ingredients}]
-                    EditLinkedIngredientsPopup(self.root, product['name'], summary, inventory_list, initial_ingredients, on_save_edit=on_save_edit)
-                SizeTempPopup(self.root, after_size_temp)
+                    EditLinkedIngredientsPopup(self, product['name'], summary, inventory_list, initial_ingredients, on_save_edit=on_save_edit)
+                SizeTempPopup(self, after_size_temp)
             else:
                 summary = f"{product['name']} | {category}"
                 inventory_list = ["Milk", "Sugar", "Espresso"]
@@ -565,56 +540,42 @@ class LinkIngredientsPage:
                             self.linked_ingredients[product_name].append({'summary': summary, 'ingredients': ingredients})
                     else:
                         self.linked_ingredients[product_name] = [{'summary': summary, 'ingredients': ingredients}]
-                EditLinkedIngredientsPopup(self.root, product['name'], summary, inventory_list, initial_ingredients, on_save_edit=on_save_edit)
+                EditLinkedIngredientsPopup(self, product['name'], summary, inventory_list, initial_ingredients, on_save_edit=on_save_edit)
         else:
             messagebox.showinfo("Action", f"{action} for product: {product['name']}")
 
     def show_inventory(self):
-        self.root.destroy()
-        from .inventory_page import InventoryManagement
-        InventoryManagement(user_role=self.user_role).run()
+        self.main_app.show_frame("inventory")
 
     def show_staff(self):
-        self.root.destroy()
-        if self.user_role == "admin":
-            StaffPageAdmin(user_role="admin").run()
-        else:
-            StaffPageEmployee(user_role="employee").run()
+        self.main_app.show_frame("staff")
 
     def show_receipt(self):
-        from receipt.sales_history import SalesHistoryMain
-        self.root.destroy()
-        SalesHistoryMain(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("receipt")
 
     def show_cashbox(self):
-        self.root.destroy()
-        from cash_box.cashbox_page import CashBoxApp
-        CashBoxApp(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("cashbox")
 
     def show_ticket(self):
-        from ticket.ticket_main import TicketMainPage
-        self.root.destroy()
-        TicketMainPage(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("ticket")
 
     def show_dashboard(self):
-        from dashboard.sales_dashboard import SalesDashboard
-        self.root.destroy()
-        SalesDashboard(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("dashboard")
 
     def run(self):
         try:
-            self.root.mainloop()
+            self.mainloop()
         except Exception as e:
             print(f"Error running LinkIngredientsPage: {e}")
             messagebox.showerror("Fatal Error", f"Application failed to start: {e}")
         finally:
             try:
-                self.root.destroy()
+                self.destroy()
             except:
                 pass
     
     def mainloop(self):
-        self.root.mainloop()
+        self.mainloop()
 
     def save_linked_ingredients(self, product_name, summary, ingredients):
         if product_name not in self.linked_ingredients:

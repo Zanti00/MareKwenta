@@ -3,34 +3,12 @@ import datetime
 from .staff_card import StaffTimeCard
 from nav_bar import Navbar
 
-class StaffPageEmployee(ctk.CTk):
-    def __init__(self, user_role="employee"):
-        super().__init__()
+class StaffPageEmployee(ctk.CTkFrame):
+    def __init__(self, parent, main_app, user_role="employee"):
+        super().__init__(parent)
+        self.main_app = main_app
         self.user_role = user_role
-        self.title("MareKwenta POS")
-        taskbar_height = 70
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        usable_height = screen_height - taskbar_height
-        self.geometry(f"{screen_width}x{usable_height}+0+0")
         self.configure(fg_color="#f2efea")
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
-
-        # Navbar
-        self.navbar = Navbar(self, width=124, user_role=self.user_role, active_tab="staff")
-        self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
-        self.navbar.set_nav_callback("ticket", self.show_ticket)
-        self.navbar.set_nav_callback("receipt", self.show_receipt)
-        self.navbar.set_nav_callback("inventory", self.show_inventory)
-        self.navbar.set_nav_callback("staff", self.show_staff)
-        self.navbar.set_nav_callback("cashbox", self.show_cashbox)
-        self.navbar.set_nav_callback("dashboard", self.show_dashboard)
-
-        # Main content frame
-        self.main_frame = ctk.CTkFrame(self, fg_color="#f2efea")
-        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(20, 20), pady=20)
-        self.main_frame.grid_columnconfigure(0, weight=1)
 
         # Track selected date and employee cards
         self.selected_date = datetime.date.today()
@@ -49,8 +27,8 @@ class StaffPageEmployee(ctk.CTk):
 
     def create_header(self):
         """Create the header with title and date"""
-        header_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        header_frame.pack(fill="x", padx=40, pady=(10, 0))
+        header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        header_frame.place(relx=0.5, rely=0.1, anchor="center", relwidth=0.85, relheight=0.1)
 
         title_label = ctk.CTkLabel(header_frame, text="Staff", font=("Unbounded", 36, "bold"), text_color="#4e2d18")
         title_label.pack(side="left")
@@ -61,13 +39,19 @@ class StaffPageEmployee(ctk.CTk):
 
     def create_main_layout(self):
         """Create the main layout with left and right panels"""
+        # Main content frame for horizontal layout
+        self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.content_frame.place(relx=0.5, rely=0.55, anchor="center", relwidth=0.95, relheight=0.8)
+
         # Left Panel - Date selection
-        self.left_panel = ctk.CTkFrame(self.main_frame, width=220, fg_color="#f2efea", corner_radius=0)
-        self.left_panel.pack(side="left", fill="y", padx=(20, 10), pady=(5, 20))
+        self.left_panel = ctk.CTkFrame(self.content_frame, width=220, fg_color="#f2efea", corner_radius=0)
+        self.left_panel.grid(row=0, column=0, sticky="ns", padx=(0, 20), pady=0)
 
         # Right Panel - Employee cards
-        self.right_panel = ctk.CTkFrame(self.main_frame, fg_color="transparent", corner_radius=20)
-        self.right_panel.pack(side="left", fill="both", expand=True, padx=(20,15), pady=(5, 20))
+        self.right_panel = ctk.CTkFrame(self.content_frame, fg_color="transparent", corner_radius=20)
+        self.right_panel.grid(row=0, column=1, sticky="nsew")
+        self.content_frame.grid_columnconfigure(1, weight=1)
+        self.content_frame.grid_rowconfigure(0, weight=1)
 
     def build_date_list(self):
         """Build the date selection buttons on the left panel"""
@@ -133,29 +117,19 @@ class StaffPageEmployee(ctk.CTk):
         # Set initial card states
         self.update_employee_card_states()
 
-    # Navigation callbacks
+    # Navigation methods now use main_app.show_frame
     def show_ticket(self):
-        from ticket.ticket_main import TicketMainPage
-        self.destroy()
-        TicketMainPage(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("ticket")
     def show_receipt(self):
-        from receipt.sales_history import SalesHistoryMain
-        self.destroy()
-        SalesHistoryMain(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("receipt")
     def show_inventory(self):
-        from inventory.inventory_page import InventoryManagement
-        self.destroy()
-        InventoryManagement(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("inventory")
     def show_staff(self):
-        pass
+        self.main_app.show_frame("staff")
     def show_cashbox(self):
-        from cash_box.cashbox_page import CashBoxApp
-        self.destroy()
-        CashBoxApp(user_role=self.user_role).run()
+        self.main_app.show_frame("cashbox")
     def show_dashboard(self):
-        from dashboard.sales_dashboard import SalesDashboard
-        self.destroy()
-        SalesDashboard(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("dashboard")
 
     def custom_messagebox(self, title, message):
         popup = ctk.CTkToplevel(self)
@@ -172,5 +146,7 @@ class StaffPageEmployee(ctk.CTk):
         self.mainloop()
 
 if __name__ == "__main__":
-    app = StaffPageEmployee()
+    # You must provide the required arguments: parent and main_app
+    # For standalone testing, you can use None or suitable mock objects
+    app = StaffPageEmployee(parent=None, main_app=None)
     app.run()

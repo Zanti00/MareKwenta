@@ -2,36 +2,30 @@ import customtkinter as ctk
 import datetime
 from nav_bar import Navbar
 
-class StaffPageAdmin(ctk.CTk):
-    def __init__(self, user_role="admin"):
-        super().__init__()
+class StaffPageAdmin(ctk.CTkFrame):
+    def __init__(self, parent, main_app, user_role="admin"):
+        super().__init__(parent)
+        self.main_app = main_app
         self.user_role = user_role
         if self.user_role != "admin":
-            self.destroy()
             raise PermissionError("Access denied: Admins only.")
-        self.title("MareKwenta POS")
-        taskbar_height = 70
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        usable_height = screen_height - taskbar_height
-        self.geometry(f"{screen_width}x{usable_height}+0+0")
         self.configure(fg_color="#f2efea")
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
 
-        # Navbar
-        self.navbar = Navbar(self, width=124, user_role=self.user_role, active_tab="staff")
-        self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
-        self.navbar.set_nav_callback("ticket", self.show_ticket)
-        self.navbar.set_nav_callback("receipt", self.show_receipt)
-        self.navbar.set_nav_callback("inventory", self.show_inventory)
-        self.navbar.set_nav_callback("staff", self.show_staff)
-        self.navbar.set_nav_callback("cashbox", self.show_cashbox)
-        self.navbar.set_nav_callback("dashboard", self.show_dashboard)
+        # Header frame (outside main_frame)
+        header_frame = ctk.CTkFrame(self, fg_color="#f2efea", height=60)
+        header_frame.place(relx=0.015, rely=0.03, relwidth=0.97)
+        header_frame.grid_columnconfigure(0, weight=1)
+        header_frame.grid_columnconfigure(1, weight=1)
+        staff_label = ctk.CTkLabel(header_frame, text="Staff", font=("Unbounded", 36, "bold"), text_color="#4e2d18")
+        staff_label.grid(row=0, column=0, sticky="w", padx=(20, 0))
+        current_date = datetime.datetime.now().strftime("%B %d, %Y")
+        date_label = ctk.CTkLabel(header_frame, text=current_date, font=("Unbounded", 20, "bold"), text_color="#4e2d18")
+        date_label.grid(row=0, column=1, sticky="e", padx=(0, 20))
 
-        # Main Panel (everything else)
-        self.main_frame = ctk.CTkFrame(self, fg_color="#f2efea")
-        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(20, 20), pady=20)
+        # Main content container (wider)
+        self.main_frame = ctk.CTkFrame(self, fg_color="#fff", corner_radius=24)
+        self.main_frame.place(relx=0.015, rely=0.13, relwidth=0.97, relheight=0.82)
+        self.main_frame.grid_rowconfigure(0, weight=1)
         self.main_frame.grid_columnconfigure(0, weight=1)
 
         # Initialize employee data structure for database integration
@@ -42,45 +36,10 @@ class StaffPageAdmin(ctk.CTk):
         self.table_rows = []  # Store references to table row widgets
         self.table_container = None
 
-        # Header
-        header_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", padx=40, pady=(10, 0))
-        header_frame.grid_columnconfigure(0, weight=1)
-        header_frame.grid_columnconfigure(1, weight=0)
-        title_label = ctk.CTkLabel(header_frame, text="Staff", font=("Unbounded", 36, "bold"), text_color="#4e2d18")
-        title_label.grid(row=0, column=0, sticky="w")
-        # Date frame styled like cashbox_page
-        date_frame = ctk.CTkFrame(
-            header_frame,
-            width=283,
-            height=48,
-            fg_color="#f2efea",
-            border_width=1,
-            border_color="#4d2d18",
-            corner_radius=10
-        )
-        date_frame.grid(row=0, column=1, padx=30, pady=20, sticky="e")
-        date_frame.grid_propagate(False)
-        current_date = datetime.datetime.now().strftime("%B %d, %Y")
-        date_label = ctk.CTkLabel(
-            date_frame,
-            text="DATE:",
-            font=ctk.CTkFont(family="Inter", size=18),
-            text_color="#4d2d18"
-        )
-        date_label.place(x=8, y=11)
-        date_value_label = ctk.CTkLabel(
-            date_frame,
-            text=current_date,
-            font=ctk.CTkFont(family="Inter", size=18, weight="bold"),
-            text_color="#4d2d18"
-        )
-        date_value_label.place(x=70, y=11)
-
         # Main Panel
         container = ctk.CTkFrame(self.main_frame, fg_color="#ffffff", corner_radius=20)
-        container.grid(row=1, column=0, padx=40, pady=20, sticky="nsew")
-        self.main_frame.grid_rowconfigure(1, weight=1)
+        container.grid(row=0, column=0, padx=40, pady=20, sticky="nsew")
+        container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
         # Table Header
@@ -88,8 +47,6 @@ class StaffPageAdmin(ctk.CTk):
         # Create table container
         self.table_container = ctk.CTkFrame(container, fg_color="#ffffff")
         self.table_container.grid(row=0, column=0, sticky="nsew", padx=20, pady=(20, 10))
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
         self.table_container.grid_columnconfigure(0, weight=1)
         # Create header row
         header_row = ctk.CTkFrame(self.table_container, fg_color="#f0f0f0", height=50)
@@ -163,35 +120,19 @@ class StaffPageAdmin(ctk.CTk):
         ctk.CTkButton(popup, text="OK", fg_color="#4e2d18", text_color="#fff", command=popup.destroy).grid(row=2, column=0, pady=(0, 10))
         popup.wait_window()
 
-    # Navigation callbacks
+    # Navigation methods now use main_app.show_frame
     def show_ticket(self):
-        from ticket.ticket_main import TicketMainPage
-        self.destroy()
-        TicketMainPage(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("ticket")
     def show_receipt(self):
-        from receipt.sales_history import SalesHistoryMain
-        self.destroy()
-        SalesHistoryMain(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("receipt")
     def show_inventory(self):
-        from inventory.inventory_page import InventoryManagement
-        self.destroy()
-        InventoryManagement(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("inventory")
     def show_staff(self):
-        if self.user_role == "admin":
-            self.destroy()
-            StaffPageAdmin(user_role="admin").run()
-        else:
-            from .staff_employee import StaffPageEmployee
-            self.destroy()
-            StaffPageEmployee(user_role="employee").run()
+        self.main_app.show_frame("staff")
     def show_cashbox(self):
-        from features.cash_box.cashbox_page import CashBoxApp
-        self.destroy()
-        CashBoxApp(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("cashbox")
     def show_dashboard(self):
-        from dashboard.sales_dashboard import SalesDashboard
-        self.destroy()
-        SalesDashboard(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("dashboard")
 
     def add_employee(self, first_name, last_name, username, password):
         """Add a new employee to the data structure"""
@@ -348,7 +289,4 @@ class StaffPageAdmin(ctk.CTk):
                                  font=("Inter", 12, "bold"),
                                  command=reset)
         reset_btn.grid(row=4, column=0, pady=20)
-    
-    def run(self):
-        self.mainloop()
 
