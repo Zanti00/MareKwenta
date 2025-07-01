@@ -50,10 +50,14 @@ class StaffAdminController:
         try:
             conn = sqlite3.connect(DB_NAME)
             cursor = conn.cursor()
+
+            formatted_first_name = first_name.strip().title()
+            formatted_last_name = last_name.strip().title()
+            
             cursor.execute("""
                 INSERT INTO user (first_name, last_name, username, password)
                 VALUES (?, ?, ?, ?)
-            """, (first_name, last_name, username, password))
+            """, (formatted_first_name, formatted_last_name, username, password))
             conn.commit()
             employee_id = cursor.lastrowid
         except sqlite3.IntegrityError: # e.g., username already exists
