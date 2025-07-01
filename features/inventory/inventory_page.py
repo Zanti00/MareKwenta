@@ -581,7 +581,7 @@ class InventoryManagement:
                     if qty < rpoint:
                         status = "Restock Needed"
                         color = "#f73e3e"
-                    elif rpoint < qty <= rpoint + (rpoint * 0.3):
+                    elif rpoint <= qty <= rpoint + (rpoint * 0.3):
                         status = "Low Stock"
                         color = "#e8bb6d"
                     else:
