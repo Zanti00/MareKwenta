@@ -20,11 +20,11 @@ class ProductController:
             try:
                 cursor = conn.cursor()
                 
-                # Insert the product first
+                # Insert the product first (without selling_price)
                 cursor.execute("""
-                    INSERT INTO products (product_name, selling_price, image, category)
-                    VALUES (?, ?, ?, ?)
-                """, (product_name, selling_price, image_path, category))
+                    INSERT INTO products (product_name, image, category)
+                    VALUES (?, ?, ?)
+                """, (product_name, image_path, category))
                 
                 # Get the product_id of the newly inserted product
                 product_id = cursor.lastrowid
@@ -107,8 +107,11 @@ class ProductController:
             try:
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT product_id, product_name, selling_price, image, category
-                    FROM products
+                    SELECT p.product_id, p.product_name, p.image, p.category,
+                           COALESCE(MIN(pt.unit_price), 0) as selling_price
+                    FROM products p
+                    LEFT JOIN product_type pt ON p.product_id = pt.product_id
+                    GROUP BY p.product_id, p.product_name, p.image, p.category
                 """)
                 rows = cursor.fetchall()
                 cursor.close()
@@ -117,9 +120,9 @@ class ProductController:
                     products.append({
                         "product_id": row[0],
                         "name": row[1],
-                        "selling_price": row[2],
-                        "image": row[3],
-                        "category": row[4]
+                        "image": row[2],
+                        "category": row[3],
+                        "selling_price": row[4]
                     })
                 return products
             except Exception as e:
@@ -154,16 +157,16 @@ class ProductController:
         return False
 
     @staticmethod
-    def update_product_by_id(product_id, product_name, selling_price, category, image_path=None):
+    def update_product_by_id(product_id, product_name, category, image_path=None):
         conn = ProductController.connect_db()
         if conn:
             try:
                 cursor = conn.cursor()
                 cursor.execute("""
                     UPDATE products 
-                    SET product_name = ?, selling_price = ?, category = ?, image = ?
+                    SET product_name = ?, category = ?, image = ?
                     WHERE product_id = ?
-                """, (product_name, selling_price, category, image_path, product_id))
+                """, (product_name, category, image_path, product_id))
                 conn.commit()
                 cursor.close()
                 return True

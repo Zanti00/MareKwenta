@@ -19,7 +19,6 @@ try:
         CREATE TABLE IF NOT EXISTS products (
             product_id INTEGER PRIMARY KEY AUTOINCREMENT,
             product_name VARCHAR(255) NOT NULL,
-            selling_price DECIMAL(10,2) NOT NULL,
             image VARCHAR(500),
             category VARCHAR(100) NOT NULL
         )
