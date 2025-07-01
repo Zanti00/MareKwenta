@@ -17,7 +17,7 @@ class AddProductDialog:
         self.on_save = on_save
         self.dialog = ctk.CTkToplevel(parent)
         self.dialog.title("Add Product")
-        self.dialog.geometry("420x480")
+        self.dialog.geometry("420x400")  # Reduced height since removing price field
         self.dialog.configure(fg_color="#f2efea")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -31,7 +31,7 @@ class AddProductDialog:
     def center_popup(self, parent):
         self.dialog.update_idletasks()
         w = 420
-        h = 480
+        h = 400  # Updated height
         x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (w // 2)
         y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (h // 2)
         self.dialog.geometry(f"{w}x{h}+{x}+{y}")
@@ -69,15 +69,6 @@ class AddProductDialog:
         self.name_entry.grid(row=card_row, column=0, padx=16, pady=(0, 10), sticky="ew")
         card_row += 1
 
-        # Selling price
-        price_label = ctk.CTkLabel(card, text="Selling Price", font=ctk.CTkFont("Unbounded", 15, "bold"), text_color="#4d2d18")
-        price_label.grid(row=card_row, column=0, sticky="w", padx=16, pady=(8, 2))
-        card_row += 1
-        self.price_entry = ctk.CTkEntry(card, width=300, height=38, font=ctk.CTkFont("Inter", 14), 
-                                       corner_radius=10, fg_color="#f7f3ee")
-        self.price_entry.grid(row=card_row, column=0, padx=16, pady=(0, 10), sticky="ew")
-        card_row += 1
-
         # Buttons
         button_frame = ctk.CTkFrame(card, fg_color="transparent")
         button_frame.grid(row=card_row, column=0, pady=18)
@@ -92,7 +83,6 @@ class AddProductDialog:
 
     def save_product(self):
         name = self.name_entry.get().strip()
-        price_str = self.price_entry.get().strip()
         category = self.category.get()
         
         if not name:
@@ -101,18 +91,11 @@ class AddProductDialog:
         if not category:
             messagebox.showerror("Error", "Please select a category")
             return
-        try:
-            price = float(price_str)
-            if price <= 0:
-                raise ValueError("Price must be positive")
-        except ValueError:
-            messagebox.showerror("Error", "Please enter a valid positive price")
-            return
 
-        # Save to database
-        success = ProductController.add_product(name, price, category, None)
+        # Save to database without price
+        success = ProductController.add_product(name, 0, category, None)  # Pass 0 as dummy price
         if success:
-            self.result = {"name": name, "price": price, "category": category, "image_path": None}
+            self.result = {"name": name, "category": category, "image_path": None}
             if self.on_save:
                 self.on_save(self.result)
             messagebox.showinfo("Success", f"Product '{name}' added successfully!")
@@ -180,7 +163,7 @@ class LinkIngredientFinalPopup(ctk.CTkToplevel):
     def __init__(self, parent, product, size=None, temperature=None, on_save_link=None):
         super().__init__(parent)
         self.title("Link Ingredients")
-        self.geometry("500x600")
+        self.geometry("500x700")  # Increased height for price fields
         self.configure(fg_color="#f2efea")
         self.transient(parent)
         self.grab_set()
@@ -204,15 +187,43 @@ class LinkIngredientFinalPopup(ctk.CTkToplevel):
             summary = f"{product['name']} | {product['category']}"
             
         ctk.CTkLabel(self, text=summary, font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4d2d18").grid(row=0, column=0, pady=(18, 10), sticky="n")
-        self.entries_scroll = ctk.CTkScrollableFrame(self, fg_color="#ffffff", corner_radius=14, width=440, height=340)
-        self.entries_scroll.grid(row=1, column=0, padx=18, pady=10, sticky="nsew")
+        
+        # Price fields
+        price_frame = ctk.CTkFrame(self, fg_color="#ffffff", corner_radius=14)
+        price_frame.grid(row=1, column=0, padx=18, pady=(0, 10), sticky="ew")
+        price_frame.grid_columnconfigure(0, weight=1)
+        price_frame.grid_columnconfigure(1, weight=1)
+        
+        # Unit Price
+        unit_price_label = ctk.CTkLabel(price_frame, text="Unit Price (Cost)", font=ctk.CTkFont("Inter", 14, "bold"), text_color="#4d2d18")
+        unit_price_label.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="w")
+        self.unit_price_entry = ctk.CTkEntry(price_frame, width=150, height=32, font=ctk.CTkFont("Inter", 13), 
+                                           placeholder_text="0.00", corner_radius=8, fg_color="#f7f3ee")
+        self.unit_price_entry.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="ew")
+        
+        # Selling Price
+        selling_price_label = ctk.CTkLabel(price_frame, text="Selling Price", font=ctk.CTkFont("Inter", 14, "bold"), text_color="#4d2d18")
+        selling_price_label.grid(row=0, column=1, padx=10, pady=(10, 5), sticky="w")
+        self.selling_price_entry = ctk.CTkEntry(price_frame, width=150, height=32, font=ctk.CTkFont("Inter", 13), 
+                                              placeholder_text="0.00", corner_radius=8, fg_color="#f7f3ee")
+        self.selling_price_entry.grid(row=1, column=1, padx=10, pady=(0, 10), sticky="ew")
+        
+        self.entries_scroll = ctk.CTkScrollableFrame(self, fg_color="#ffffff", corner_radius=14, width=440, height=300)
+        self.entries_scroll.grid(row=2, column=0, padx=18, pady=10, sticky="nsew")
         self.add_entry_row()
         plus_btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        plus_btn_frame.grid(row=2, column=0, sticky="ew", padx=18)
+        plus_btn_frame.grid(row=3, column=0, sticky="ew", padx=18)
         plus_btn = ctk.CTkButton(plus_btn_frame, text="+", width=36, height=36, font=ctk.CTkFont("Unbounded", 18, "bold"), fg_color="#4e2d18", text_color="#fff", corner_radius=18, command=self.add_entry_row)
         plus_btn.pack(side="right", pady=(8, 0))
         save_btn = ctk.CTkButton(self, text="Save", fg_color="#4e2d18", text_color="#fff", width=140, height=48, corner_radius=12, font=ctk.CTkFont("Unbounded", 16, "bold"), command=self._on_save)
-        save_btn.grid(row=3, column=0, pady=18)
+        save_btn.grid(row=4, column=0, pady=18)
+
+    def center_popup(self, parent):
+        self.update_idletasks()
+        w, h = 500, 700
+        x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (w // 2)
+        y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (h // 2)
+        self.geometry(f"{w}x{h}+{x}+{y}")
 
     def load_inventory(self):
         """Load inventory names from database"""
@@ -222,13 +233,6 @@ class LinkIngredientFinalPopup(ctk.CTkToplevel):
         except Exception as e:
             print(f"Error loading inventory: {e}")
             return ["Error loading inventory"]
-
-    def center_popup(self, parent):
-        self.update_idletasks()
-        w, h = 500, 600
-        x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (w // 2)
-        y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (h // 2)
-        self.geometry(f"{w}x{h}+{x}+{y}")
 
     def add_entry_row(self):
         row_frame = ctk.CTkFrame(self.entries_scroll, fg_color="transparent")
@@ -259,6 +263,26 @@ class LinkIngredientFinalPopup(ctk.CTkToplevel):
             messagebox.showwarning("Cannot Remove", "At least one ingredient must remain.")
 
     def _on_save(self):
+        # Validate price fields
+        unit_price_str = self.unit_price_entry.get().strip()
+        selling_price_str = self.selling_price_entry.get().strip()
+        
+        if not unit_price_str:
+            messagebox.showerror("Error", "Please enter unit price")
+            return
+        if not selling_price_str:
+            messagebox.showerror("Error", "Please enter selling price")
+            return
+            
+        try:
+            unit_price = float(unit_price_str)
+            selling_price = float(selling_price_str)
+            if unit_price < 0 or selling_price < 0:
+                raise ValueError("Prices must be positive")
+        except ValueError:
+            messagebox.showerror("Error", "Please enter valid positive prices")
+            return
+        
         ingredients = []
         used_ingredients = set()
         
@@ -287,43 +311,14 @@ class LinkIngredientFinalPopup(ctk.CTkToplevel):
             return
             
         if self.on_save_link:
-            self.on_save_link(self.product, self.size, self.temperature, ingredients)
+            self.on_save_link(self.product, self.size, self.temperature, ingredients, unit_price, selling_price)
         self.destroy()
 
-class ViewLinkedIngredientsPopup(ctk.CTkToplevel):
-    def __init__(self, parent, product_name, linked_data):
-        super().__init__(parent)
-        self.title(f"Linked Ingredients for {product_name}")
-        self.geometry("500x500")
-        self.configure(fg_color="#f2efea")
-        self.transient(parent)
-        self.grab_set()
-        self.resizable(False, False)
-        self.center_popup(parent)
-        ctk.CTkLabel(self, text=product_name, font=ctk.CTkFont("Unbounded", 18, "bold"), text_color="#4d2d18").pack(pady=(18, 10))
-        scroll = ctk.CTkScrollableFrame(self, fg_color="#ffffff", corner_radius=14, width=440, height=400)
-        scroll.pack(padx=18, pady=10, fill="both", expand=True)
-        if not linked_data:
-            ctk.CTkLabel(scroll, text="No linked ingredients.", font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(pady=20)
-        else:
-            for group in linked_data:
-                ctk.CTkLabel(scroll, text=group['summary'], font=ctk.CTkFont("Unbounded", 15, "bold"), text_color="#4d2d18").pack(anchor="w", pady=(12, 2), padx=10)
-                for qty, ingredient in group['ingredients']:
-                    row = f"{qty:<8} {ingredient}"
-                    ctk.CTkLabel(scroll, text=row, font=ctk.CTkFont("Inter", 14), text_color="#4d2d18", anchor="w").pack(anchor="w", padx=30)
-    
-    def center_popup(self, parent):
-        self.update_idletasks()
-        w, h = 500, 500
-        x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (w // 2)
-        y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (h // 2)
-        self.geometry(f"{w}x{h}+{x}+{y}")
-
 class EditLinkedIngredientsPopup(ctk.CTkToplevel):
-    def __init__(self, parent, product_name, summary, inventory_list, initial_ingredients, on_save_edit=None):
+    def __init__(self, parent, product_name, summary, inventory_list, initial_ingredients, product_type_data, on_save_edit=None):
         super().__init__(parent)
         self.title("Edit Linked Ingredients")
-        self.geometry("500x600")
+        self.geometry("500x700")  # Increased height for price fields
         self.configure(fg_color="#f2efea")
         self.transient(parent)
         self.grab_set()
@@ -333,13 +328,37 @@ class EditLinkedIngredientsPopup(ctk.CTkToplevel):
         self.entries = []
         self.product_name = product_name
         self.summary = summary
+        self.product_type_data = product_type_data
         self.on_save_edit = on_save_edit
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
         
         ctk.CTkLabel(self, text=summary, font=ctk.CTkFont("Unbounded", 16, "bold"), text_color="#4d2d18").grid(row=0, column=0, pady=(18, 10), sticky="n")
-        self.entries_scroll = ctk.CTkScrollableFrame(self, fg_color="#ffffff", corner_radius=14, width=440, height=340)
-        self.entries_scroll.grid(row=1, column=0, padx=18, pady=10, sticky="nsew")
+        
+        # Price fields
+        price_frame = ctk.CTkFrame(self, fg_color="#ffffff", corner_radius=14)
+        price_frame.grid(row=1, column=0, padx=18, pady=(0, 10), sticky="ew")
+        price_frame.grid_columnconfigure(0, weight=1)
+        price_frame.grid_columnconfigure(1, weight=1)
+        
+        # Unit Price
+        unit_price_label = ctk.CTkLabel(price_frame, text="Unit Price (Cost)", font=ctk.CTkFont("Inter", 14, "bold"), text_color="#4d2d18")
+        unit_price_label.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="w")
+        self.unit_price_entry = ctk.CTkEntry(price_frame, width=150, height=32, font=ctk.CTkFont("Inter", 13), 
+                                           placeholder_text="0.00", corner_radius=8, fg_color="#f7f3ee")
+        self.unit_price_entry.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="ew")
+        self.unit_price_entry.insert(0, str(product_type_data.get('unit_price', 0)))
+        
+        # Selling Price
+        selling_price_label = ctk.CTkLabel(price_frame, text="Selling Price", font=ctk.CTkFont("Inter", 14, "bold"), text_color="#4d2d18")
+        selling_price_label.grid(row=0, column=1, padx=10, pady=(10, 5), sticky="w")
+        self.selling_price_entry = ctk.CTkEntry(price_frame, width=150, height=32, font=ctk.CTkFont("Inter", 13), 
+                                              placeholder_text="0.00", corner_radius=8, fg_color="#f7f3ee")
+        self.selling_price_entry.grid(row=1, column=1, padx=10, pady=(0, 10), sticky="ew")
+        self.selling_price_entry.insert(0, str(product_type_data.get('selling_price', 0)))
+        
+        self.entries_scroll = ctk.CTkScrollableFrame(self, fg_color="#ffffff", corner_radius=14, width=440, height=300)
+        self.entries_scroll.grid(row=2, column=0, padx=18, pady=10, sticky="nsew")
         
         for qty, ingredient in initial_ingredients:
             self.add_entry_row(qty, ingredient)
@@ -347,15 +366,15 @@ class EditLinkedIngredientsPopup(ctk.CTkToplevel):
             self.add_entry_row()
             
         plus_btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        plus_btn_frame.grid(row=2, column=0, sticky="ew", padx=18)
+        plus_btn_frame.grid(row=3, column=0, sticky="ew", padx=18)
         plus_btn = ctk.CTkButton(plus_btn_frame, text="+", width=36, height=36, font=ctk.CTkFont("Unbounded", 18, "bold"), fg_color="#4e2d18", text_color="#fff", corner_radius=18, command=self.add_entry_row)
         plus_btn.pack(side="right", pady=(8, 0))
         save_btn = ctk.CTkButton(self, text="Save", fg_color="#4e2d18", text_color="#fff", width=140, height=48, corner_radius=12, font=ctk.CTkFont("Unbounded", 16, "bold"), command=self._on_save)
-        save_btn.grid(row=3, column=0, pady=18)
+        save_btn.grid(row=4, column=0, pady=18)
 
     def center_popup(self, parent):
         self.update_idletasks()
-        w, h = 500, 600
+        w, h = 500, 700
         x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (w // 2)
         y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (h // 2)
         self.geometry(f"{w}x{h}+{x}+{y}")
@@ -394,6 +413,26 @@ class EditLinkedIngredientsPopup(ctk.CTkToplevel):
             messagebox.showwarning("Cannot Remove", "At least one ingredient must remain.")
 
     def _on_save(self):
+        # Validate price fields
+        unit_price_str = self.unit_price_entry.get().strip()
+        selling_price_str = self.selling_price_entry.get().strip()
+        
+        if not unit_price_str:
+            messagebox.showerror("Error", "Please enter unit price")
+            return
+        if not selling_price_str:
+            messagebox.showerror("Error", "Please enter selling price")
+            return
+            
+        try:
+            unit_price = float(unit_price_str)
+            selling_price = float(selling_price_str)
+            if unit_price < 0 or selling_price < 0:
+                raise ValueError("Prices must be positive")
+        except ValueError:
+            messagebox.showerror("Error", "Please enter valid positive prices")
+            return
+        
         ingredients = []
         used_ingredients = set()
         
@@ -422,8 +461,39 @@ class EditLinkedIngredientsPopup(ctk.CTkToplevel):
             return
             
         if self.on_save_edit:
-            self.on_save_edit(self.product_name, self.summary, ingredients)
+            self.on_save_edit(self.product_name, self.summary, ingredients, unit_price, selling_price)
         self.destroy()
+
+class ViewLinkedIngredientsPopup(ctk.CTkToplevel):
+    def __init__(self, parent, product_name, linked_data):
+        super().__init__(parent)
+        self.title(f"Linked Ingredients for {product_name}")
+        self.geometry("500x500")
+        self.configure(fg_color="#f2efea")
+        self.transient(parent)
+        self.grab_set()
+        self.resizable(False, False)
+        self.center_popup(parent)
+        ctk.CTkLabel(self, text=product_name, font=ctk.CTkFont("Unbounded", 18, "bold"), text_color="#4d2d18").pack(pady=(18, 10))
+        scroll = ctk.CTkScrollableFrame(self, fg_color="#ffffff", corner_radius=14, width=440, height=400)
+        scroll.pack(padx=18, pady=10, fill="both", expand=True)
+        if not linked_data:
+            ctk.CTkLabel(scroll, text="No linked ingredients.", font=ctk.CTkFont("Inter", 14), text_color="#4e2d18").pack(pady=20)
+        else:
+            for group in linked_data:
+                # Display summary (product name with size/temperature)
+                ctk.CTkLabel(scroll, text=group['summary'], font=ctk.CTkFont("Unbounded", 15, "bold"), text_color="#4d2d18").pack(anchor="w", pady=(12, 2), padx=10)
+                # Display ingredients
+                for qty, ingredient in group['ingredients']:
+                    row = f"{qty:<8} {ingredient}"
+                    ctk.CTkLabel(scroll, text=row, font=ctk.CTkFont("Inter", 14), text_color="#4d2d18", anchor="w").pack(anchor="w", padx=30)
+    
+    def center_popup(self, parent):
+        self.update_idletasks()
+        w, h = 500, 500
+        x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (w // 2)
+        y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (h // 2)
+        self.geometry(f"{w}x{h}+{x}+{y}")
 
 class LinkIngredientsPage:
     def __init__(self, user_role="admin"):
@@ -671,12 +741,12 @@ class LinkIngredientsPage:
                         inventory_data = InventoryController.get_all_inventory()
                         inventory_list = [item['ingredient'] for item in inventory_data]
                         
-                        def on_save_edit(product_name, summary, ingredients):
-                            self.update_recipe_ingredients(food_type['product_type_id'], ingredients)
+                        def on_save_edit(product_name, summary, ingredients, unit_price, selling_price):
+                            self.update_recipe_ingredients(food_type['product_type_id'], ingredients, unit_price, selling_price)
                         
                         EditLinkedIngredientsPopup(
                             self.root, product['name'], summary, inventory_list, 
-                            existing_recipes, on_save_edit=on_save_edit
+                            existing_recipes, food_type, on_save_edit=on_save_edit
                         )
                     else:
                         messagebox.showinfo("No Data", f"No ingredients linked for '{product['name']}'")
@@ -714,12 +784,13 @@ class LinkIngredientsPage:
                         inventory_data = InventoryController.get_all_inventory()
                         inventory_list = [item['ingredient'] for item in inventory_data]
                         
-                        def on_save_edit(product_name, summary, ingredients):
-                            self.update_recipe_ingredients(target_variant['product_type']['product_type_id'], ingredients)
+                        def on_save_edit(product_name, summary, ingredients, unit_price, selling_price):
+                            self.update_recipe_ingredients(target_variant['product_type']['product_type_id'], ingredients, unit_price, selling_price)
                         
                         EditLinkedIngredientsPopup(
                             self.root, product['name'], target_variant['summary'], 
-                            inventory_list, target_variant['recipes'], on_save_edit=on_save_edit
+                            inventory_list, target_variant['recipes'], target_variant['product_type'], 
+                            on_save_edit=on_save_edit
                         )
                     else:
                         messagebox.showerror("Error", f"No ingredients found for {product['name']} {size} {temp}")
@@ -950,14 +1021,16 @@ class LinkIngredientsPage:
             print(f"Error getting linked data: {e}")
             return []
 
-    def save_linked_ingredients(self, product, size, temperature, ingredients):
+    def save_linked_ingredients(self, product, size, temperature, ingredients, unit_price, selling_price):
         """Save linked ingredients to database"""
         try:
             # Create product_type entry
             if size and temperature:
                 product_type_id = ProductController.create_product_type(
-                    product['product_id'], size, temperature, product['selling_price']
+                    product['product_id'], size, temperature, selling_price
                 )
+                # Update unit_price separately
+                ProductController.update_product_type_prices(product_type_id, unit_price, selling_price)
             else:
                 # For Food items, find the existing product_type with NULL size/temp
                 product_types = ProductController.get_product_types_by_product_id(product['product_id'])
@@ -965,6 +1038,8 @@ class LinkIngredientsPage:
                 for ptype in product_types:
                     if ptype['size'] is None and ptype['temperature'] is None:
                         product_type_id = ptype['product_type_id']
+                        # Update prices
+                        ProductController.update_product_type_prices(product_type_id, unit_price, selling_price)
                         break
                         
             if not product_type_id:
@@ -997,9 +1072,15 @@ class LinkIngredientsPage:
             print(f"Error saving linked ingredients: {e}")
             messagebox.showerror("Error", f"Failed to save linked ingredients: {e}")
 
-    def update_recipe_ingredients(self, product_type_id, ingredients):
+    def update_recipe_ingredients(self, product_type_id, ingredients, unit_price, selling_price):
         """Update recipe ingredients in database"""
         try:
+            # Update prices first
+            success = ProductController.update_product_type_prices(product_type_id, unit_price, selling_price)
+            if not success:
+                messagebox.showerror("Error", "Failed to update prices")
+                return
+                
             # Prepare ingredients data for recipe
             ingredients_data = []
             for qty, ingredient_name in ingredients:
@@ -1014,7 +1095,7 @@ class LinkIngredientsPage:
             success = RecipeController.update_recipe_ingredients(product_type_id, ingredients_data)
             
             if success:
-                messagebox.showinfo("Success", "Ingredients updated successfully!")
+                messagebox.showinfo("Success", "Ingredients and prices updated successfully!")
             else:
                 messagebox.showerror("Error", "Failed to update recipe ingredients")
                 
