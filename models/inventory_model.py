@@ -1,7 +1,9 @@
 import sqlite3
 import os
 
-db_name = "mare_kwenta.db"
+# Get the base path of the project  
+base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+db_name = os.path.join(base_path, "mare_kwenta.db")
 
 # check if the database file exists
 if not os.path.exists(db_name):
@@ -25,13 +27,15 @@ try:
     """)
 
     conn.commit()
-    cursor.close
+    print("Inventory table created successfully!")
+    cursor.close()
 except sqlite3.Error as e:
-    print("An error occured while connecting to sqlite", e)
+    print("An error occurred while connecting to sqlite", e)
 finally:
     if conn:
         conn.commit()
-        cursor.close
+        cursor.close()
+        conn.close()
 
 
 
