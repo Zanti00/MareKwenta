@@ -1,3 +1,4 @@
+from tkinter import messagebox
 import customtkinter as ctk
 from .product_panel import ProductPanel
 from .ticket_panel import TicketPanel
@@ -12,64 +13,57 @@ from .components.item_detail import ItemDetail
 from .ticket_controller import TicketController
 from .components.receipt_popup import ReceiptPopup
 
-class TicketMainPage:
-    def __init__(self, user_role="admin", employee_id=None):
-        self.root = ctk.CTk()
-        self.root.title("MareKwenta POS")
-        
-        # Set window to fullscreen
-        taskbar_height = 70
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        usable_height = screen_height - taskbar_height
-        self.root.geometry(f"{screen_width}x{usable_height}+0+0")
-        self.root.configure(fg_color="#f2efea")
+class TicketMainPage(ctk.CTkFrame):
+    def __init__(self, parent, main_app, user_role="employee", employee_id=None):
+        super().__init__(parent)
+        self.configure(fg_color="#f2efea")
         
         self.user_role = user_role
+        self.main_app = main_app
+        self.current_user_id = employee_id
         
         # Configure appearance
-        ctk.set_appearance_mode("light")
-        ctk.set_default_color_theme("blue")
+        # ctk.set_appearance_mode("light")
+        # ctk.set_default_color_theme("blue")
         
         # Configure grid
-        self.root.grid_columnconfigure(1, weight=1)
-        self.root.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=1)
         
         # Bind window close event
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        # self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
         # Initialize cart items list
         self.cart_items = []
         self.current_total = 0.0
         
-        # Store current user info
-        self.current_user_id = employee_id  # Default admin user, should be passed from login
+        
         
         self.setup_ui()
 
     def on_closing(self):
         """Handle window closing"""
         try:
-            self.root.quit()
-            self.root.destroy()
+            self.quit()
+            self.destroy()
         except:
             pass
 
     def setup_ui(self):
         # Create navbar
-        self.navbar = Navbar(self.root, width=124, user_role=self.user_role, active_tab="ticket")
-        self.navbar.grid(row=0, column=0, sticky="ns")
+        # self.navbar = Navbar(self, width=124, user_role=self.user_role, active_tab="ticket")
+        # self.navbar.grid(row=0, column=0, sticky="ns")
         
-        # Set navigation callbacks
-        self.navbar.set_nav_callback("ticket", self.show_ticket)
-        self.navbar.set_nav_callback("receipt", self.show_receipt)
-        self.navbar.set_nav_callback("inventory", self.show_inventory)
-        self.navbar.set_nav_callback("staff", self.show_staff)
-        self.navbar.set_nav_callback("cashbox", self.show_cashbox)
-        self.navbar.set_nav_callback("dashboard", self.show_dashboard)
+        # # Set navigation callbacks
+        # self.navbar.set_nav_callback("ticket", self.show_ticket)
+        # self.navbar.set_nav_callback("receipt", self.show_receipt)
+        # self.navbar.set_nav_callback("inventory", self.show_inventory)
+        # self.navbar.set_nav_callback("staff", self.show_staff)
+        # self.navbar.set_nav_callback("cashbox", self.show_cashbox)
+        # self.navbar.set_nav_callback("dashboard", self.show_dashboard)
         
         # Main content area
-        self.main_frame = ctk.CTkFrame(self.root, fg_color="#f2efea")
+        self.main_frame = ctk.CTkFrame(self, fg_color="#f2efea")
         self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 0), pady=0)
         self.main_frame.grid_columnconfigure(0, weight=2)  # Product panel takes more space
         self.main_frame.grid_columnconfigure(1, weight=1)  # Ticket panel
@@ -349,7 +343,7 @@ class TicketMainPage:
             ticket_details = TicketController.get_ticket_details(ticket_id)
             if ticket_details:
                 print("Ticket details retrieved successfully, creating receipt popup")
-                ReceiptPopup(self.root, ticket_details)
+                ReceiptPopup(self, ticket_details)
             else:
                 print("Failed to retrieve ticket details from database")
                 messagebox.showerror("Error", "Failed to retrieve ticket details")
@@ -398,21 +392,6 @@ class TicketMainPage:
 
     def show_dashboard(self):
         self.main_app.show_frame("dashboard")
-
-    def handle_product_click(self, product_name, product_type):
-        print(f"Clicked: {product_name} ({product_type})")
-        try:
-            ModifierPopup(self, product_name=product_name, product_type=product_type, on_submit=self.handle_modifier_submit)
-        except Exception as e:
-            print(f"Error opening modifier popup: {e}")
-
-    def handle_modifier_submit(self, product_name, quantity, size, temperature, extras):
-        print(f"Adding to cart: {product_name} - Qty: {quantity}, Size: {size}, Temp: {temperature}, Extras: {extras}")
-        try:
-            # TODO: Add the item to the cart in ticket_panel
-            pass
-        except Exception as e:
-            print(f"Error adding item to cart: {e}")
 
     def handle_split_popup(self, total):
         try:

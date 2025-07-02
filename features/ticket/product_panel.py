@@ -1,3 +1,4 @@
+from tkinter import messagebox
 import customtkinter as ctk
 import os
 from .components.product_btn import ProductButton
@@ -12,7 +13,7 @@ class ProductPanel(ctk.CTkFrame):
     def __init__(self, master, on_product_click=None, *args, **kwargs):
         super().__init__(master,*args, **kwargs, width=950, height=938, fg_color="#f2efea")
 
-        self.on_product_click = on_product_click
+        self.on_product_click_callback = on_product_click
         self.current_tab = "All"
         self.selected_tab = "All"  
 
@@ -242,8 +243,8 @@ class ProductPanel(ctk.CTkFrame):
                     "unit_price": selected_type['selling_price'],
                     "product_type_id": selected_type['product_type_id']
                 }
-                if self.on_product_click:
-                    self.on_product_click(cart_item)
+                if self.on_product_click_callback:
+                    self.on_product_click_callback(cart_item)
         
         ModifierPopup(
             self.master, 

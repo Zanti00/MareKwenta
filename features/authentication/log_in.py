@@ -175,17 +175,17 @@ class LoginWindow(ctk.CTk):
         success, user_role, employee_id = log_in_controller.authenticate_user(self.username, self.password)
         
         if success:
-            self.inventory_page(user_role)
+            self.inventory_page(user_role, employee_id)
         elif success is False: # Explicitly check for False to differentiate from None (DB error)
             messagebox.showerror("Login Failed", "Invalid username or password")
         else: # Handle database errors or other issues
             messagebox.showerror("Login Error", "An error occurred during login. Please try again.")
             
-    def inventory_page(self, user_role):
+    def inventory_page(self, user_role, employee_id):
         """Navigate to main app with user role"""
         self.destroy()
         from main_app import MainApp
-        app = MainApp(user_role=user_role)
+        app = MainApp(user_role=user_role, employee_id=employee_id)
         app.mainloop()
     
     def exit_app(self):

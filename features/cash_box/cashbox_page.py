@@ -22,11 +22,11 @@ class CashBoxApp(ctk.CTkFrame):
         self.update_cashbox_data()
         
         # Configure grid weights for main layout
-        self.root.grid_columnconfigure(1, weight=1)
-        self.root.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=1)
         
         # Bind window close event
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        # self.protocol("WM_DELETE_WINDOW", self.on_closing)
         
         self.setup_ui()
         self.refresh_expense_list() # Initial load of expenses
@@ -46,8 +46,8 @@ class CashBoxApp(ctk.CTkFrame):
     def on_closing(self):
         """Handle window closing"""
         try:
-            self.root.quit()
-            self.root.destroy()
+            self.quit()
+            self.destroy()
         except:
             pass
         
@@ -375,7 +375,7 @@ class CashBoxApp(ctk.CTkFrame):
                 self.refresh_expense_list()
             else:
                 messagebox.showerror("Error", "Failed to add expense.")
-        AddExpenseDialog(self.root, on_save=on_save)
+        AddExpenseDialog(self, on_save=on_save)
     
     def delete_expense(self, expense_id):
         if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this expense?"):
@@ -399,7 +399,7 @@ class CashBoxApp(ctk.CTkFrame):
                 self.refresh_expense_list()
             else:
                 messagebox.showerror("Error", "Failed to update expense.")
-        EditExpenseDialog(self.root, expense_data, on_save=on_save)
+        EditExpenseDialog(self, expense_data, on_save=on_save)
     
     def update_totals(self):
         """Updates the cashbox summary and refreshes the payment cards."""
@@ -419,5 +419,12 @@ class CashBoxApp(ctk.CTkFrame):
         self.main_app.show_frame("staff")
     def show_cashbox(self):
         self.main_app.show_frame("cashbox")
+        self.refresh()
+    def refresh(self):
+        """Refreshes the cashbox data and updates the UI."""
+        print("Refreshing Cash Box data...")
+        self.update_cashbox_data()
+        self.update_totals() # This will re-setup payment cards and refresh expenses
+        self.refresh_expense_list()
     def show_dashboard(self):
         self.main_app.show_frame("dashboard")

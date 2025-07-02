@@ -10,9 +10,10 @@ from receipt.sales_history import SalesHistoryMain
 from inventory.link_ingredients import LinkIngredientsPage
 
 class MainApp(ctk.CTk):
-    def __init__(self, user_role):
+    def __init__(self, user_role, employee_id=None):
         super().__init__()
         self.user_role = user_role
+        self.employee_id = employee_id
         self.title("MareKwenta POS")
         self.geometry(f"{self.winfo_screenwidth()}x{self.winfo_screenheight()-70}+0+0")
         self.configure(fg_color="#f2efea")
@@ -38,7 +39,7 @@ class MainApp(ctk.CTk):
 
         # Preload all pages
         self.frames = {}
-        self.frames["ticket"] = TicketMainPage(self.container, main_app=self, user_role=self.user_role)
+        self.frames["ticket"] = TicketMainPage(self.container, main_app=self, user_role=self.user_role, employee_id=self.employee_id)
         self.frames["inventory"] = InventoryManagement(self.container, main_app=self, user_role=self.user_role)
         self.frames["staff"] = StaffPageAdmin(self.container, main_app=self, user_role=self.user_role) if self.user_role == "admin" else StaffPageEmployee(self.container, main_app=self, user_role=self.user_role)
         self.frames["cashbox"] = CashBoxApp(self.container, main_app=self, user_role=self.user_role)
@@ -54,6 +55,9 @@ class MainApp(ctk.CTk):
     def show_frame(self, page_name):
         frame = self.frames[page_name]
         frame.tkraise()
+        # Call refresh method if it exists on the frame
+        if hasattr(frame, 'refresh') and callable(getattr(frame, 'refresh')):
+            frame.refresh()
         self.navbar.active_tab = page_name
         for name, btn in self.navbar.nav_buttons.items():
             btn.configure(fg_color="#D5C8B0" if name == page_name else "#f7f3ee") 
