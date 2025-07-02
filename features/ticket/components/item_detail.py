@@ -19,25 +19,45 @@ class ItemDetail(ctk.CTkFrame):
         self.item_total = (quantity * unit_price) + (quantity * extras_cost)
         self.on_remove = on_remove
 
+        # Create the initial display
+        self.create_display()
+
+    def create_display(self):
+        """Create the display elements"""
         # Left section: Product info
         self.left_column = ctk.CTkFrame(self, fg_color="transparent")
         self.left_column.pack(side="left", fill="both", expand=True, padx=15, pady=2)
 
-        name = ctk.CTkLabel(self.left_column, text=product_name, font=("Unbounded", 16), text_color="#4e2d18")
+        # Right section: Total + Delete
+        self.right_column = ctk.CTkFrame(self, fg_color="transparent", width=90, height=95)
+        self.right_column.place(x=385, rely=0.5, anchor="e")
+        
+        self.update_display()
+
+    def update_display(self):
+        """Update the display with current data"""
+        # Clear existing content
+        for widget in self.left_column.winfo_children():
+            widget.destroy()
+        for widget in self.right_column.winfo_children():
+            widget.destroy()
+
+        # Recreate content
+        name = ctk.CTkLabel(self.left_column, text=self.product_name, font=("Unbounded", 16), text_color="#4e2d18")
         name.pack(anchor="w", pady=(7,0), ipady=0)
 
         details_lines = []
-        if size_drink:
-            details_lines.append(f"Size: {size_drink}")
-        if item_info:
-            details_lines.append(f"Temperature: {item_info}")
-        if extras:
-            extras_str = ", ".join(extras) if isinstance(extras, list) else str(extras)
-            if extras_cost > 0:
-                details_lines.append(f"Extras: {extras_str} (+₱{extras_cost})")
+        if self.size_drink:
+            details_lines.append(f"Size: {self.size_drink}")
+        if self.item_info:
+            details_lines.append(f"Temperature: {self.item_info}")
+        if self.extras:
+            extras_str = ", ".join(self.extras) if isinstance(self.extras, list) else str(self.extras)
+            if self.extras_cost > 0:
+                details_lines.append(f"Extras: {extras_str} (+₱{self.extras_cost})")
             else:
                 details_lines.append(f"Extras: {extras_str}")
-        details_lines.append(f"Quantity: {quantity}")
+        details_lines.append(f"Quantity: {self.quantity}")
         details_text = "\n".join(details_lines)
         details_label = ctk.CTkLabel(
             self.left_column,
@@ -49,10 +69,6 @@ class ItemDetail(ctk.CTkFrame):
         )
         details_label.pack(anchor="w", pady=(0,10), ipady=0)
 
-        # Right section: Total + Delete
-        self.right_column = ctk.CTkFrame(self, fg_color="transparent", width=90, height=95)
-        self.right_column.place(x=385, rely=0.5, anchor="e")
-        
         # Get the absolute path to the assets folder relative to this file
         assets_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'assets')
         icon_path = os.path.abspath(os.path.join(assets_dir, 'trash.png'))
@@ -82,3 +98,9 @@ class ItemDetail(ctk.CTkFrame):
         if self.on_remove:
             self.on_remove(self.product_name, self.item_total)
         self.destroy()
+
+    def update_quantity(self, new_quantity):
+        """Update the quantity and refresh display"""
+        self.quantity = new_quantity
+        self.item_total = (self.quantity * self.unit_price) + (self.quantity * self.extras_cost)
+        self.update_display()

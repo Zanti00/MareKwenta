@@ -83,35 +83,157 @@ class TicketMainPage:
         print(f"Product clicked: {cart_item}")  # Debug print
         
         try:
-            # Add item to cart list
-            self.cart_items.append(cart_item)
+            # Check if this exact item already exists in cart
+            existing_item_detail = self.find_existing_item(cart_item)
             
-            # Create item detail widget for display
-            item_detail = ItemDetail(
-                self.ticket_panel.scrollable_frame,
-                product_name=cart_item["name"],
-                quantity=cart_item["quantity"],
-                size_drink=cart_item.get("size", ""),
-                item_info=cart_item.get("temperature", ""),
-                extras=cart_item.get("extras", []),
-                extras_cost=cart_item.get("extras_cost", 0),
-                unit_price=cart_item["unit_price"],
-                on_remove=self.remove_item
-            )
-            
-            # Add to ticket panel
-            self.ticket_panel.add_item(item_detail)
+            if existing_item_detail:
+                # Update existing item instead of creating new one
+                self.update_existing_item(existing_item_detail, cart_item)
+            else:
+                # Create new item detail widget for display
+                item_detail = ItemDetail(
+                    self.ticket_panel.scrollable_frame,
+                    product_name=cart_item["name"],
+                    quantity=cart_item["quantity"],
+                    size_drink=cart_item.get("size", ""),
+                    item_info=cart_item.get("temperature", ""),
+                    extras=cart_item.get("extras", []),
+                    extras_cost=cart_item.get("extras_cost", 0),
+                    unit_price=cart_item["unit_price"],
+                    on_remove=self.remove_item
+                )
+                
+                # Add to ticket panel
+                self.ticket_panel.add_item(item_detail)
+                
+                # Add item to cart list
+                self.cart_items.append(cart_item)
             
             # Update total (includes extras cost)
             item_total = (cart_item["quantity"] * cart_item["unit_price"]) + (cart_item["quantity"] * cart_item.get("extras_cost", 0))
             self.current_total += item_total
             self.ticket_panel.update_total(self.current_total)
             
-            print(f"Item added to cart. New total: ₱{self.current_total:.2f}")
+            print(f"Item added/updated in cart. New total: ₱{self.current_total:.2f}")
             
         except Exception as e:
             print(f"Error adding item to cart: {e}")
             messagebox.showerror("Error", f"Failed to add item to cart: {e}")
+
+    def find_existing_item(self, new_cart_item):
+        """Find if an identical item already exists in the ticket panel"""
+        try:
+            for item_detail in self.ticket_panel.items:
+                # Check if it's the same product with same specifications
+                if (item_detail.product_name == new_cart_item["name"] and
+                    item_detail.size_drink == new_cart_item.get("size", "") and
+                    item_detail.item_info == new_cart_item.get("temperature", "") and
+                    item_detail.extras == new_cart_item.get("extras", []) and
+                    item_detail.extras_cost == new_cart_item.get("extras_cost", 0) and
+                    item_detail.unit_price == new_cart_item["unit_price"]):
+                    return item_detail
+            return None
+        except Exception as e:
+            print(f"Error finding existing item: {e}")
+            return None
+
+    def update_existing_item(self, existing_item_detail, new_cart_item):
+        """Update the quantity and total of an existing item"""
+        try:
+            # Update quantity
+            new_quantity = existing_item_detail.quantity + new_cart_item["quantity"]
+            existing_item_detail.quantity = new_quantity
+            
+            # Recalculate item total
+            existing_item_detail.item_total = (new_quantity * existing_item_detail.unit_price) + (new_quantity * existing_item_detail.extras_cost)
+            
+            # Update the display
+            self.refresh_item_detail_display(existing_item_detail)
+            
+            # Update the cart_items list
+            for cart_item in self.cart_items:
+                if (cart_item["name"] == new_cart_item["name"] and
+                    cart_item.get("size", "") == new_cart_item.get("size", "") and
+                    cart_item.get("temperature", "") == new_cart_item.get("temperature", "") and
+                    cart_item.get("extras", []) == new_cart_item.get("extras", []) and
+                    cart_item.get("extras_cost", 0) == new_cart_item.get("extras_cost", 0) and
+                    cart_item["unit_price"] == new_cart_item["unit_price"]):
+                    cart_item["quantity"] = new_quantity
+                    break
+            
+            print(f"Updated existing item quantity to {new_quantity}")
+            
+        except Exception as e:
+            print(f"Error updating existing item: {e}")
+
+    def refresh_item_detail_display(self, item_detail):
+        """Refresh the display of an ItemDetail widget"""
+        try:
+            # Clear the existing widgets
+            for widget in item_detail.left_column.winfo_children():
+                widget.destroy()
+            for widget in item_detail.right_column.winfo_children():
+                widget.destroy()
+            
+            # Recreate the content with updated data
+            import customtkinter as ctk
+            from PIL import Image
+            import os
+            
+            # Left section: Product info (recreated)
+            name = ctk.CTkLabel(item_detail.left_column, text=item_detail.product_name, font=("Unbounded", 16), text_color="#4e2d18")
+            name.pack(anchor="w", pady=(7,0), ipady=0)
+
+            details_lines = []
+            if item_detail.size_drink:
+                details_lines.append(f"Size: {item_detail.size_drink}")
+            if item_detail.item_info:
+                details_lines.append(f"Temperature: {item_detail.item_info}")
+            if item_detail.extras:
+                extras_str = ", ".join(item_detail.extras) if isinstance(item_detail.extras, list) else str(item_detail.extras)
+                if item_detail.extras_cost > 0:
+                    details_lines.append(f"Extras: {extras_str} (+₱{item_detail.extras_cost})")
+                else:
+                    details_lines.append(f"Extras: {extras_str}")
+            details_lines.append(f"Quantity: {item_detail.quantity}")
+            details_text = "\n".join(details_lines)
+            details_label = ctk.CTkLabel(
+                item_detail.left_column,
+                text=details_text,
+                font=("Inter", 12),
+                text_color="#4e2d18",
+                anchor="w",
+                justify="left"
+            )
+            details_label.pack(anchor="w", pady=(0,10), ipady=0)
+
+            # Right section: Total + Delete (recreated)
+            assets_dir = os.path.join(os.path.dirname(__file__), '..', 'assets')
+            icon_path = os.path.abspath(os.path.join(assets_dir, 'trash.png'))
+            
+            try:
+                trash_icon = ctk.CTkImage(light_image=Image.open(icon_path))
+                delete_btn = ctk.CTkButton(item_detail.right_column, width=20, height=20, text="",
+                                           fg_color="transparent", hover_color="#f0f0f0",
+                                           image=trash_icon,
+                                           command=item_detail._remove_self)
+            except:
+                # Fallback if trash icon doesn't exist
+                delete_btn = ctk.CTkButton(item_detail.right_column, width=20, height=20, text="✕",
+                                           fg_color="transparent", hover_color="#f0f0f0",
+                                           text_color="#dc3545",
+                                           command=item_detail._remove_self)
+            
+            delete_btn.place(relx=1.0, rely=0.0, anchor="ne")
+
+            total_text = ctk.CTkLabel(item_detail.right_column,
+                                      text=f"\u20B1{item_detail.item_total:.2f}",
+                                      font=("Unbounded", 16, "bold"),
+                                      text_color="#708a2e")
+            total_text.place(relx=1.0, rely=1.0, anchor="se")
+            
+        except Exception as e:
+            print(f"Error refreshing item detail display: {e}")
 
     def remove_item(self, product_name, item_total):
         """Handle item removal from cart"""
@@ -123,7 +245,7 @@ class TicketMainPage:
             # Remove from cart items list
             self.cart_items = [item for item in self.cart_items if not (
                 item["name"] == product_name and 
-                (item["quantity"] * item["unit_price"]) == item_total
+                (item["quantity"] * item["unit_price"]) + (item["quantity"] * item.get("extras_cost", 0)) == item_total
             )]
             
             print(f"Item removed. New total: ₱{self.current_total:.2f}")

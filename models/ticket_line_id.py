@@ -15,13 +15,14 @@ try:
     cursor = conn.cursor()
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS staff_attendance (
-            attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            attendance_date DATE NOT NULL,
-            time_in TIME NOT NULL,
-            time_out TIME NOT NULL,
-            employee_id INTEGER NOT NULL,
-            FOREIGN KEY (employee_id) REFERENCES user(employee_id) ON DELETE CASCADE ON UPDATE CASCADE
+        CREATE TABLE IF NOT EXISTS ticket_line (
+            ticket_line_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_id INTEGER NOT NULL,
+            product_type_id INTEGER NOT NULL,
+            product_quantity INTEGER NOT NULL,
+            unit_selling_price REAL NOT NULL,
+            FOREIGN KEY (ticket_id) REFERENCES ticket(ticket_id) ON DELETE CASCADE ON UPDATE CASCADE,
+            FOREIGN KEY (product_type_id) REFERENCES products(product_type_id) ON DELETE CASCADE ON UPDATE CASCADE
         )
     """)
 

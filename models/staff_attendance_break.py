@@ -1,7 +1,8 @@
 import sqlite3
 import os
 
-db_name = "mare_kwenta.db"
+base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+db_name = os.path.join(base_path, "mare_kwenta.db")
 
 # check if the database file exists
 if not os.path.exists(db_name):
