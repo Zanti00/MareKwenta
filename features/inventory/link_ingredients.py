@@ -81,6 +81,19 @@ class AddProductDialog:
                                      hover_color="#555555", corner_radius=12, command=self.cancel)
         cancel_button.grid(row=0, column=1)
 
+    def upload_image(self):
+        filetypes = [
+            ("Image files", "*.png *.jpg *.jpeg *.gif *.bmp"),
+            ("All files", "*.*")
+        ]
+        path = fd.askopenfilename(title="Select Product Image", filetypes=filetypes)
+        if path:
+            self.image_path = path
+            img = Image.open(path)
+            img.thumbnail((120, 120))
+            self.ctk_img = CTkImage(light_image=img, dark_image=img, size=img.size)
+            self.image_label.configure(image=self.ctk_img, text="")
+
     def save_product(self):
         name = self.name_entry.get().strip()
         category = self.category.get()
@@ -495,22 +508,24 @@ class ViewLinkedIngredientsPopup(ctk.CTkToplevel):
         y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (h // 2)
         self.geometry(f"{w}x{h}+{x}+{y}")
 
-class LinkIngredientsPage:
-    def __init__(self, user_role="admin"):
-        self.root = ctk.CTk()
-        self.root.title("MareKwenta POS")
-        taskbar_height = 70
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        usable_height = screen_height - taskbar_height
-        self.root.geometry(f"{screen_width}x{usable_height}+0+0")
-        self.root.configure(fg_color="#f2efea")
+class LinkIngredientsPage(ctk.CTkFrame):
+    def __init__(self, parent, main_app, user_role="admin"):
+        super().__init__(parent)
+        self.main_app = main_app
         self.user_role = user_role
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
-        self.root.grid_columnconfigure(1, weight=1)
-        self.root.grid_rowconfigure(0, weight=1)
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        # either remove this three lines or use parent widget 
+        # self.parent_widget = parent
+        # then 
+        # self.parent_widget.grid_columnconfigure(1, weight=1)
+        # self.parent_widget.grid_rowconfigure(0, weight=1)
+        # self.parent_widget.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
+        # remove this
+        # self.grid_columnconfigure(1, weight=1)
+        # self.grid_rowconfigure(0, weight=1)
+        # self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.products = []  # Will be loaded from database
         self.linked_ingredients = {}
         self.setup_ui()
@@ -518,30 +533,21 @@ class LinkIngredientsPage:
 
     def on_closing(self):
         try:
-            self.root.quit()
-            self.root.destroy()
+            self.quit()
+            self.destroy()
         except:
             pass
 
     def setup_ui(self):
-        self.navbar = Navbar(self.root, width=124, user_role=self.user_role, active_tab="inventory")
-        self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
-        self.navbar.set_nav_callback("ticket", self.show_ticket)
-        self.navbar.set_nav_callback("receipt", self.show_receipt)
-        self.navbar.set_nav_callback("inventory", self.show_inventory)
-        self.navbar.set_nav_callback("staff", self.show_staff)
-        self.navbar.set_nav_callback("cashbox", self.show_cashbox)
-        self.navbar.set_nav_callback("dashboard", self.show_dashboard)
-        self.main_frame = ctk.CTkFrame(self.root, fg_color="#f2efea", width=700, corner_radius=24)
-        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 0), pady=20)
-        self.root.grid_columnconfigure(1, weight=1)
-        self.main_frame.grid_columnconfigure(0, weight=1)
-        self.setup_header()
-        self.setup_navigation()
+        # Main frame for content (like inventory_page.py)
+        self.main_frame = ctk.CTkFrame(self, fg_color="#f2efea")
+        self.main_frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.9, relheight=0.9)
+        self.setup_header_and_nav()
         self.setup_product_list()
         self.setup_fab()
 
-    def setup_header(self):
+    def setup_header_and_nav(self):
+        # Header (title)
         header_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         header_frame.grid(row=0, column=0, sticky="w", pady=(10, 5))
         header_label = ctk.CTkLabel(
@@ -552,13 +558,12 @@ class LinkIngredientsPage:
         )
         header_label.grid(row=0, column=0, sticky="w")
 
-    def setup_navigation(self):
-        nav_frame = ctk.CTkFrame(self.main_frame, fg_color="#f2efea")
-        nav_frame.grid(row=1, column=0, sticky="ew", pady=(0, 15))
-        nav_frame.grid_columnconfigure(0, weight=1)
-        nav_container = ctk.CTkFrame(nav_frame, fg_color="transparent")
+        # Navigation Tabs (identical to inventory_page.py)
+        self.nav_frame = ctk.CTkFrame(self.main_frame, fg_color="#f2efea")
+        self.nav_frame.grid(row=1, column=0, sticky="ew", pady=(0, 15))
+        self.nav_frame.grid_columnconfigure(0, weight=1)
+        nav_container = ctk.CTkFrame(self.nav_frame, fg_color="transparent")
         nav_container.grid(row=0, column=0, pady=0)
-        # Inventory tab as button
         inventory_tab = ctk.CTkButton(
             nav_container,
             text="Inventory",
@@ -570,7 +575,6 @@ class LinkIngredientsPage:
             command=self.show_inventory
         )
         inventory_tab.grid(row=0, column=0)
-        # Link Ingredients tab (active)
         link_ingredients_tab_frame = ctk.CTkFrame(nav_container, fg_color="transparent")
         link_ingredients_tab_frame.grid(row=0, column=1, padx=(60, 0))
         link_ingredients_tab = ctk.CTkLabel(
@@ -587,7 +591,7 @@ class LinkIngredientsPage:
         if hasattr(self, 'list_frame'):
             self.list_frame.destroy()
         self.list_frame = ctk.CTkFrame(self.main_frame, fg_color="#f2efea", corner_radius=16)
-        self.list_frame.grid(row=2, column=0, sticky="nsew", padx=0, pady=(0, 20))
+        self.list_frame.grid(row=3, column=0, sticky="nsew", padx=(70, 40))
         self.list_frame.grid_columnconfigure(0, weight=1)
         self.main_frame.grid_rowconfigure(2, weight=1)
         
@@ -688,12 +692,12 @@ class LinkIngredientsPage:
                         return
                     else:
                         # Link ingredients for this specific variant
-                        LinkIngredientFinalPopup(self.root, product, product_type['size'], product_type['temperature'], on_save_link=self.save_linked_ingredients)
+                        LinkIngredientFinalPopup(self, product, product_type['size'], product_type['temperature'], on_save_link=self.save_linked_ingredients)
                 else:
                     # No product type yet, show size/temp selection
                     def after_size_temp(size, temp):
-                        LinkIngredientFinalPopup(self.root, product, size, temp, on_save_link=self.save_linked_ingredients)
-                    SizeTempPopup(self.root, product, after_size_temp)
+                        LinkIngredientFinalPopup(self, product, size, temp, on_save_link=self.save_linked_ingredients)
+                    SizeTempPopup(self, product, after_size_temp)
             else:  # Food category
                 if product_type:
                     existing_recipes = RecipeController.get_recipes_by_product_type_id(product_type['product_type_id'])
@@ -705,12 +709,12 @@ class LinkIngredientsPage:
                         return
                 
                 # If no existing recipes, proceed with linking
-                LinkIngredientFinalPopup(self.root, product, on_save_link=self.save_linked_ingredients)
+                LinkIngredientFinalPopup(self, product, on_save_link=self.save_linked_ingredients)
                 
         elif action == "View":
             # Get linked data from database for this specific product
             linked_data = self.get_linked_data_from_db(product)
-            ViewLinkedIngredientsPopup(self.root, product['name'], linked_data)
+            ViewLinkedIngredientsPopup(self, product['name'], linked_data)
             
         elif action == "Edit":
             if product_type:
@@ -729,7 +733,7 @@ class LinkIngredientsPage:
                         self.update_recipe_ingredients(product_type['product_type_id'], ingredients, unit_price, selling_price)
                     
                     EditLinkedIngredientsPopup(
-                        self.root, product['name'], summary, inventory_list, 
+                        self, product['name'], summary, inventory_list, 
                         existing_recipes, product_type, on_save_edit=on_save_edit
                     )
                 else:
@@ -780,124 +784,37 @@ class LinkIngredientsPage:
             return False
 
     def show_inventory(self):
-        try:
-            from inventory.inventory_page import InventoryManagement
-            self.root.withdraw()  # Hide current window first
-            self.root.after(100, lambda: self._delayed_inventory_launch())  # Delay the launch
-        except Exception as e:
-            print(f"Error navigating to inventory: {e}")
-            messagebox.showerror("Navigation Error", f"Failed to open inventory page: {e}")
+        self.main_app.show_frame("inventory")
 
-    def _delayed_inventory_launch(self):
-        """Launch inventory page with delay to prevent image conflicts"""
-        try:
-            from inventory.inventory_page import InventoryManagement
-            self.root.destroy()  # Destroy after withdrawal
-            inventory_page = InventoryManagement(self.user_role)
-            inventory_page.run()
-        except Exception as e:
-            print(f"Error launching inventory page: {e}")
-            messagebox.showerror("Navigation Error", f"Failed to launch inventory page: {e}")
-        
-    def show_ticket(self):
-        try:
-            from ticket.ticket_main import TicketMainPage
-            self.root.withdraw()
-            self.root.after(100, lambda: self._delayed_ticket_launch())
-        except Exception as e:
-            print(f"Error navigating to ticket: {e}")
-
-    def _delayed_ticket_launch(self):
-        try:
-            from ticket.ticket_main import TicketMainPage
-            self.root.destroy()
-            ticket_page = TicketMainPage(self.user_role)
-            ticket_page.run()
-        except Exception as e:
-            print(f"Error launching ticket page: {e}")
-        
-    def show_receipt(self):
-        try:
-            from receipt.sales_history import SalesHistoryMain
-            self.root.withdraw()
-            self.root.after(100, lambda: self._delayed_receipt_launch())
-        except Exception as e:
-            print(f"Error navigating to receipt: {e}")
-
-    def _delayed_receipt_launch(self):
-        try:
-            from receipt.sales_history import SalesHistoryMain
-            self.root.destroy()
-            receipt_page = SalesHistoryMain(self.user_role)
-            receipt_page.run()
-        except Exception as e:
-            print(f"Error launching receipt page: {e}")
-        
     def show_staff(self):
-        try:
-            self.root.withdraw()
-            self.root.after(100, lambda: self._delayed_staff_launch())
-        except Exception as e:
-            print(f"Error navigating to staff: {e}")
+        self.main_app.show_frame("staff")
 
-    def _delayed_staff_launch(self):
-        try:
-            self.root.destroy()
-            if self.user_role == "admin":
-                StaffPageAdmin(user_role="admin").run()
-            else:
-                StaffPageEmployee(user_role="employee").run()
-        except Exception as e:
-            print(f"Error launching staff page: {e}")
-        
+    def show_receipt(self):
+        self.main_app.show_frame("receipt")
+
     def show_cashbox(self):
-        try:
-            from cash_box.cashbox_page import CashBoxApp
-            self.root.withdraw()
-            self.root.after(100, lambda: self._delayed_cashbox_launch())
-        except Exception as e:
-            print(f"Error navigating to cashbox: {e}")
+        self.main_app.show_frame("cashbox")
 
-    def _delayed_cashbox_launch(self):
-        try:
-            from cash_box.cashbox_page import CashBoxApp
-            self.root.destroy()
-            cashbox_page = CashBoxApp(self.user_role)
-            cashbox_page.run()
-        except Exception as e:
-            print(f"Error launching cashbox page: {e}")
-        
+    def show_ticket(self):
+        self.main_app.show_frame("ticket")
+
     def show_dashboard(self):
-        try:
-            from dashboard.sales_dashboard import SalesDashboard
-            self.root.withdraw()
-            self.root.after(100, lambda: self._delayed_dashboard_launch())
-        except Exception as e:
-            print(f"Error navigating to dashboard: {e}")
-
-    def _delayed_dashboard_launch(self):
-        try:
-            from dashboard.sales_dashboard import SalesDashboard
-            self.root.destroy()
-            dashboard_page = SalesDashboard(self.user_role)
-            dashboard_page.run()
-        except Exception as e:
-            print(f"Error launching dashboard page: {e}")
+        self.main_app.show_frame("dashboard")
 
     def run(self):
         try:
-            self.root.mainloop()
+            self.mainloop()
         except Exception as e:
             print(f"Error running LinkIngredientsPage: {e}")
             messagebox.showerror("Fatal Error", f"Application failed to start: {e}")
         finally:
             try:
-                self.root.destroy()
+                self.destroy()
             except:
                 pass
     
     def mainloop(self):
-        self.root.mainloop()
+        self.mainloop()
 
     def get_linked_data_from_db(self, product):
         """Get linked ingredients data from database"""
@@ -1018,7 +935,7 @@ class LinkIngredientsPage:
     def setup_fab(self):
         # Floating Action Button (FAB) with a plus sign
         self.fab = ctk.CTkButton(
-            self.root,
+            self,
             text="+",
             font=ctk.CTkFont("Unbounded", size=36, weight="bold"),
             fg_color="#4e2d18",
@@ -1035,7 +952,7 @@ class LinkIngredientsPage:
     def on_fab_click(self):
         def on_save(product):
             self.load_products_from_db()  # Reload from database
-        AddProductDialog(self.root, on_save=on_save)
+        AddProductDialog(self, on_save=on_save)
 
     def handle_action(self, product, action):
         """Original handle_action method for fallback"""
@@ -1043,8 +960,8 @@ class LinkIngredientsPage:
             category = product.get("category", "")
             if category in ["Coffee", "Non-Coffee"]:
                 def after_size_temp(size, temp):
-                    LinkIngredientFinalPopup(self.root, product, size, temp, on_save_link=self.save_linked_ingredients)
-                SizeTempPopup(self.root, product, after_size_temp)
+                    LinkIngredientFinalPopup(self, product, size, temp, on_save_link=self.save_linked_ingredients)
+                SizeTempPopup(self, product, after_size_temp)
             else:  # Food category
                 # Check if this Food product already has linked ingredients
                 product_types = ProductController.get_product_types_by_product_id(product['product_id'])
@@ -1065,12 +982,12 @@ class LinkIngredientsPage:
                         return
                 
                 # If no existing recipes, proceed with linking
-                LinkIngredientFinalPopup(self.root, product, on_save_link=self.save_linked_ingredients)
+                LinkIngredientFinalPopup(self, product, on_save_link=self.save_linked_ingredients)
                 
         elif action == "View":
             # Get linked data from database
             linked_data = self.get_linked_data_from_db(product)
-            ViewLinkedIngredientsPopup(self.root, product['name'], linked_data)
+            ViewLinkedIngredientsPopup(self, product['name'], linked_data)
             
         elif action == "Edit":
             # Get all product types for this product
@@ -1096,7 +1013,7 @@ class LinkIngredientsPage:
                             self.update_recipe_ingredients(food_type['product_type_id'], ingredients, unit_price, selling_price)
                         
                         EditLinkedIngredientsPopup(
-                            self.root, product['name'], summary, inventory_list, 
+                            self, product['name'], summary, inventory_list, 
                             existing_recipes, food_type, on_save_edit=on_save_edit
                         )
                     else:
@@ -1139,7 +1056,7 @@ class LinkIngredientsPage:
                             self.update_recipe_ingredients(target_variant['product_type']['product_type_id'], ingredients, unit_price, selling_price)
                         
                         EditLinkedIngredientsPopup(
-                            self.root, product['name'], target_variant['summary'], 
+                            self, product['name'], target_variant['summary'], 
                             inventory_list, target_variant['recipes'], target_variant['product_type'], 
                             on_save_edit=on_save_edit
                         )
@@ -1161,19 +1078,19 @@ class LinkIngredientsPage:
 
     def show_size_temp_for_edit(self, product, variants_with_recipes, on_next):
         """Show size/temperature selection popup for editing, only showing variants with recipes"""
-        popup = ctk.CTkToplevel(self.root)
+        popup = ctk.CTkToplevel(self)
         popup.title("Select Size & Temperature to Edit")
         popup.geometry("300x260")
         popup.configure(fg_color="#f2efea")
-        popup.transient(self.root)
+        popup.transient(self)
         popup.grab_set()
         popup.resizable(False, False)
         
         # Center the popup
         popup.update_idletasks()
         w, h = 300, 260
-        x = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - (w // 2)
-        y = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - (h // 2)
+        x = self.winfo_rootx() + (self.winfo_width() // 2) - (w // 2)
+        y = self.winfo_rooty() + (self.winfo_height() // 2) - (h // 2)
         popup.geometry(f"{w}x{h}+{x}+{y}")
         
         size_var = tk.StringVar(value=None)

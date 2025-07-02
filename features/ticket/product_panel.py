@@ -10,7 +10,7 @@ from inventory.product_controller import ProductController
 
 class ProductPanel(ctk.CTkFrame):
     def __init__(self, master, on_product_click=None, *args, **kwargs):
-        super().__init__(master,*args, **kwargs, width=800, height=938, fg_color="#f2efea")
+        super().__init__(master,*args, **kwargs, width=950, height=938, fg_color="#f2efea")
 
         self.on_product_click = on_product_click
         self.current_tab = "All"

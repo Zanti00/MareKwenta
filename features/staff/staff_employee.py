@@ -5,41 +5,19 @@ from nav_bar import Navbar
 from staff.staff_employee_controller import StaffEmployeeController
 from staff.staff_admin import StaffPageAdmin
 
-class StaffPageEmployee(ctk.CTk):
-    def __init__(self, user_role="employee"):
-        super().__init__()
+class StaffPageEmployee(ctk.CTkFrame):
+    def __init__(self, parent, main_app, user_role="employee"):
+        super().__init__(parent)
+        self.main_app = main_app
         self.user_role = user_role
-        self.title("MareKwenta POS")
-        taskbar_height = 70
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        usable_height = screen_height - taskbar_height
-        self.geometry(f"{screen_width}x{usable_height}+0+0")
         self.configure(fg_color="#f2efea")
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
-
-        self.controller = StaffEmployeeController()
-
-        # Navbar
-        self.navbar = Navbar(self, width=124, user_role=self.user_role, active_tab="staff")
-        self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
-        self.navbar.set_nav_callback("ticket", self.show_ticket)
-        self.navbar.set_nav_callback("receipt", self.show_receipt)
-        self.navbar.set_nav_callback("inventory", self.show_inventory)
-        self.navbar.set_nav_callback("staff", self.show_staff)
-        self.navbar.set_nav_callback("cashbox", self.show_cashbox)
-        self.navbar.set_nav_callback("dashboard", self.show_dashboard)
-
-        # Main content frame
-        self.main_frame = ctk.CTkScrollableFrame(self, fg_color="#f2efea")
-        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(20, 20), pady=(10, 20)) 
-        self.main_frame.grid_columnconfigure(0, weight=1)
 
         # Track selected date and employee cards
         self.selected_date = datetime.date.today()
         self.date_buttons = []
         self.employee_cards = []
+
+        self.controller = StaffEmployeeController()
 
         # Header
         self.create_header()
@@ -52,8 +30,9 @@ class StaffPageEmployee(ctk.CTk):
         self.build_employee_view()
 
     def create_header(self):
-        header_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        header_frame.pack(fill="x", padx=40, pady=(10, 0))
+        """Create the header with title and date"""
+        header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        header_frame.place(relx=0.5, rely=0.1, anchor="center", relwidth=0.85, relheight=0.1)
 
         title_label = ctk.CTkLabel(header_frame, text="Staff", font=("Unbounded", 36, "bold"), text_color="#4e2d18")
         title_label.pack(side="left")
@@ -63,19 +42,20 @@ class StaffPageEmployee(ctk.CTk):
         date_label.pack(side="right", pady=20)
 
     def create_main_layout(self):
-        # Using a container frame for left and right panels to manage packing
-        content_container = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        content_container.pack(fill="both", expand=True, padx=20, pady=(5, 20))
-        content_container.grid_columnconfigure(0, weight=0) # Left panel fixed width
-        content_container.grid_columnconfigure(1, weight=1) # Right panel expands
-        content_container.grid_rowconfigure(0, weight=1)
+        """Create the main layout with left and right panels"""
+        # Main content frame for horizontal layout
+        self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.content_frame.place(relx=0.5, rely=0.55, anchor="center", relwidth=0.95, relheight=0.8)
 
-        self.left_panel = ctk.CTkFrame(content_container, width=220, fg_color="#f2efea", corner_radius=0)
-        self.left_panel.grid(row=0, column=0, sticky="ns", padx=(0, 10)) # Adjusted padx
+        # Left Panel - Date selection
+        self.left_panel = ctk.CTkFrame(self.content_frame, width=220, fg_color="#f2efea", corner_radius=0)
+        self.left_panel.grid(row=0, column=0, sticky="ns", padx=(0, 20), pady=0)
 
-        self.right_panel = ctk.CTkFrame(content_container, fg_color="transparent", corner_radius=20) # Made scrollable
-        self.right_panel.grid(row=0, column=1, sticky="nsew", padx=(10, 0)) # Adjusted padx
-        self.right_panel.grid_columnconfigure(0, weight=1) # Ensure cards expand within scrollable frame
+        # Right Panel - Employee cards
+        self.right_panel = ctk.CTkFrame(self.content_frame, fg_color="transparent", corner_radius=20)
+        self.right_panel.grid(row=0, column=1, sticky="nsew")
+        self.content_frame.grid_columnconfigure(1, weight=1)
+        self.content_frame.grid_rowconfigure(0, weight=1)
 
     def build_date_list(self):
         today = datetime.date.today()
@@ -160,19 +140,13 @@ class StaffPageEmployee(ctk.CTk):
             card.set_enabled(is_current_date)
 
 
-    # Navigation callbacks (unchanged)
+    # Navigation methods now use main_app.show_frame
     def show_ticket(self):
-        from ticket.ticket_main import TicketMainPage
-        self.destroy()
-        TicketMainPage(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("ticket")
     def show_receipt(self):
-        from receipt.sales_history import SalesHistoryMain
-        self.destroy()
-        SalesHistoryMain(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("receipt")
     def show_inventory(self):
-        from inventory.inventory_page import InventoryManagement
-        self.destroy()
-        InventoryManagement(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("inventory")
     def show_staff(self):
         if self.user_role == "admin":
             self.destroy()
@@ -181,13 +155,9 @@ class StaffPageEmployee(ctk.CTk):
             self.destroy()
             StaffPageEmployee(user_role="employee").run()
     def show_cashbox(self):
-        from cash_box.cashbox_page import CashBoxApp
-        self.destroy()
-        CashBoxApp(user_role=self.user_role).run()
+        self.main_app.show_frame("cashbox")
     def show_dashboard(self):
-        from dashboard.sales_dashboard import SalesDashboard
-        self.destroy()
-        SalesDashboard(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("dashboard")
 
     def custom_messagebox(self, title, message):
         popup = ctk.CTkToplevel(self)
@@ -204,5 +174,7 @@ class StaffPageEmployee(ctk.CTk):
         self.mainloop()
 
 if __name__ == "__main__":
-    app = StaffPageEmployee()
+    # You must provide the required arguments: parent and main_app
+    # For standalone testing, you can use None or suitable mock objects
+    app = StaffPageEmployee(parent=None, main_app=None)
     app.run()

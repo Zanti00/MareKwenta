@@ -1,5 +1,6 @@
 import customtkinter as ctk
-from PIL import Image, ImageTk
+from PIL import Image
+from customtkinter import CTkImage
 import os
 
 class ProductButton(ctk.CTkFrame):

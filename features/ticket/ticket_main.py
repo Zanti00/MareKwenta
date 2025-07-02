@@ -1,10 +1,10 @@
 import customtkinter as ctk
-from tkinter import messagebox
+from .product_panel import ProductPanel
+from .ticket_panel import TicketPanel
+from .components.modifier_popup import ModifierPopup
 import sys
 import os
-
-# Add navigation imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # Add view folder to path
 from nav_bar import Navbar
 from .product_panel import ProductPanel
 from .components.ticket_panel import TicketPanel
@@ -382,115 +382,50 @@ class TicketMainPage:
 
     # Navigation methods
     def show_ticket(self):
-        """Already on ticket page"""
-        pass
+        pass  # Already on this page, do nothing!
 
     def show_receipt(self):
-        """Navigate to receipt page"""
-        try:
-            from receipt.sales_history import SalesHistoryMain
-            self.root.withdraw()
-            self.root.after(100, lambda: self._delayed_receipt_launch())
-        except Exception as e:
-            print(f"Error navigating to receipt: {e}")
-
-    def _delayed_receipt_launch(self):
-        try:
-            from receipt.sales_history import SalesHistoryMain
-            self.root.destroy()
-            receipt_page = SalesHistoryMain(self.user_role)
-            receipt_page.run()
-        except Exception as e:
-            print(f"Error launching receipt page: {e}")
+        self.main_app.show_frame("receipt")
 
     def show_inventory(self):
-        """Navigate to inventory page"""
-        try:
-            from inventory.inventory_page import InventoryManagement
-            self.root.withdraw()
-            self.root.after(100, lambda: self._delayed_inventory_launch())
-        except Exception as e:
-            print(f"Error navigating to inventory: {e}")
-
-    def _delayed_inventory_launch(self):
-        try:
-            from inventory.inventory_page import InventoryManagement
-            self.root.destroy()
-            inventory_page = InventoryManagement(self.user_role)
-            inventory_page.run()
-        except Exception as e:
-            print(f"Error launching inventory page: {e}")
+        self.main_app.show_frame("inventory")
 
     def show_staff(self):
-        """Navigate to staff page"""
-        try:
-            self.root.withdraw()
-            self.root.after(100, lambda: self._delayed_staff_launch())
-        except Exception as e:
-            print(f"Error navigating to staff: {e}")
-
-    def _delayed_staff_launch(self):
-        try:
-            self.root.destroy()
-            if self.user_role == "admin":
-                from staff.staff_admin import StaffPageAdmin
-                StaffPageAdmin(user_role="admin").run()
-            else:
-                from staff.staff_employee import StaffPageEmployee
-                StaffPageEmployee(user_role="employee").run()
-        except Exception as e:
-            print(f"Error launching staff page: {e}")
+        self.main_app.show_frame("staff")
 
     def show_cashbox(self):
-        """Navigate to cashbox page"""
-        try:
-            from cash_box.cashbox_page import CashBoxApp
-            self.root.withdraw()
-            self.root.after(100, lambda: self._delayed_cashbox_launch())
-        except Exception as e:
-            print(f"Error navigating to cashbox: {e}")
-
-    def _delayed_cashbox_launch(self):
-        try:
-            from cash_box.cashbox_page import CashBoxApp
-            self.root.destroy()
-            cashbox_page = CashBoxApp(self.user_role)
-            cashbox_page.run()
-        except Exception as e:
-            print(f"Error launching cashbox page: {e}")
+        self.main_app.show_frame("cashbox")
 
     def show_dashboard(self):
-        """Navigate to dashboard page"""
+        self.main_app.show_frame("dashboard")
+
+    def handle_product_click(self, product_name, product_type):
+        print(f"Clicked: {product_name} ({product_type})")
         try:
-            from dashboard.sales_dashboard import SalesDashboard
-            self.root.withdraw()
-            self.root.after(100, lambda: self._delayed_dashboard_launch())
+            ModifierPopup(self, product_name=product_name, product_type=product_type, on_submit=self.handle_modifier_submit)
         except Exception as e:
-            print(f"Error navigating to dashboard: {e}")
+            print(f"Error opening modifier popup: {e}")
 
-    def _delayed_dashboard_launch(self):
+    def handle_modifier_submit(self, product_name, quantity, size, temperature, extras):
+        print(f"Adding to cart: {product_name} - Qty: {quantity}, Size: {size}, Temp: {temperature}, Extras: {extras}")
         try:
-            from dashboard.sales_dashboard import SalesDashboard
-            self.root.destroy()
-            dashboard_page = SalesDashboard(self.user_role)
-            dashboard_page.run()
+            # TODO: Add the item to the cart in ticket_panel
+            pass
         except Exception as e:
-            print(f"Error launching dashboard page: {e}")
+            print(f"Error adding item to cart: {e}")
 
-    def run(self):
-        """Start the application"""
+    def handle_split_popup(self, total):
         try:
-            self.root.mainloop()
+            self.ticket_panel.open_split_popup(total)
         except Exception as e:
-            print(f"Error running TicketMainPage: {e}")
-            messagebox.showerror("Fatal Error", f"Application failed to start: {e}")
-        finally:
-            try:
-                self.root.destroy()
-            except:
-                pass
+            print(f"Error opening split popup: {e}")
 
-    def mainloop(self):
-        """Alternative method name for compatibility"""
-        self.run()
-
+# Alternative entry point function to avoid recursion issues
+def create_ticket_app(user_role="employee"):
+    """Factory function to create the ticket application"""
+    try:
+        app = TicketMainPage(None, None, user_role=user_role)
+        return app
+    except Exception as e:
+        print(f"Error creating ticket app: {e}")
+        return None

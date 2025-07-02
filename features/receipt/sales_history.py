@@ -7,36 +7,28 @@ from staff.staff_admin import StaffPageAdmin
 from staff.staff_employee import StaffPageEmployee
 from .receipt_controller import ReceiptController
 
-class SalesHistoryMain(ctk.CTk):
-    def __init__(self, user_role="employee"):
-        super().__init__()
-        taskbar_height = 70
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        usable_height = screen_height - taskbar_height
-        self.geometry(f"{screen_width}x{usable_height}+0+0")
-        self.configure(fg_color="#f2efea")
-        
-        # Store user role
+class SalesHistoryMain(ctk.CTkFrame):
+    def __init__(self, parent, main_app, user_role="employee"):
+        super().__init__(parent)
+        self.main_app = main_app
         self.user_role = user_role
-
+        self.configure(fg_color="#f2efea")
         self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
-        self.navbar = Navbar(self, width=124, user_role=self.user_role, active_tab="receipt")
-        self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
-        self.navbar.set_nav_callback("ticket", self.show_ticket)
-        self.navbar.set_nav_callback("receipt", self.show_receipt)
-        self.navbar.set_nav_callback("inventory", self.show_inventory)
-        self.navbar.set_nav_callback("staff", self.show_staff)
-        self.navbar.set_nav_callback("cashbox", self.show_cashbox)
-        self.navbar.set_nav_callback("dashboard", self.show_dashboard)
+        # Header (outside containers)
+        header_frame = ctk.CTkFrame(self, fg_color="#f2efea", height=60)
+        header_frame.place(relx=0.0, x=40, rely=0.03, relwidth=0.94)
+        header_frame.grid_columnconfigure(0, weight=1)
+        history_label = ctk.CTkLabel(header_frame, text="Sales History", font=("Unbounded", 36, "bold"), text_color="#4e2d18")
+        history_label.grid(row=0, column=0, sticky="w", padx=(20, 0))
 
-        main_frame = ctk.CTkFrame(self, fg_color="transparent")
-        main_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 0), pady=0)
-        main_frame.grid_rowconfigure(0, weight=1)
-        main_frame.grid_columnconfigure(0, weight=0)
-        main_frame.grid_columnconfigure(1, weight=1)
+        # Main content area (centered, fixed width)
+        main_content = ctk.CTkFrame(self, fg_color="#f2efea", width=820)
+        main_content.place(relx=0.0, x=40, rely=0.13, relheight=0.82)
+        main_content.grid_rowconfigure(0, weight=1)
+        main_content.grid_columnconfigure(0, weight=1)
+        main_content.grid_columnconfigure(1, weight=1)
 
         self.selected_receipt = None
         self.receipts_data = []  # Store fetched receipts
@@ -60,28 +52,22 @@ class SalesHistoryMain(ctk.CTk):
 
         self.populate_receipt_list()
 
-        # === RIGHT PANEL WRAPPER (for centering) ===
-        right_wrapper = ctk.CTkFrame(main_frame, fg_color="transparent")
-        right_wrapper.grid(row=0, column=1, sticky="nsew", padx=(0, 40), pady=40)
-        right_wrapper.grid_rowconfigure(0, weight=1)
-        right_wrapper.grid_columnconfigure(0, weight=1)
+        # RIGHT: Details Container (fixed width)
+        right_container = ctk.CTkFrame(main_content, fg_color="#ffffff", corner_radius=20, width=420)
+        right_container.grid(row=0, column=1, sticky="ns", padx=(60, 0), pady=0)
+        right_container.grid_propagate(False)
+        right_container.grid_rowconfigure(0, weight=1)
+        right_container.grid_columnconfigure(0, weight=1)
 
-        # Inner wrapper to center content vertically and horizontally
-        center_frame = ctk.CTkFrame(right_wrapper, fg_color="transparent")
-        center_frame.grid(row=0, column=0, sticky="nsew")
-        center_frame.grid_rowconfigure(0, weight=1)  # top spacer
-        center_frame.grid_rowconfigure(1, weight=0)  # right_panel
-        center_frame.grid_rowconfigure(2, weight=1)  # bottom spacer
-        center_frame.grid_columnconfigure(0, weight=1)  # left spacer
-        center_frame.grid_columnconfigure(1, weight=0)  # right_panel
-        center_frame.grid_columnconfigure(2, weight=1)  # right spacer
+        self.right_panel = ctk.CTkFrame(right_container, fg_color="#ffffff", corner_radius=15)
+        self.right_panel.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+        self.right_panel.grid_rowconfigure(2, weight=1)
+        self.right_panel.grid_columnconfigure(0, weight=1)
 
-        self.right_panel = ctk.CTkFrame(center_frame, fg_color="#ffffff", corner_radius=15, width=380)
-        self.right_panel.grid(row=1, column=1, sticky="n", padx=0)
-
-        self.placeholder_label = ctk.CTkLabel(center_frame, text="Select a receipt to view details", 
+        self.placeholder_label = ctk.CTkLabel(right_container, text="Select a receipt to view details", 
                                              font=("Poppins", 18), text_color="#8B7355")
-        self.placeholder_label.grid(row=1, column=1, sticky="n")
+        self.placeholder_label.place(relx=0.5, rely=0.05, anchor="n")
+        self.placeholder_label.lift()  # Ensure it's above right_panel when visible
 
         self.setup_right_panel()
 
@@ -98,40 +84,24 @@ class SalesHistoryMain(ctk.CTk):
         """Setup the right panel components"""
         self.header_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent", width=500)
         self.header_frame.grid(row=0, column=0, pady=20, sticky="ew")
-
-        # Order ID (big)
-        self.order_id_label = ctk.CTkLabel(self.header_frame, text="", font=("Poppins", 24, "bold"), text_color="#4E2D18", width=500)
+        self.order_id_label = ctk.CTkLabel(self.header_frame, text="", font=("Poppins", 24, "bold"), text_color="#4E2D18", width=300)
         self.order_id_label.grid(row=0, column=0, sticky="ew")
-
-        # "Order ID" label 
-        self.order_id_sublabel = ctk.CTkLabel(self.header_frame, text="Order ID", font=("Inter", 12), text_color="lightgray", width=500)
+        self.order_id_sublabel = ctk.CTkLabel(self.header_frame, text="Order ID", font=("Inter", 12), text_color="lightgray", width=300)
         self.order_id_sublabel.grid(row=1, column=0, sticky="ew")
-
-        # Cashier name 
-        self.cashier_label = ctk.CTkLabel(self.header_frame, text="", font=("Inter", 16), text_color="#4e2d18", width=500, anchor="w")
+        self.cashier_label = ctk.CTkLabel(self.header_frame, text="", font=("Inter", 16), text_color="#4e2d18", width=300, anchor="w")
         self.cashier_label.grid(row=2, column=0, sticky="ew", pady=(10, 0), padx=20)
-
-        # Divider after header
         self.header_divider = ctk.CTkFrame(self.right_panel, fg_color="#E0E0E0", height=2)
         self.header_divider.grid(row=1, column=0, sticky="ew", padx=20, pady=5)
-
-        self.items_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent", width=500)
+        self.items_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent", width=300)
         self.items_frame.grid(row=2, column=0, sticky="nsew", padx=20)
-        self.right_panel.grid_rowconfigure(2, weight=1)
-
-        # Divider after items
         self.items_divider = ctk.CTkFrame(self.right_panel, fg_color="#E0E0E0", height=2)
         self.items_divider.grid(row=3, column=0, sticky="ew", padx=20, pady=5)
 
-        # Total frame
+        # Total frame (created in __init__ but populated in select_receipt)
         self.total_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent")
         self.total_frame.grid(row=4, column=0, sticky="ew", padx=20, pady=20)
-
-        # Divider after total
         self.total_divider = ctk.CTkFrame(self.right_panel, fg_color="#E0E0E0", height=2)
         self.total_divider.grid(row=5, column=0, sticky="ew", padx=20, pady=5)
-
-        # payment breakdown
         self.payment_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent")
         self.payment_frame.grid(row=6, column=0, sticky="ew", padx=20, pady=(10, 20))
 
@@ -192,10 +162,12 @@ class SalesHistoryMain(ctk.CTk):
             for receipt in receipts:
                 receipt_frame = ctk.CTkFrame(self.receipt_list_frame, fg_color="#ffffff", border_color="#d9d9d9", border_width=2, corner_radius=10, height=80)
                 receipt_frame.grid(row=len(self.receipt_list_frame.winfo_children()), column=0, sticky="ew", padx=(5,10), pady=5)
+                receipt_frame.grid_columnconfigure(0, weight=1)
+                receipt_frame.grid_columnconfigure(1, weight=0)
 
                 # Left side - Amount and Time
                 left_info = ctk.CTkFrame(receipt_frame, fg_color="transparent")
-                left_info.grid(row=0, column=0, sticky="nsew", padx=(15, 10), pady=12)
+                left_info.grid(row=0, column=0, sticky="w", padx=(15, 0), pady=12)
 
                 amount_label = ctk.CTkLabel(left_info, text=f"₱{receipt['totalAmount']:.2f}", font=("Inter", 16, "bold"), text_color="#4e2d18")
                 amount_label.grid(row=0, column=0, sticky="w")
@@ -212,7 +184,7 @@ class SalesHistoryMain(ctk.CTk):
 
                 # Right side - Order ID
                 right_info = ctk.CTkFrame(receipt_frame, fg_color="transparent")
-                right_info.grid(row=0, column=1, sticky="ns", padx=(10, 15), pady=5)
+                right_info.grid(row=0, column=1, sticky="e", padx=(10, 15), pady=5)
 
                 order_id_label = ctk.CTkLabel(right_info, text=receipt['orderId'], font=("Inter", 18, "bold"), text_color="#4e2d18")
                 order_id_label.grid(row=0, column=0, sticky="e", pady=18)
@@ -226,7 +198,7 @@ class SalesHistoryMain(ctk.CTk):
         
         # Show the right panel and hide placeholder
         self.right_panel.grid()
-        self.placeholder_label.grid_forget()
+        self.placeholder_label.place_forget()
         
         self.order_id_label.configure(text=receipt['orderId'])
         self.cashier_label.configure(text=f"Employee Name: {receipt['cashier']}")
@@ -348,47 +320,19 @@ class SalesHistoryMain(ctk.CTk):
         datetime_value.grid(row=0, column=1, sticky="e")
 
     def show_ticket(self):
-        from ticket.ticket_main import TicketMainPage
-        self.destroy()
-        TicketMainPage(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("ticket")
 
     def show_receipt(self):
-        pass  # Already on this page
+        self.main_app.show_frame("receipt")
 
     def show_inventory(self):
-        from inventory.inventory_page import InventoryManagement
-        self.destroy()
-        InventoryManagement(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("inventory")
 
     def show_staff(self):
-        self.destroy()
-        if self.user_role == "admin":
-            StaffPageAdmin(user_role="admin").run()
-        else:
-            StaffPageEmployee(user_role="employee").run()
+        self.main_app.show_frame("staff")
 
     def show_cashbox(self):
-        from cash_box.cashbox_page import CashBoxApp
-        self.destroy()
-        CashBoxApp(user_role=self.user_role).run()
+        self.main_app.show_frame("cashbox")
 
     def show_dashboard(self):
-        from dashboard.sales_dashboard import SalesDashboard
-        self.destroy()
-        SalesDashboard(user_role=self.user_role).mainloop()
-
-    def run(self):
-        """Start the application"""
-        try:
-            self.mainloop()
-        except Exception as e:
-            print(f"Error running SalesHistoryMain: {e}")
-        finally:
-            try:
-                self.destroy()
-            except:
-                pass
-
-    def mainloop(self):
-        """Run the application"""
-        super().mainloop()
+        self.main_app.show_frame("dashboard")

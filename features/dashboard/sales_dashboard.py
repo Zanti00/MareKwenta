@@ -10,27 +10,16 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from nav_bar import Navbar
 
 
-class SalesDashboard(ctk.CTk):
-    def __init__(self, user_role="admin"):
-        super().__init__()
+class SalesDashboard(ctk.CTkFrame):
+    def __init__(self, parent, main_app, user_role="admin"):
+        super().__init__(parent)
+        self.main_app = main_app
         self.user_role = user_role
         taskbar_height = 70
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         usable_height = screen_height - taskbar_height
-        self.geometry(f"{screen_width}x{usable_height}+0+0")
         self.configure(fg_color="#f2efea")
-        self.title("MareKwenta POS")
-
-        # Add Navbar
-        self.navbar = Navbar(self, user_role=self.user_role, active_tab="dashboard")
-        self.navbar.pack(side="left", fill="y")
-        self.navbar.set_nav_callback("ticket", self.show_ticket)
-        self.navbar.set_nav_callback("receipt", self.show_receipt)
-        self.navbar.set_nav_callback("inventory", self.show_inventory)
-        self.navbar.set_nav_callback("staff", self.show_staff)
-        self.navbar.set_nav_callback("cashbox", self.show_cashbox)
-        self.navbar.set_nav_callback("dashboard", self.show_dashboard)
 
         # Title Label
         self.title_label = ctk.CTkLabel(
@@ -94,19 +83,17 @@ class SalesDashboard(ctk.CTk):
         self.generate_button.grid(row=0, column=3, padx=20)
 
         # Main Panel 
-        self.dashboard_panel = ctk.CTkFrame(self, fg_color="#fff", corner_radius=20)
-        self.dashboard_panel.pack(padx=30, pady=20, fill="both", expand=True)
+        self.dashboard_panel = ctk.CTkFrame(self, fg_color="#f2efea", corner_radius=20)
+        self.dashboard_panel.pack(fill="both", expand=True, padx=0, pady=0)
 
         # --- Summary Cards  ---
         self.cards_frame = ctk.CTkFrame(self.dashboard_panel, fg_color="#fff")
-        self.cards_frame.pack(padx=20, pady=(20, 0), fill="x")
+        self.cards_frame.place(relx=0.5, rely=0.08, anchor="n", relwidth=0.85)
 
         self.card_data = [
-            {"label": "Gross Sales", "value": "₱ 287.00", "change": "+₱287.00 (+100%)", "color": "#4e2d18", "change_color": "#7a9c33"},
-            {"label": "Refunds", "value": "₱ 0.00", "change": "₱0.00", "color": "#4e2d18", "change_color": "#4e2d18"},
-            {"label": "Discounts", "value": "₱ 145.00", "change": "-₱500.00", "color": "#4e2d18", "change_color": "#c30e0e"},
-            {"label": "Net Sales", "value": "₱ 200,00.00", "change": "+₱20,000.00", "color": "#4e2d18", "change_color": "#7a9c33"},
-            {"label": "Gross Profits", "value": "₱ 145.00", "change": "-₱500.00", "color": "#4e2d18", "change_color": "#c30e0e"},
+            {"label": "Revenue", "value": "₱ 287.00", "change": "+₱287.00 (+100%)", "color": "#4e2d18", "change_color": "#7a9c33"},
+            {"label": "Net Profit", "value": "₱ 200,00.00", "change": "+₱20,000.00", "color": "#4e2d18", "change_color": "#7a9c33"},
+            {"label": "Expenses", "value": "₱ 145.00", "change": "-₱500.00", "color": "#4e2d18", "change_color": "#c30e0e"},
         ]
         self.card_labels = []
         for i, card in enumerate(self.card_data):
@@ -121,13 +108,9 @@ class SalesDashboard(ctk.CTk):
             change_label.pack()
             self.card_labels.append((value_label, change_label))
 
-        # --- Divider between cards and chart ---
-        divider = ctk.CTkFrame(self.dashboard_panel, height=2, fg_color="#e0e0e0")
-        divider.pack(fill="x", padx=20, pady=(5, 10))
-
         # --- Chart  ---
         chart_frame = ctk.CTkFrame(self.dashboard_panel, fg_color="#fff")
-        chart_frame.pack(padx=20, pady=10, fill="both", expand=True)
+        chart_frame.place(relx=0.5, rely=0.2, anchor="n", relwidth=0.85, relheight=0.75)
 
         self.fig = Figure(figsize=(7, 3), dpi=100)
         self.ax = self.fig.add_subplot(111)
@@ -242,38 +225,28 @@ class SalesDashboard(ctk.CTk):
         print(f"Date: {self.date_var.get()}")
 
     def show_ticket(self):
-        from ticket.ticket_main import TicketMainPage
-        self.destroy()
-        TicketMainPage(user_role=self.navbar.user_role).mainloop()
+        self.main_app.show_frame("ticket")
 
     def show_receipt(self):
-        from receipt.sales_history import SalesHistoryMain
-        self.destroy()
-        SalesHistoryMain(user_role=self.navbar.user_role).mainloop()
+        self.main_app.show_frame("receipt")
 
     def show_inventory(self):
-        from inventory.inventory_page import InventoryManagement
-        self.destroy()
-        InventoryManagement(user_role=self.navbar.user_role).mainloop()
+        self.main_app.show_frame("inventory")
 
     def show_staff(self):
-        from staff.staff_admin import StaffPageAdmin
-        from staff.staff_employee import StaffPageEmployee
-        self.destroy()
-        if self.navbar.user_role == "admin":
-            StaffPageAdmin(user_role="admin").run()
-        else:
-            StaffPageEmployee(user_role="employee").run()
+        self.main_app.show_frame("staff")
 
     def show_cashbox(self):
-        from cash_box.cashbox_page import CashBoxApp
-        self.destroy()
-        CashBoxApp(user_role=self.navbar.user_role).run()
+        self.main_app.show_frame("cashbox")
 
     def show_dashboard(self):
-        pass  # Already on dashboard, do nothing
+        self.main_app.show_frame("dashboard")
 
 
 if __name__ == "__main__":
-    app = SalesDashboard()
-    app.mainloop()
+    import tkinter as tk
+    root = tk.Tk()
+    # Replace 'main_app' with 'root' as parent, and pass 'root' as main_app if needed
+    app = SalesDashboard(parent=root, main_app=root)
+    app.pack(fill="both", expand=True)
+    root.mainloop()
