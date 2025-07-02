@@ -8,19 +8,33 @@ class TicketController:
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         db_name = os.path.join(base_path, "mare_kwenta.db")
         try:
-            conn = sqlite3.connect(db_name)
+            conn = sqlite3.connect(db_name, timeout=30.0)  # Add timeout to prevent locks
+            conn.execute("PRAGMA busy_timeout = 30000")  # 30 second timeout
             return conn
         except sqlite3.Error as e:
-            print(f"Database connection error: {e}")
+            print("An error occurred while connecting to sqlite", e)
             return None
 
     @staticmethod
     def create_ticket(employee_id, cart_items, total_amount, cash_received, change, discount=0, payment_type="Cash", split_payments=None):
-        """Create a new ticket with ticket lines and payment record(s)"""
+        """Create a new ticket with ticket lines and payment record(s), with inventory validation and deduction"""
+        # Import here to avoid circular imports
+        import sys
+        import os
+        sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'inventory'))
+        from inventory.recipe_controller import RecipeController
+        
+        # First, check if we have enough inventory
+        has_enough, error_msg = RecipeController.check_inventory_availability(cart_items)
+        if not has_enough:
+            print(f"Insufficient inventory: {error_msg}")
+            return None, error_msg
+        
+        # Get database connection
         conn = TicketController.connect_db()
         if conn is None:
             print("Failed to connect to database")
-            return None
+            return None, "Database connection failed"
             
         try:
             cursor = conn.cursor()
@@ -70,17 +84,29 @@ class TicketController:
                 
                 print(f"Added payment: {payment_type} ₱{cash_received:.2f}")
             
+            # Commit the ticket creation first
             conn.commit()
             cursor.close()
+            conn.close()  # Close this connection before inventory deduction
+            
+            # Now deduct inventory using a separate connection to avoid locks
+            inventory_deducted = RecipeController.deduct_inventory(cart_items)
+            if not inventory_deducted:
+                print("Warning: Failed to deduct inventory, but ticket was created")
+                # Note: You might want to implement a rollback mechanism here or add to a queue for retry
+            
             print(f"Ticket {ticket_id} created successfully with discount: ₱{discount:.2f}")
-            return ticket_id
+            return ticket_id, None
             
         except Exception as e:
             print(f"Error creating ticket: {e}")
             conn.rollback()
-            return None
+            return None, f"Error creating ticket: {e}"
         finally:
-            conn.close()
+            try:
+                conn.close()
+            except:
+                pass
 
     @staticmethod
     def get_ticket_details(ticket_id):

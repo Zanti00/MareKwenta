@@ -214,3 +214,71 @@ class Navbar(ctk.CTkFrame):
         while hasattr(root, 'master') and root.master:
             root = root.master
         return root
+
+    def create_nav_buttons(self):
+        """Create navigation buttons based on user role"""
+        button_configs = [
+            {"name": "ticket", "icon": "ticket.png", "text": "Ticket", "roles": ["admin", "employee"]},
+            {"name": "receipt", "icon": "receipt.png", "text": "Receipt", "roles": ["admin", "employee"]},
+            {"name": "inventory", "icon": "inventory.png", "text": "Inventory", "roles": ["admin", "employee"]},
+            {"name": "staff", "icon": "staff.png", "text": "Staff", "roles": ["admin", "employee"]},
+            {"name": "cashbox", "icon": "cashbox.png", "text": "Cashbox", "roles": ["admin"]},
+            {"name": "dashboard", "icon": "dashboard.png", "text": "Dashboard", "roles": ["admin"]}
+        ]
+        
+        row = 0
+        for config in button_configs:
+            if self.user_role in config["roles"]:
+                self.create_nav_button(config["name"], config["icon"], config["text"], row)
+                row += 1
+    
+    def create_nav_button(self, name, icon_name, text, row):
+        """Create a navigation button"""
+        # Try to load icon
+        try:
+            icon_path = os.path.join(os.path.dirname(__file__), "assets", icon_name)
+            if os.path.exists(icon_path):
+                icon = ctk.CTkImage(Image.open(icon_path), size=(24, 24))
+            else:
+                icon = None
+        except:
+            icon = None
+        
+        # Determine if this button should be highlighted
+        is_active = (name == self.active_tab)
+        fg_color = "#6b4423" if is_active else "transparent"
+        hover_color = "#5a3a1f" if is_active else "#6b4423"
+        
+        # Create button
+        button = ctk.CTkButton(
+            self,
+            text=text,
+            image=icon,
+            font=ctk.CTkFont("Inter", size=12, weight="bold"),
+            fg_color=fg_color,
+            hover_color=hover_color,
+            text_color="#ffffff",
+            anchor="center",
+            command=lambda: self.handle_nav_click(name)
+        )
+        button.grid(row=row, column=0, sticky="ew", padx=5, pady=2)
+        
+        # Configure grid weight
+        self.grid_rowconfigure(row, weight=0)
+    
+    def handle_nav_click(self, tab_name):
+        """Handle navigation button click"""
+        if tab_name in self.nav_callbacks:
+            self.nav_callbacks[tab_name]()
+    
+    def set_nav_callback(self, tab_name, callback):
+        """Set callback for a navigation tab"""
+        self.nav_callbacks[tab_name] = callback
+    
+    def set_active_tab(self, tab_name):
+        """Update the active tab"""
+        self.active_tab = tab_name
+        # Recreate buttons to update active state
+        for widget in self.winfo_children():
+            widget.destroy()
+        self.create_nav_buttons()

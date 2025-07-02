@@ -301,7 +301,7 @@ class TicketMainPage:
             print(f"Processing charge: {charge_data}")
             
             # Create ticket in database
-            ticket_id = TicketController.create_ticket(
+            ticket_result = TicketController.create_ticket(
                 employee_id=self.current_user_id,
                 cart_items=self.cart_items,
                 total_amount=charge_data["total_amount"],  # Final amount after discount
@@ -311,6 +311,13 @@ class TicketMainPage:
                 payment_type=payment_type,
                 split_payments=charge_data.get("split_payments")  # Pass split payment data
             )
+            
+            # Handle the result (could be tuple or single value for backward compatibility)
+            if isinstance(ticket_result, tuple):
+                ticket_id, error_msg = ticket_result
+            else:
+                ticket_id = ticket_result
+                error_msg = None
             
             if ticket_id:
                 discount_info = f" with ₱{charge_data['discount']:.2f} discount" if charge_data['discount'] > 0 else ""
@@ -326,7 +333,10 @@ class TicketMainPage:
                 self.clear_cart()
                 
             else:
-                messagebox.showerror("Error", "Failed to create ticket")
+                if error_msg and "Insufficient inventory" in error_msg:
+                    messagebox.showerror("Insufficient Inventory", error_msg)
+                else:
+                    messagebox.showerror("Error", error_msg or "Failed to create ticket")
                 
         except Exception as e:
             print(f"Error handling charge: {e}")
@@ -389,7 +399,7 @@ class TicketMainPage:
             from receipt.sales_history import SalesHistoryMain
             self.root.destroy()
             receipt_page = SalesHistoryMain(self.user_role)
-            receipt_page.run()
+            receipt_page.mainloop()  # Changed from run() to mainloop()
         except Exception as e:
             print(f"Error launching receipt page: {e}")
 

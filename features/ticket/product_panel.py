@@ -152,6 +152,27 @@ class ProductPanel(ctk.CTkFrame):
         if not product["product_types"]:
             # No pricing available
             return
+        
+        # Check inventory availability before allowing selection
+        try:
+            # Import here to avoid circular imports
+            import sys
+            import os
+            sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'inventory'))
+            from inventory.recipe_controller import RecipeController
+            
+            # Create a test cart item to check inventory
+            test_item = {
+                "product_type_id": product["product_types"][0]["product_type_id"],
+                "quantity": 1
+            }
+            
+            has_enough, error_msg = RecipeController.check_inventory_availability([test_item])
+            if not has_enough:
+                messagebox.showwarning("Low Inventory", f"Warning: {error_msg}\n\nYou can still proceed, but check inventory levels.")
+        except Exception as e:
+            print(f"Error checking inventory: {e}")
+            # Continue anyway if inventory check fails
             
         if product["category"] in ["Coffee", "Non-Coffee"]:
             # Show modifier popup for beverages

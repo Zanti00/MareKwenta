@@ -7,59 +7,12 @@ class RecipeController:
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         db_name = os.path.join(base_path, "mare_kwenta.db")
         try:
-            conn = sqlite3.connect(db_name)
+            conn = sqlite3.connect(db_name, timeout=30.0)  # Add timeout to prevent locks
+            conn.execute("PRAGMA busy_timeout = 30000")  # 30 second timeout
             return conn
         except sqlite3.Error as e:
             print("An error occurred while connecting to sqlite", e)
             return None
-
-    @staticmethod
-    def add_recipe_ingredients(product_type_id, ingredients_data):
-        """
-        Add multiple ingredients for a product type
-        ingredients_data: list of tuples [(quantity, inventory_id), ...]
-        """
-        conn = RecipeController.connect_db()
-        if conn:
-            try:
-                cursor = conn.cursor()
-                for quantity, inventory_id in ingredients_data:
-                    cursor.execute("""
-                        INSERT INTO product_ingredients_recipe 
-                        (required_ingredient_quantity, product_type_id, inventory_id)
-                        VALUES (?, ?, ?)
-                    """, (quantity, product_type_id, inventory_id))
-                conn.commit()
-                cursor.close()
-                return True
-            except Exception as e:
-                print("Error inserting recipe ingredients:", e)
-                conn.rollback()
-                return False
-            finally:
-                conn.close()
-        return False
-
-    @staticmethod
-    def get_inventory_id_by_name(ingredient_name):
-        """Get inventory_id by ingredient name"""
-        conn = RecipeController.connect_db()
-        if conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT inventory_id FROM inventory 
-                    WHERE ingredient_name = ?
-                """, (ingredient_name,))
-                result = cursor.fetchone()
-                cursor.close()
-                return result[0] if result else None
-            except Exception as e:
-                print("Error fetching inventory ID:", e)
-                return None
-            finally:
-                conn.close()
-        return None
 
     @staticmethod
     def get_recipes_by_product_type_id(product_type_id):
@@ -76,17 +29,84 @@ class RecipeController:
                 """, (product_type_id,))
                 rows = cursor.fetchall()
                 cursor.close()
-                return [(row[0], row[1]) for row in rows]
+                return [(str(row[0]), row[1]) for row in rows]
             except Exception as e:
-                print("Error fetching recipes:", e)
+                print(f"Error fetching recipes: {e}")
                 return []
             finally:
                 conn.close()
         return []
 
     @staticmethod
+    def get_inventory_id_by_name(ingredient_name):
+        """Get inventory ID by ingredient name"""
+        conn = RecipeController.connect_db()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT inventory_id FROM inventory WHERE ingredient_name = ?", (ingredient_name,))
+                row = cursor.fetchone()
+                cursor.close()
+                return row[0] if row else None
+            except Exception as e:
+                print(f"Error fetching inventory ID: {e}")
+                return None
+            finally:
+                conn.close()
+        return None
+
+    @staticmethod
+    def add_recipe_ingredients(product_type_id, ingredients_data):
+        """Add recipe ingredients for a product type"""
+        conn = RecipeController.connect_db()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                for qty, inventory_id in ingredients_data:
+                    cursor.execute("""
+                        INSERT INTO product_ingredients_recipe (required_ingredient_quantity, product_type_id, inventory_id)
+                        VALUES (?, ?, ?)
+                    """, (qty, product_type_id, inventory_id))
+                conn.commit()
+                cursor.close()
+                return True
+            except Exception as e:
+                print(f"Error adding recipe ingredients: {e}")
+                conn.rollback()
+                return False
+            finally:
+                conn.close()
+        return False
+
+    @staticmethod
+    def update_recipe_ingredients(product_type_id, ingredients_data):
+        """Update recipe ingredients for a product type"""
+        conn = RecipeController.connect_db()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                # Delete existing recipes for this product type
+                cursor.execute("DELETE FROM product_ingredients_recipe WHERE product_type_id = ?", (product_type_id,))
+                # Insert new recipes
+                for qty, inventory_id in ingredients_data:
+                    cursor.execute("""
+                        INSERT INTO product_ingredients_recipe (required_ingredient_quantity, product_type_id, inventory_id)
+                        VALUES (?, ?, ?)
+                    """, (qty, product_type_id, inventory_id))
+                conn.commit()
+                cursor.close()
+                return True
+            except Exception as e:
+                print(f"Error updating recipe ingredients: {e}")
+                conn.rollback()
+                return False
+            finally:
+                conn.close()
+        return False
+
+    @staticmethod
     def delete_recipes_by_product_type_id(product_type_id):
-        """Delete all recipes for a specific product type"""
+        """Delete all recipes for a product type"""
         conn = RecipeController.connect_db()
         if conn:
             try:
@@ -96,105 +116,137 @@ class RecipeController:
                 cursor.close()
                 return True
             except Exception as e:
-                print("Error deleting recipes:", e)
+                print(f"Error deleting recipes: {e}")
                 return False
             finally:
                 conn.close()
         return False
 
     @staticmethod
-    def update_recipe_ingredients(product_type_id, ingredients_data):
-        """Update recipe ingredients by deleting old ones and adding new ones"""
+    def check_inventory_availability(cart_items):
+        """Check if there's enough inventory for all cart items"""
         conn = RecipeController.connect_db()
-        if conn:
-            try:
-                cursor = conn.cursor()
+        if not conn:
+            return False, "Database connection failed"
+        
+        try:
+            cursor = conn.cursor()
+            
+            # Aggregate required ingredients across all cart items
+            total_required = {}  # {inventory_id: total_quantity_needed}
+            
+            for item in cart_items:
+                product_type_id = item["product_type_id"]
+                quantity = item["quantity"]
                 
-                # Delete existing recipes for this product_type
+                # Get recipe for this product type
                 cursor.execute("""
-                    DELETE FROM product_ingredients_recipe 
+                    SELECT inventory_id, required_ingredient_quantity
+                    FROM product_ingredients_recipe
                     WHERE product_type_id = ?
                 """, (product_type_id,))
                 
-                # Add new recipes
-                for quantity, inventory_id in ingredients_data:
-                    cursor.execute("""
-                        INSERT INTO product_ingredients_recipe 
-                        (required_ingredient_quantity, product_type_id, inventory_id)
-                        VALUES (?, ?, ?)
-                    """, (quantity, product_type_id, inventory_id))
+                recipe_rows = cursor.fetchall()
                 
-                conn.commit()
-                cursor.close()
-                return True
-            except Exception as e:
-                print("Error updating recipe ingredients:", e)
-                conn.rollback()
-                return False
-            finally:
-                conn.close()
-        return False
+                for inventory_id, required_qty in recipe_rows:
+                    total_needed = required_qty * quantity
+                    if inventory_id in total_required:
+                        total_required[inventory_id] += total_needed
+                    else:
+                        total_required[inventory_id] = total_needed
+            
+            # Check if we have enough of each ingredient
+            insufficient_ingredients = []
+            
+            for inventory_id, needed_qty in total_required.items():
+                cursor.execute("""
+                    SELECT ingredient_name, quantity
+                    FROM inventory
+                    WHERE inventory_id = ?
+                """, (inventory_id,))
+                
+                inv_row = cursor.fetchone()
+                if inv_row:
+                    ingredient_name, available_qty = inv_row
+                    if available_qty < needed_qty:
+                        insufficient_ingredients.append({
+                            'name': ingredient_name,
+                            'needed': needed_qty,
+                            'available': available_qty
+                        })
+                else:
+                    insufficient_ingredients.append({
+                        'name': f'Unknown (ID: {inventory_id})',
+                        'needed': needed_qty,
+                        'available': 0
+                    })
+            
+            cursor.close()
+            
+            if insufficient_ingredients:
+                error_msg = "Insufficient inventory:\n"
+                for item in insufficient_ingredients:
+                    error_msg += f"• {item['name']}: Need {item['needed']:.1f}, Have {item['available']:.1f}\n"
+                return False, error_msg
+            
+            return True, "Inventory sufficient"
+            
+        except Exception as e:
+            print(f"Error checking inventory availability: {e}")
+            return False, f"Error checking inventory: {e}"
+        finally:
+            conn.close()
 
     @staticmethod
-    def check_duplicate_ingredient(product_type_id, inventory_id):
-        """Check if an ingredient already exists for a product type"""
+    def deduct_inventory(cart_items):
+        """Deduct inventory based on cart items"""
         conn = RecipeController.connect_db()
-        if conn:
-            try:
-                cursor = conn.cursor()
+        if not conn:
+            return False
+        
+        try:
+            cursor = conn.cursor()
+            
+            # Aggregate required ingredients across all cart items
+            total_required = {}  # {inventory_id: total_quantity_needed}
+            
+            for item in cart_items:
+                product_type_id = item["product_type_id"]
+                quantity = item["quantity"]
+                
+                # Get recipe for this product type
                 cursor.execute("""
-                    SELECT COUNT(*) FROM product_ingredients_recipe 
-                    WHERE product_type_id = ? AND inventory_id = ?
-                """, (product_type_id, inventory_id))
-                count = cursor.fetchone()[0]
-                cursor.close()
-                return count > 0
-            except Exception as e:
-                print("Error checking for duplicate ingredient:", e)
-                return False
-            finally:
-                conn.close()
-        return False
-
-    @staticmethod
-    def remove_ingredient(product_type_id, inventory_id):
-        """Remove a specific ingredient from a product type"""
-        conn = RecipeController.connect_db()
-        if conn:
-            try:
-                cursor = conn.cursor()
+                    SELECT inventory_id, required_ingredient_quantity
+                    FROM product_ingredients_recipe
+                    WHERE product_type_id = ?
+                """, (product_type_id,))
+                
+                recipe_rows = cursor.fetchall()
+                
+                for inventory_id, required_qty in recipe_rows:
+                    total_needed = required_qty * quantity
+                    if inventory_id in total_required:
+                        total_required[inventory_id] += total_needed
+                    else:
+                        total_required[inventory_id] = total_needed
+            
+            # Deduct from inventory
+            for inventory_id, deduct_qty in total_required.items():
                 cursor.execute("""
-                    DELETE FROM product_ingredients_recipe 
-                    WHERE product_type_id = ? AND inventory_id = ?
-                """, (product_type_id, inventory_id))
-                conn.commit()
-                cursor.close()
-                return True
-            except Exception as e:
-                print("Error removing ingredient:", e)
-                conn.rollback()
-                return False
-            finally:
-                conn.close()
-        return False
-
-    @staticmethod
-    def get_coffee_non_coffee_options():
-        """Get size and temperature options for Coffee/Non-Coffee items"""
-        conn = RecipeController.connect_db()
-        if conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT DISTINCT size, temperature FROM product_types
-                    WHERE size IS NOT NULL AND temperature IS NOT NULL
-                """)
-                options = cursor.fetchall()
-                cursor.close()
-                return [{"size": row[0], "temperature": row[1]} for row in options]
-            except Exception as e:
-                print("Error fetching Coffee/Non-Coffee options:", e)
-                return []
-            finally:
-                conn.close()
-        return []
+                    UPDATE inventory 
+                    SET quantity = quantity - ?
+                    WHERE inventory_id = ?
+                """, (deduct_qty, inventory_id))
+                
+                print(f"Deducted {deduct_qty} from inventory_id {inventory_id}")
+            
+            conn.commit()
+            cursor.close()
+            return True
+            
+        except Exception as e:
+            print(f"Error deducting inventory: {e}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()

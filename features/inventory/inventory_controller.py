@@ -9,7 +9,8 @@ class InventoryController:
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         db_name = os.path.join(base_path, "mare_kwenta.db")
         try:
-            conn = sqlite3.connect(db_name)
+            conn = sqlite3.connect(db_name, timeout=30.0)  # Add timeout to prevent locks
+            conn.execute("PRAGMA busy_timeout = 30000")  # 30 second timeout
             return conn
         except sqlite3.Error as e:
             print("An error occurred while connecting to sqlite", e)
