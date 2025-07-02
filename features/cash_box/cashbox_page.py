@@ -4,6 +4,7 @@ from datetime import datetime
 import tkinter as tk
 import math
 from nav_bar import Navbar
+from cash_box.cashbox_controller import CashboxController
 
 class CashBoxApp:
     def __init__(self, user_role="employee"):
@@ -19,13 +20,15 @@ class CashBoxApp:
         
         # Store user role
         self.user_role = user_role
-        
-        # Initialize data
-        self.cash_amount = 3100.00
-        self.gcash_amount = 3100.00
-        self.maya_amount = 3100.00
+
+        self.controller = CashboxController()
+        cashbox_data = self.controller.get_cashbox_summary_by_date()
+
+        self.cash_amount = cashbox_data['cash_amount']
+        self.gcash_amount = cashbox_data['gcash_amount'] 
+        self.maya_amount = cashbox_data['maya_amount']
         self.petty_cash_amount = 1000.00
-        self.cash_sales_amount = 3100.00
+        self.cash_sales_amount = cashbox_data['cash_sales_amount']
         self.cash_expenses_amount = 3100.00
         self.non_cash_expenses_amount = 3100.00
         
