@@ -515,17 +515,26 @@ class LinkIngredientsPage(ctk.CTkFrame):
         self.user_role = user_role
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
-        self.root.grid_columnconfigure(1, weight=1)
-        self.root.grid_rowconfigure(0, weight=1)
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        # either remove this three lines or use parent widget 
+        # self.parent_widget = parent
+        # then 
+        # self.parent_widget.grid_columnconfigure(1, weight=1)
+        # self.parent_widget.grid_rowconfigure(0, weight=1)
+        # self.parent_widget.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
+        # remove this
+        # self.grid_columnconfigure(1, weight=1)
+        # self.grid_rowconfigure(0, weight=1)
+        # self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.products = []  # Will be loaded from database
         self.linked_ingredients = {}
         self.setup_ui()
+        self.load_products_from_db()
 
     def on_closing(self):
         try:
-            self.root.quit()
-            self.root.destroy()
+            self.quit()
+            self.destroy()
         except:
             pass
 
@@ -683,12 +692,12 @@ class LinkIngredientsPage(ctk.CTkFrame):
                         return
                     else:
                         # Link ingredients for this specific variant
-                        LinkIngredientFinalPopup(self.root, product, product_type['size'], product_type['temperature'], on_save_link=self.save_linked_ingredients)
+                        LinkIngredientFinalPopup(self, product, product_type['size'], product_type['temperature'], on_save_link=self.save_linked_ingredients)
                 else:
                     # No product type yet, show size/temp selection
                     def after_size_temp(size, temp):
-                        LinkIngredientFinalPopup(self.root, product, size, temp, on_save_link=self.save_linked_ingredients)
-                    SizeTempPopup(self.root, product, after_size_temp)
+                        LinkIngredientFinalPopup(self, product, size, temp, on_save_link=self.save_linked_ingredients)
+                    SizeTempPopup(self, product, after_size_temp)
             else:  # Food category
                 if product_type:
                     existing_recipes = RecipeController.get_recipes_by_product_type_id(product_type['product_type_id'])
@@ -700,12 +709,12 @@ class LinkIngredientsPage(ctk.CTkFrame):
                         return
                 
                 # If no existing recipes, proceed with linking
-                LinkIngredientFinalPopup(self.root, product, on_save_link=self.save_linked_ingredients)
+                LinkIngredientFinalPopup(self, product, on_save_link=self.save_linked_ingredients)
                 
         elif action == "View":
             # Get linked data from database for this specific product
             linked_data = self.get_linked_data_from_db(product)
-            ViewLinkedIngredientsPopup(self.root, product['name'], linked_data)
+            ViewLinkedIngredientsPopup(self, product['name'], linked_data)
             
         elif action == "Edit":
             if product_type:
@@ -724,7 +733,7 @@ class LinkIngredientsPage(ctk.CTkFrame):
                         self.update_recipe_ingredients(product_type['product_type_id'], ingredients, unit_price, selling_price)
                     
                     EditLinkedIngredientsPopup(
-                        self.root, product['name'], summary, inventory_list, 
+                        self, product['name'], summary, inventory_list, 
                         existing_recipes, product_type, on_save_edit=on_save_edit
                     )
                 else:
@@ -926,7 +935,7 @@ class LinkIngredientsPage(ctk.CTkFrame):
     def setup_fab(self):
         # Floating Action Button (FAB) with a plus sign
         self.fab = ctk.CTkButton(
-            self.root,
+            self,
             text="+",
             font=ctk.CTkFont("Unbounded", size=36, weight="bold"),
             fg_color="#4e2d18",
@@ -943,7 +952,7 @@ class LinkIngredientsPage(ctk.CTkFrame):
     def on_fab_click(self):
         def on_save(product):
             self.load_products_from_db()  # Reload from database
-        AddProductDialog(self.root, on_save=on_save)
+        AddProductDialog(self, on_save=on_save)
 
     def handle_action(self, product, action):
         """Original handle_action method for fallback"""
@@ -951,8 +960,8 @@ class LinkIngredientsPage(ctk.CTkFrame):
             category = product.get("category", "")
             if category in ["Coffee", "Non-Coffee"]:
                 def after_size_temp(size, temp):
-                    LinkIngredientFinalPopup(self.root, product, size, temp, on_save_link=self.save_linked_ingredients)
-                SizeTempPopup(self.root, product, after_size_temp)
+                    LinkIngredientFinalPopup(self, product, size, temp, on_save_link=self.save_linked_ingredients)
+                SizeTempPopup(self, product, after_size_temp)
             else:  # Food category
                 # Check if this Food product already has linked ingredients
                 product_types = ProductController.get_product_types_by_product_id(product['product_id'])
@@ -973,12 +982,12 @@ class LinkIngredientsPage(ctk.CTkFrame):
                         return
                 
                 # If no existing recipes, proceed with linking
-                LinkIngredientFinalPopup(self.root, product, on_save_link=self.save_linked_ingredients)
+                LinkIngredientFinalPopup(self, product, on_save_link=self.save_linked_ingredients)
                 
         elif action == "View":
             # Get linked data from database
             linked_data = self.get_linked_data_from_db(product)
-            ViewLinkedIngredientsPopup(self.root, product['name'], linked_data)
+            ViewLinkedIngredientsPopup(self, product['name'], linked_data)
             
         elif action == "Edit":
             # Get all product types for this product
@@ -1004,7 +1013,7 @@ class LinkIngredientsPage(ctk.CTkFrame):
                             self.update_recipe_ingredients(food_type['product_type_id'], ingredients, unit_price, selling_price)
                         
                         EditLinkedIngredientsPopup(
-                            self.root, product['name'], summary, inventory_list, 
+                            self, product['name'], summary, inventory_list, 
                             existing_recipes, food_type, on_save_edit=on_save_edit
                         )
                     else:
@@ -1047,7 +1056,7 @@ class LinkIngredientsPage(ctk.CTkFrame):
                             self.update_recipe_ingredients(target_variant['product_type']['product_type_id'], ingredients, unit_price, selling_price)
                         
                         EditLinkedIngredientsPopup(
-                            self.root, product['name'], target_variant['summary'], 
+                            self, product['name'], target_variant['summary'], 
                             inventory_list, target_variant['recipes'], target_variant['product_type'], 
                             on_save_edit=on_save_edit
                         )
@@ -1069,19 +1078,19 @@ class LinkIngredientsPage(ctk.CTkFrame):
 
     def show_size_temp_for_edit(self, product, variants_with_recipes, on_next):
         """Show size/temperature selection popup for editing, only showing variants with recipes"""
-        popup = ctk.CTkToplevel(self.root)
+        popup = ctk.CTkToplevel(self)
         popup.title("Select Size & Temperature to Edit")
         popup.geometry("300x260")
         popup.configure(fg_color="#f2efea")
-        popup.transient(self.root)
+        popup.transient(self)
         popup.grab_set()
         popup.resizable(False, False)
         
         # Center the popup
         popup.update_idletasks()
         w, h = 300, 260
-        x = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - (w // 2)
-        y = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - (h // 2)
+        x = self.winfo_rootx() + (self.winfo_width() // 2) - (w // 2)
+        y = self.winfo_rooty() + (self.winfo_height() // 2) - (h // 2)
         popup.geometry(f"{w}x{h}+{x}+{y}")
         
         size_var = tk.StringVar(value=None)

@@ -1,10 +1,10 @@
 import customtkinter as ctk
-from tkinter import messagebox
+from .product_panel import ProductPanel
+from .ticket_panel import TicketPanel
+from .components.modifier_popup import ModifierPopup
 import sys
 import os
-
-# Add navigation imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # Add view folder to path
 from nav_bar import Navbar
 
 class TicketMainPage(ctk.CTkFrame):
@@ -12,117 +12,48 @@ class TicketMainPage(ctk.CTkFrame):
         super().__init__(parent)
         self.main_app = main_app
         self.user_role = user_role
-        
-        # Configure appearance
-        ctk.set_appearance_mode("light")
-        ctk.set_default_color_theme("blue")
-        
-        # Configure grid
-        self.root.grid_columnconfigure(1, weight=1)
-        self.root.grid_rowconfigure(0, weight=1)
-        
-        # Bind window close event
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-        
-        # Initialize cart items list
-        self.cart_items = []
-        self.current_total = 0.0
-        
-        self.setup_ui()
 
-    def on_closing(self):
-        """Handle window closing"""
-        try:
-            self.root.quit()
-            self.root.destroy()
-        except:
-            pass
+        # === MAIN WRAPPER FRAME ===
+        self.configure(fg_color="#f2efea")
 
-    def setup_ui(self):
-        # Create navbar
-        self.navbar = Navbar(self.root, width=124, user_role=self.user_role, active_tab="ticket")
-        self.navbar.grid(row=0, column=0, sticky="ns")
-        
-        # Set navigation callbacks
-        self.navbar.set_nav_callback("ticket", self.show_ticket)
-        self.navbar.set_nav_callback("receipt", self.show_receipt)
-        self.navbar.set_nav_callback("inventory", self.show_inventory)
-        self.navbar.set_nav_callback("staff", self.show_staff)
-        self.navbar.set_nav_callback("cashbox", self.show_cashbox)
-        self.navbar.set_nav_callback("dashboard", self.show_dashboard)
-        
-        # Main content area
-        self.main_frame = ctk.CTkFrame(self.root, fg_color="#f2efea")
-        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 0), pady=0)
-        self.main_frame.grid_columnconfigure(0, weight=2)  # Product panel takes more space
-        self.main_frame.grid_columnconfigure(1, weight=1)  # Ticket panel
-        self.main_frame.grid_rowconfigure(0, weight=1)
-        
-        # Product panel (left side)
-        self.product_panel = ProductPanel(self.main_frame, on_product_click=self.handle_product_click)
-        self.product_panel.grid(row=0, column=0, sticky="nsew", padx=(10, 5), pady=10)
-        
-        # Ticket panel (right side)
-        self.ticket_panel = TicketPanel(self.main_frame)
-        self.ticket_panel.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
+        # Use grid for main layout
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
-    def handle_product_click(self, cart_item):
-        """Handle product selection from product panel"""
-        print(f"Product clicked: {cart_item}")  # Debug print
-        
-        try:
-            # Add item to cart list
-            self.cart_items.append(cart_item)
-            
-            # Create item detail widget for display
-            item_detail = ItemDetail(
-                self.ticket_panel.scrollable_frame,
-                product_name=cart_item["name"],
-                quantity=cart_item["quantity"],
-                size_drink=cart_item.get("size", ""),
-                item_info=cart_item.get("temperature", ""),
-                extras=cart_item.get("extras", []),
-                extras_cost=cart_item.get("extras_cost", 0),
-                unit_price=cart_item["unit_price"],
-                on_remove=self.remove_item
-            )
-            
-            # Add to ticket panel
-            self.ticket_panel.add_item(item_detail)
-            
-            # Update total (includes extras cost)
-            item_total = (cart_item["quantity"] * cart_item["unit_price"]) + (cart_item["quantity"] * cart_item.get("extras_cost", 0))
-            self.current_total += item_total
-            self.ticket_panel.update_total(self.current_total)
-            
-            print(f"Item added to cart. New total: ₱{self.current_total:.2f}")
-            
-        except Exception as e:
-            print(f"Error adding item to cart: {e}")
-            messagebox.showerror("Error", f"Failed to add item to cart: {e}")
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.grid(row=0, column=0, sticky="nsew", padx=30, pady=30)
+        main_frame.grid_rowconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(0, weight=1, minsize=650)  # Left column (product)
+        main_frame.grid_columnconfigure(1, weight=1)  # Right column (ticket)
 
-    def remove_item(self, product_name, item_total):
-        """Handle item removal from cart"""
-        try:
-            # Update total
-            self.current_total -= item_total
-            self.ticket_panel.update_total(self.current_total)
-            
-            # Remove from cart items list
-            self.cart_items = [item for item in self.cart_items if not (
-                item["name"] == product_name and 
-                (item["quantity"] * item["unit_price"]) == item_total
-            )]
-            
-            print(f"Item removed. New total: ₱{self.current_total:.2f}")
-            
-        except Exception as e:
-            print(f"Error removing item: {e}")
+        # === LEFT COLUMN (Header + Product Panel) ===
+        left_column = ctk.CTkFrame(main_frame, fg_color="transparent")
+        left_column.grid(row=0, column=0, sticky="nsew", padx=(0, 20), pady=0)
+        left_column.grid_rowconfigure(1, weight=1)
 
-    # Navigation methods
+        # === HEADER ===
+        header_frame = ctk.CTkFrame(left_column, fg_color="transparent")
+        header_frame.grid(row=0, column=0, sticky="ew", padx=20, pady=(0, 10))
+
+        hello_label = ctk.CTkLabel(header_frame, text="Hello,", font=("Unbounded", 36), text_color="#4e2d18")
+        hello_label.pack(side="left")
+
+        self.user_label = ctk.CTkLabel(header_frame, text="User", font=("Unbounded", 36), text_color="#4e2d18")
+        self.user_label.pack(side="left", padx=(10, 0))
+
+        # === PRODUCT PANEL ===
+        self.product_panel = ProductPanel(left_column, on_product_click=self.handle_product_click)
+        self.product_panel.grid(row=1, column=0, sticky="nsew")
+
+        # === RIGHT PANEL ===
+        self.ticket_panel = TicketPanel(main_frame, on_split_popup=self.handle_split_popup)
+        self.ticket_panel.grid(row=0, column=1, sticky="nsew", padx=(0, 0))
+        self.ticket_panel.grid_propagate(False)
+        self.ticket_panel.configure(width=350)  # Set a max width for ticket panel
+
+    # Navigation methods now use main_app.show_frame
     def show_ticket(self):
-        """Already on ticket page"""
-        pass
+        pass  # Already on this page, do nothing!
 
     def show_receipt(self):
         self.main_app.show_frame("receipt")
@@ -144,7 +75,7 @@ class TicketMainPage(ctk.CTkFrame):
         try:
             ModifierPopup(self, product_name=product_name, product_type=product_type, on_submit=self.handle_modifier_submit)
         except Exception as e:
-            print(f"Error navigating to dashboard: {e}")
+            print(f"Error opening modifier popup: {e}")
 
     def handle_modifier_submit(self, product_name, quantity, size, temperature, extras):
         print(f"Adding to cart: {product_name} - Qty: {quantity}, Size: {size}, Temp: {temperature}, Extras: {extras}")
@@ -169,4 +100,3 @@ def create_ticket_app(user_role="employee"):
     except Exception as e:
         print(f"Error creating ticket app: {e}")
         return None
-

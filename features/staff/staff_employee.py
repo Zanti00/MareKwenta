@@ -17,6 +17,8 @@ class StaffPageEmployee(ctk.CTkFrame):
         self.date_buttons = []
         self.employee_cards = []
 
+        self.controller = StaffEmployeeController()
+
         # Header
         self.create_header()
 

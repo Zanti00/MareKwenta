@@ -29,8 +29,8 @@ class InventoryManagement(ctk.CTkFrame):
     def on_closing(self):
         """Handle window closing"""
         try:
-            self.root.quit()
-            self.root.destroy()
+            self.quit()
+            self.destroy()
         except:
             pass
         
@@ -405,7 +405,7 @@ class InventoryManagement(ctk.CTkFrame):
                         print(f"Error updating quantity: {e}")
                         messagebox.showerror("Error", f"Failed to update quantity: {e}")
 
-                AddQuantityPopup(self.root, on_save=on_save)
+                AddQuantityPopup(self, on_save=on_save)
             elif action == "Edit":
                 item_data = self.inventory_data[index].copy()
                 def on_edit_save(name, qty, measurement, cost, restock_point):
@@ -421,7 +421,7 @@ class InventoryManagement(ctk.CTkFrame):
                             messagebox.showerror("Error", "Failed to update ingredient in database.")
                     else:
                         messagebox.showerror("Error", "No inventory_id found for this item.")
-                EditInventoryPopup(self.root, item_data, on_save=on_edit_save)
+                EditInventoryPopup(self, item_data, on_save=on_edit_save)
             elif action == "Delete":
                 result = messagebox.askyesno(
                     "Confirm Delete",
@@ -465,20 +465,20 @@ class InventoryManagement(ctk.CTkFrame):
     
     def show_dashboard(self):
         from dashboard.sales_dashboard import SalesDashboard
-        self.root.destroy()
+        self.destroy()
         SalesDashboard(user_role=self.user_role).mainloop()
     
     def run(self):
         """Start the application with error handling"""
         try:
             print("Starting Inventory Management Application...")
-            self.root.mainloop()
+            self.mainloop()
         except Exception as e:
             print(f"Error running application: {e}")
             messagebox.showerror("Fatal Error", f"Application failed to start: {e}")
         finally:
             try:
-                self.root.destroy()
+                self.destroy()
             except:
                 pass
     
