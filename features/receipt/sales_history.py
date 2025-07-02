@@ -5,44 +5,12 @@ from datetime import datetime, timedelta
 from nav_bar import Navbar
 from staff.staff_admin import StaffPageAdmin
 from staff.staff_employee import StaffPageEmployee
-
-sample_receipts = [
-    {
-        "orderId": "#1-3001",
-        "dateTime": "June 23, 2025 3:00 PM",
-        "totalAmount": 210.00,
-        "cashier": "Aliah",
-        "paymentMode": "Split",
-        "discount": 10.00,
-        "paymentBreakdown": "Cash ₱100.00 + Card ₱110.00",
-        "itemsJson": '[{"name":"Americano","qty":2,"temperature":"Hot","size":"Grande","price":45.00, "extras":["Solo Shot"]},{"name":"Frappe Mocha","qty":1,"size":"Venti","price": 120.00,"extras":["Double Shot","Whip Cream"]}]',
-    },
-        {
-        "orderId": "#1-3001",
-        "dateTime": "June 24, 2025 3:00 PM",
-        "totalAmount": 210.00,
-        "cashier": "Aliah",
-        "paymentMode": "Split",
-        "discount": 10.00,
-        "paymentBreakdown": "Cash ₱100.00 + Card ₱110.00",
-        "itemsJson": '[{"name":"Americano","qty":2,"temperature":"Hot","size":"Grande","price":45.00, "extras":["Solo Shot"]},{"name":"Croissant","qty":1, "price": 20.00},{"name":"Frappe Mocha","qty":1,"size":"Venti","price": 120.00,"extras":["Double Shot","Whip Cream"]}]',
-    },
-    {
-        "orderId": "#1-3002",
-        "dateTime": "June 24, 2025 5:00 PM",
-        "totalAmount": 135.00,
-        "cashier": "Jane",
-        "paymentMode": "Cash",
-        "discount": 0.00,
-        "paymentBreakdown": "",
-        "itemsJson": '[{"name":"Latte","qty":2,"temperature":"Cold","size":"Venti", "price": 60.00},{"name":"Bagel","qty":2, "price":50.00}]'
-    }
-]
+from .receipt_controller import ReceiptController
 
 class SalesHistoryMain(ctk.CTk):
     def __init__(self, user_role="employee"):
         super().__init__()
-        taskbar_height = 70  # Adjust this value as needed
+        taskbar_height = 70
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         usable_height = screen_height - taskbar_height
@@ -71,6 +39,10 @@ class SalesHistoryMain(ctk.CTk):
         main_frame.grid_columnconfigure(1, weight=1)
 
         self.selected_receipt = None
+        self.receipts_data = []  # Store fetched receipts
+
+        # Load receipts from database
+        self.load_receipts_from_db()
 
         # === LEFT COLUMN (Header + Product Panel) ===
         left_column = ctk.CTkFrame(main_frame, fg_color="transparent", width=300)
@@ -111,6 +83,19 @@ class SalesHistoryMain(ctk.CTk):
                                              font=("Poppins", 18), text_color="#8B7355")
         self.placeholder_label.grid(row=1, column=1, sticky="n")
 
+        self.setup_right_panel()
+
+    def load_receipts_from_db(self):
+        """Load receipts from database"""
+        try:
+            self.receipts_data = ReceiptController.get_all_tickets()
+            print(f"Loaded {len(self.receipts_data)} receipts from database")
+        except Exception as e:
+            print(f"Error loading receipts: {e}")
+            self.receipts_data = []
+
+    def setup_right_panel(self):
+        """Setup the right panel components"""
         self.header_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent", width=500)
         self.header_frame.grid(row=0, column=0, pady=20, sticky="ew")
 
@@ -138,7 +123,7 @@ class SalesHistoryMain(ctk.CTk):
         self.items_divider = ctk.CTkFrame(self.right_panel, fg_color="#E0E0E0", height=2)
         self.items_divider.grid(row=3, column=0, sticky="ew", padx=20, pady=5)
 
-        # Total frame (created in __init__ but populated in select_receipt)
+        # Total frame
         self.total_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent")
         self.total_frame.grid(row=4, column=0, sticky="ew", padx=20, pady=20)
 
@@ -154,29 +139,52 @@ class SalesHistoryMain(ctk.CTk):
         for widget in self.receipt_list_frame.winfo_children():
             widget.destroy()
 
+        if not self.receipts_data:
+            # Show message when no receipts
+            no_receipts_label = ctk.CTkLabel(
+                self.receipt_list_frame,
+                text="No receipts found",
+                font=("Inter", 16),
+                text_color="#666666"
+            )
+            no_receipts_label.grid(row=0, column=0, pady=50, padx=20)
+            return
+
         def get_date_label(date_str):
-            receipt_date = datetime.strptime(date_str, "%B %d, %Y %I:%M %p").date()
-            today = datetime.today().date()
-            if receipt_date == today:
-                return "Today"
-            elif receipt_date == today - timedelta(days=1):
-                return "Yesterday"
-            else:
-                return receipt_date.strftime("%B %d, %Y")
+            try:
+                # Parse the database datetime format
+                receipt_date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").date()
+                today = datetime.today().date()
+                if receipt_date == today:
+                    return "Today"
+                elif receipt_date == today - timedelta(days=1):
+                    return "Yesterday"
+                else:
+                    return receipt_date.strftime("%B %d, %Y")
+            except:
+                return "Unknown Date"
 
         # Group receipts by date label
         grouped = {}
-        for receipt in sample_receipts:
+        for receipt in self.receipts_data:
             label = get_date_label(receipt["dateTime"])
             grouped.setdefault(label, []).append(receipt)
 
         # Sort groups by datetime (descending)
-        sorted_groups = sorted(grouped.items(), key=lambda x: datetime.strptime(x[1][0]["dateTime"], "%B %d, %Y %I:%M %p"), reverse=True)
-
-        for date_label, receipts in sorted_groups:
+        sorted_groups = []
+        for date_label, receipts in grouped.items():
             # Sort receipts within each group by time (latest first)
-            receipts.sort(key=lambda x: datetime.strptime(x["dateTime"], "%B %d, %Y %I:%M %p"), reverse=True)
-            
+            try:
+                receipts.sort(key=lambda x: datetime.strptime(x["dateTime"], "%Y-%m-%d %H:%M:%S"), reverse=True)
+                # Use the first receipt's datetime for group sorting
+                group_datetime = datetime.strptime(receipts[0]["dateTime"], "%Y-%m-%d %H:%M:%S")
+                sorted_groups.append((date_label, receipts, group_datetime))
+            except:
+                sorted_groups.append((date_label, receipts, datetime.min))
+        
+        sorted_groups.sort(key=lambda x: x[2], reverse=True)
+
+        for date_label, receipts, _ in sorted_groups:
             # Date header
             header = ctk.CTkLabel(self.receipt_list_frame, text=date_label, font=("Inter", 14, "bold"), text_color="#708a2e")
             header.grid(row=len(self.receipt_list_frame.winfo_children()), column=0, sticky="w", padx=15, pady=(10, 5))
@@ -192,7 +200,13 @@ class SalesHistoryMain(ctk.CTk):
                 amount_label = ctk.CTkLabel(left_info, text=f"₱{receipt['totalAmount']:.2f}", font=("Inter", 16, "bold"), text_color="#4e2d18")
                 amount_label.grid(row=0, column=0, sticky="w")
 
-                time_str = receipt['dateTime'].split()[-2] + " " + receipt['dateTime'].split()[-1]  # e.g. "3:00 PM"
+                # Format time from database datetime
+                try:
+                    dt = datetime.strptime(receipt['dateTime'], "%Y-%m-%d %H:%M:%S")
+                    time_str = dt.strftime("%I:%M %p")
+                except:
+                    time_str = "Unknown"
+                
                 time_label = ctk.CTkLabel(left_info, text=time_str, font=("Inter", 12), text_color="#666666")
                 time_label.grid(row=0, column=1, sticky="w")
 
@@ -225,8 +239,8 @@ class SalesHistoryMain(ctk.CTk):
         for widget in self.total_frame.winfo_children():
             widget.destroy()
 
-        items = json.loads(receipt.get("itemsJson", "[]"))
-        for idx, item in enumerate(items):
+        # Display items from database
+        for idx, item in enumerate(receipt.get("items", [])):
             # Create a frame for each item
             item_frame = ctk.CTkFrame(self.items_frame, fg_color="transparent")
             item_frame.grid(row=idx, column=0, sticky="ew", pady=(5,0))
@@ -242,18 +256,35 @@ class SalesHistoryMain(ctk.CTk):
             price_label = ctk.CTkLabel(item_frame, text=f"₱{subtotal:.2f}", font=("Poppins", 14, "bold"), text_color="#4e2d18", anchor="e")
             price_label.grid(row=0, column=1, sticky="e")
 
-            # Row 2: Details/extras (if any)
+            # Row 2: Details (size, temperature, extras)
             details = []
             if item.get("temperature"):
                 details.append(item["temperature"])
             if item.get("size"):
                 details.append(item["size"])
-            if item.get("extras"):
-                details.append("Extras: " + ", ".join(item["extras"]))
+            
+            # Add extras from database (extra_shots and whipped_cream) - only once
+            extras_list = []
+            if item.get("extra_shots", 0) > 0:
+                extras_list.append(f"Extra Shot x{item['extra_shots']}")
+            if item.get("whipped_cream", 0) > 0:
+                extras_list.append(f"Whip Cream x{item['whipped_cream']}")
+            
+            # Format details to display vertically
             if details:
-                full_details = ", ".join(details)
-                details_label = ctk.CTkLabel(item_frame, text=full_details, font=("Poppins", 12), text_color="#666666", anchor="w")
+                # First line: size and temperature on same line
+                size_temp_line = ", ".join(details)
+                details_label = ctk.CTkLabel(item_frame, text=size_temp_line, font=("Poppins", 12), text_color="#666666", anchor="w")
                 details_label.grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 2))
+            
+            # Second line: extras (if any) on separate line
+            if extras_list:
+                extras_text = f"Extras: {', '.join(extras_list)}"
+                extras_label = ctk.CTkLabel(item_frame, text=extras_text, font=("Poppins", 12), text_color="#666666", anchor="w")
+                if details:
+                    extras_label.grid(row=2, column=0, columnspan=2, sticky="w", pady=(0, 2))
+                else:
+                    extras_label.grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 2))
 
         # Total amount 
         total_label = ctk.CTkLabel(self.total_frame, text="Total:", font=("Inter", 18, "bold"), text_color="#4E2D18", anchor="w")
@@ -263,19 +294,26 @@ class SalesHistoryMain(ctk.CTk):
         total_value.grid(row=0, column=1, sticky="e")
 
         # === Payment Breakdown ===
+        row_count = 0
+        
         if receipt.get("discount", 0) > 0:
             discount_frame = ctk.CTkFrame(self.payment_frame, fg_color="transparent")
-            discount_frame.grid(row=0, column=0, sticky="ew", pady=2)
+            discount_frame.grid(row=row_count, column=0, sticky="ew", pady=2)
+            discount_frame.grid_columnconfigure(0, weight=1)
+            discount_frame.grid_columnconfigure(1, weight=0)
             
             discount_label = ctk.CTkLabel(discount_frame, text="Discount:", font=("Inter", 14), text_color="#5C4033", anchor="w")
             discount_label.grid(row=0, column=0, sticky="w")
             
             discount_value = ctk.CTkLabel(discount_frame, text=f"₱{receipt['discount']:.2f}", font=("Inter", 14), text_color="#5C4033", anchor="e")
             discount_value.grid(row=0, column=1, sticky="e")
+            row_count += 1
 
         # Payment Mode
         payment_mode_frame = ctk.CTkFrame(self.payment_frame, fg_color="transparent")
-        payment_mode_frame.grid(row=1, column=0, sticky="ew", pady=2)
+        payment_mode_frame.grid(row=row_count, column=0, sticky="ew", pady=2)
+        payment_mode_frame.grid_columnconfigure(0, weight=1)
+        payment_mode_frame.grid_columnconfigure(1, weight=0)
         
         mode_label = ctk.CTkLabel(payment_mode_frame, text="Payment Mode:", font=("Inter", 14), text_color="#4e2d18", anchor="w")
         mode_label.grid(row=0, column=0, sticky="w")
@@ -288,15 +326,25 @@ class SalesHistoryMain(ctk.CTk):
         
         mode_value = ctk.CTkLabel(payment_mode_frame, text=mode_text, font=("Inter", 14), text_color="#4e2d18", anchor="e")
         mode_value.grid(row=0, column=1, sticky="e")
+        row_count += 1
 
         # DateTime
         datetime_frame = ctk.CTkFrame(self.payment_frame, fg_color="transparent")
-        datetime_frame.grid(row=2, column=0, sticky="ew", pady=(5, 0))
+        datetime_frame.grid(row=row_count, column=0, sticky="ew", pady=(5, 0))
+        datetime_frame.grid_columnconfigure(0, weight=1)
+        datetime_frame.grid_columnconfigure(1, weight=0)
         
         datetime_label = ctk.CTkLabel(datetime_frame, text="Date & Time:", font=("Inter", 12), text_color="#888", anchor="w")
         datetime_label.grid(row=0, column=0, sticky="w")
         
-        datetime_value = ctk.CTkLabel(datetime_frame, text=receipt.get("dateTime", ""), font=("Inter", 12), text_color="#888", anchor="e")
+        # Format datetime for display
+        try:
+            dt = datetime.strptime(receipt['dateTime'], "%Y-%m-%d %H:%M:%S")
+            formatted_datetime = dt.strftime("%B %d, %Y %I:%M %p")
+        except:
+            formatted_datetime = receipt.get("dateTime", "Unknown")
+        
+        datetime_value = ctk.CTkLabel(datetime_frame, text=formatted_datetime, font=("Inter", 12), text_color="#888", anchor="e")
         datetime_value.grid(row=0, column=1, sticky="e")
 
     def show_ticket(self):
@@ -305,7 +353,7 @@ class SalesHistoryMain(ctk.CTk):
         TicketMainPage(user_role=self.user_role).mainloop()
 
     def show_receipt(self):
-        pass  # Already on this page, do nothing!
+        pass  # Already on this page
 
     def show_inventory(self):
         from inventory.inventory_page import InventoryManagement
@@ -328,3 +376,19 @@ class SalesHistoryMain(ctk.CTk):
         from dashboard.sales_dashboard import SalesDashboard
         self.destroy()
         SalesDashboard(user_role=self.user_role).mainloop()
+
+    def run(self):
+        """Start the application"""
+        try:
+            self.mainloop()
+        except Exception as e:
+            print(f"Error running SalesHistoryMain: {e}")
+        finally:
+            try:
+                self.destroy()
+            except:
+                pass
+
+    def mainloop(self):
+        """Run the application"""
+        super().mainloop()

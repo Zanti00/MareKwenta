@@ -399,7 +399,7 @@ class TicketMainPage:
             from receipt.sales_history import SalesHistoryMain
             self.root.destroy()
             receipt_page = SalesHistoryMain(self.user_role)
-            receipt_page.mainloop()  # Changed from run() to mainloop()
+            receipt_page.run()
         except Exception as e:
             print(f"Error launching receipt page: {e}")
 

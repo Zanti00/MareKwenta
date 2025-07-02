@@ -58,12 +58,33 @@ class TicketController:
                 # Calculate unit selling price including extras
                 unit_selling_price = item["unit_price"] + item.get("extras_cost", 0)
                 
-                cursor.execute("""
-                    INSERT INTO ticket_line (ticket_id, product_type_id, product_quantity, unit_selling_price)
-                    VALUES (?, ?, ?, ?)
-                """, (ticket_id, item["product_type_id"], item["quantity"], round(unit_selling_price, 2)))
+                # Extract extra shots and whipped cream from extras
+                extra_shots = 0
+                whipped_cream = 0
                 
-                print(f"Added line: product_type_id={item['product_type_id']}, qty={item['quantity']}, price={unit_selling_price}")
+                # Parse extras list to count extra shots and whipped cream
+                extras_list = item.get("extras", [])
+                if isinstance(extras_list, list):
+                    for extra in extras_list:
+                        if "Extra Shot" in extra:
+                            # Extract quantity from "Extra Shot x1", "Extra Shot x2", etc.
+                            try:
+                                extra_shots = int(extra.split('x')[-1])
+                            except (ValueError, IndexError):
+                                extra_shots = 1  # Default to 1 if parsing fails
+                        elif "Whip Cream" in extra:
+                            # Extract quantity from "Whip Cream x1", "Whip Cream x2", etc.
+                            try:
+                                whipped_cream = int(extra.split('x')[-1])
+                            except (ValueError, IndexError):
+                                whipped_cream = 1  # Default to 1 if parsing fails
+                
+                cursor.execute("""
+                    INSERT INTO ticket_line (ticket_id, product_type_id, product_quantity, unit_selling_price, extra_shots, whipped_cream)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (ticket_id, item["product_type_id"], item["quantity"], round(unit_selling_price, 2), extra_shots, whipped_cream))
+                
+                print(f"Added line: product_type_id={item['product_type_id']}, qty={item['quantity']}, price={unit_selling_price}, extra_shots={extra_shots}, whipped_cream={whipped_cream}")
             
             # Handle payment records
             if payment_type == "Split" and split_payments:

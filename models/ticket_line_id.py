@@ -21,6 +21,8 @@ try:
             product_type_id INTEGER NOT NULL,
             product_quantity INTEGER NOT NULL,
             unit_selling_price REAL NOT NULL,
+            extra_shots INTEGER DEFAULT 0,
+            whipped_cream INTEGER DEFAULT 0,
             FOREIGN KEY (ticket_id) REFERENCES ticket(ticket_id) ON DELETE CASCADE ON UPDATE CASCADE,
             FOREIGN KEY (product_type_id) REFERENCES product_type(product_type_id) ON DELETE CASCADE ON UPDATE CASCADE
         )

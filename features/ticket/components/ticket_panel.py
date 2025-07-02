@@ -189,11 +189,6 @@ class TicketPanel(ctk.CTkFrame):
             )
             btn.grid(row=0, column=i, padx=1, pady=2, sticky="ew")  # Minimal padx
 
-        self.charge_btn = ctk.CTkButton(self.payment_buttons_frame, text="Charge", width=140, height=40,
-                                        font=("Unbounded", 16, "bold"), fg_color="#708a2e", text_color="#f2efea", hover_color="#5c7324",
-                                        corner_radius=8, command=self.handle_charge)
-        self.charge_btn.grid(row=0, column=3)
-
     def switch_tab(self, tab_index):
         self.selected_tab.set(tab_index)
         self.change_frame.grid_remove()
@@ -443,6 +438,11 @@ class TicketPanel(ctk.CTkFrame):
             for item in self.items:
                 item.destroy()
             self.items.clear()
+            # Reset discount when clearing items
+            self.clear_discount()
+            self.update_total(0.0)
+        except Exception as e:
+            print(f"Error clearing items: {e}")
             # Reset discount when clearing items
             self.clear_discount()
             self.update_total(0.0)
