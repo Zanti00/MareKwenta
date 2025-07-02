@@ -172,6 +172,11 @@ class TicketPanel(ctk.CTkFrame):
             )
             btn.grid(row=0, column=i, padx=1, pady=2, sticky="ew")  # Minimal padx
 
+        self.charge_btn = ctk.CTkButton(self.payment_buttons_frame, text="Charge", width=140, height=40,
+                                        font=("Unbounded", 16, "bold"), fg_color="#708a2e", text_color="#f2efea", hover_color="#5c7324",
+                                        corner_radius=8, command=self.handle_charge)
+        self.charge_btn.grid(row=0, column=3)
+
     def switch_tab(self, tab_index):
         self.selected_tab.set(tab_index)
         self.change_frame.grid_remove()
@@ -243,3 +248,23 @@ class TicketPanel(ctk.CTkFrame):
         except Exception as e:
             print(f"Error clearing items: {e}")
             print(f"Error clearing items: {e}")
+
+    def handle_charge(self):
+        """Handle charge button click - create ticket and show receipt"""
+        if hasattr(self, 'on_charge_callback') and self.on_charge_callback:
+            # Calculate change
+            change = max(0, self.cash_received - self.current_total)
+            
+            charge_data = {
+                "total_amount": self.current_total,
+                "cash_received": self.cash_received,
+                "change": change,
+                "discount": 0  # Will implement discount later
+            }
+            self.on_charge_callback(charge_data)
+        else:
+            print("No charge callback set")
+
+    def set_charge_callback(self, callback):
+        """Set the callback function for charge button"""
+        self.on_charge_callback = callback

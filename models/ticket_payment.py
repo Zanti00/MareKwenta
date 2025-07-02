@@ -25,10 +25,11 @@ try:
     """)
 
     conn.commit()
-    cursor.close
+    cursor.close()
 except sqlite3.Error as e:
-    print("An error occured while connecting to sqlite", e)
+    print("An error occurred while connecting to sqlite", e)
 finally:
     if conn:
         conn.commit()
-        cursor.close
+        cursor.close()
+        conn.close()

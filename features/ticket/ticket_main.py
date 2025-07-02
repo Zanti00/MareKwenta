@@ -9,6 +9,8 @@ from nav_bar import Navbar
 from .product_panel import ProductPanel
 from .components.ticket_panel import TicketPanel
 from .components.item_detail import ItemDetail
+from .ticket_controller import TicketController
+from .components.receipt_popup import ReceiptPopup
 
 class TicketMainPage:
     def __init__(self, user_role="admin"):
@@ -39,6 +41,9 @@ class TicketMainPage:
         # Initialize cart items list
         self.cart_items = []
         self.current_total = 0.0
+        
+        # Store current user info
+        self.current_user_id = 1  # Default admin user, should be passed from login
         
         self.setup_ui()
 
@@ -77,6 +82,9 @@ class TicketMainPage:
         # Ticket panel (right side)
         self.ticket_panel = TicketPanel(self.main_frame)
         self.ticket_panel.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
+        
+        # Set charge callback
+        self.ticket_panel.set_charge_callback(self.handle_charge)
 
     def handle_product_click(self, cart_item):
         """Handle product selection from product panel"""
@@ -252,6 +260,81 @@ class TicketMainPage:
             
         except Exception as e:
             print(f"Error removing item: {e}")
+
+    def handle_charge(self, charge_data):
+        """Handle charge button click - create ticket in database"""
+        try:
+            if not self.cart_items:
+                messagebox.showwarning("Empty Cart", "Cannot create ticket with empty cart")
+                return
+                
+            if charge_data["cash_received"] < charge_data["total_amount"]:
+                messagebox.showwarning("Insufficient Payment", "Cash received is less than total amount")
+                return
+            
+            # Create ticket in database
+            ticket_id = TicketController.create_ticket(
+                employee_id=self.current_user_id,
+                cart_items=self.cart_items,
+                total_amount=charge_data["total_amount"],
+                cash_received=charge_data["cash_received"],
+                change=charge_data["change"],
+                discount=charge_data["discount"]
+            )
+            
+            if ticket_id:
+                messagebox.showinfo("Success", f"Ticket #{ticket_id} created successfully!")
+                
+                # Show receipt popup
+                self.show_receipt_popup(ticket_id)
+                
+                # Clear cart after successful transaction
+                self.clear_cart()
+                
+            else:
+                messagebox.showerror("Error", "Failed to create ticket")
+                
+        except Exception as e:
+            print(f"Error handling charge: {e}")
+            messagebox.showerror("Error", f"Failed to process charge: {e}")
+
+    def show_receipt_popup(self, ticket_id):
+        """Show receipt popup with ticket details"""
+        try:
+            print(f"Showing receipt for ticket ID: {ticket_id}")
+            ticket_details = TicketController.get_ticket_details(ticket_id)
+            if ticket_details:
+                print("Ticket details retrieved successfully, creating receipt popup")
+                ReceiptPopup(self.root, ticket_details)
+            else:
+                print("Failed to retrieve ticket details from database")
+                messagebox.showerror("Error", "Failed to retrieve ticket details")
+        except Exception as e:
+            print(f"Error showing receipt: {e}")
+            import traceback
+            traceback.print_exc()
+            messagebox.showerror("Error", f"Failed to show receipt: {e}")
+
+    def clear_cart(self):
+        """Clear the shopping cart"""
+        try:
+            # Clear cart items
+            self.cart_items = []
+            self.current_total = 0.0
+            
+            # Clear ticket panel
+            self.ticket_panel.clear_items()
+            self.ticket_panel.update_total(0.0)
+            
+            # Reset cash received
+            self.ticket_panel.cash_received = 0
+            self.ticket_panel.cash_received_display.configure(text="₱ 0")
+            self.ticket_panel.update_change()
+            
+            print("Cart cleared successfully")
+            
+        except Exception as e:
+            print(f"Error clearing cart: {e}")
 
     # Navigation methods
     def show_ticket(self):
