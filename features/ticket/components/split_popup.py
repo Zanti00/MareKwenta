@@ -130,3 +130,11 @@ class SplitPopup(ctk.CTkToplevel):
         if self.on_charge_callback:
             self.on_charge_callback(data)
         self.destroy()
+
+    def open_split_popup(self, total=None):
+        # Open the SplitPopup window when split button is clicked
+        if total is None:
+            # Use the displayed total (which includes discount)
+            displayed_total_text = self.total_display.cget("text")
+            total = float(displayed_total_text.replace("₱ ", "").replace(",", ""))
+        SplitPopup(self, total_amount=total)

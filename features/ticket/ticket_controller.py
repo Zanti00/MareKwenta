@@ -28,16 +28,19 @@ class TicketController:
             # Calculate line price (subtotal before discount)
             line_price = sum((item["quantity"] * item["unit_price"]) + (item["quantity"] * item.get("extras_cost", 0)) for item in cart_items)
             
-            print(f"Creating ticket: employee_id={employee_id}, line_price={line_price}, total={total_amount}, payment_type={payment_type}")
+            print(f"Creating ticket: employee_id={employee_id}, line_price={line_price}, final_total={total_amount}, discount={discount}, payment_type={payment_type}")
             
             # Insert main ticket record
+            # line_price = subtotal before discount
+            # total_amount = final amount after discount
+            # discount = discount amount applied
             cursor.execute("""
                 INSERT INTO ticket (employee_id, line_price, total_amount, change, discount, ticket_date)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (employee_id, line_price, total_amount, change, discount, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             
             ticket_id = cursor.lastrowid
-            print(f"Ticket created with ID: {ticket_id}")
+            print(f"Ticket created with ID: {ticket_id}, line_price: ₱{line_price:.2f}, total_amount: ₱{total_amount:.2f}, discount: ₱{discount:.2f}")
             
             # Insert ticket lines for each cart item
             for item in cart_items:
@@ -61,7 +64,7 @@ class TicketController:
             
             conn.commit()
             cursor.close()
-            print(f"Ticket {ticket_id} created successfully")
+            print(f"Ticket {ticket_id} created successfully with discount: ₱{discount:.2f}")
             return ticket_id
             
         except Exception as e:

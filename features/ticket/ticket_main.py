@@ -278,26 +278,30 @@ class TicketMainPage:
                     return
             else:
                 # For GCash/Maya, show confirmation dialog
+                discount_text = f" (Discount: ₱{charge_data['discount']:.2f})" if charge_data['discount'] > 0 else ""
                 result = messagebox.askyesno(
                     f"{payment_type} Payment", 
-                    f"Process {payment_type} payment of ₱{charge_data['total_amount']:.2f}?"
+                    f"Process {payment_type} payment of ₱{charge_data['total_amount']:.2f}{discount_text}?"
                 )
                 if not result:
                     return
+            
+            print(f"Processing charge: {charge_data}")
             
             # Create ticket in database
             ticket_id = TicketController.create_ticket(
                 employee_id=self.current_user_id,
                 cart_items=self.cart_items,
-                total_amount=charge_data["total_amount"],
+                total_amount=charge_data["total_amount"],  # Final amount after discount
                 cash_received=charge_data["cash_received"],
                 change=charge_data["change"],
-                discount=charge_data["discount"],
+                discount=charge_data["discount"],  # Discount amount
                 payment_type=payment_type
             )
             
             if ticket_id:
-                messagebox.showinfo("Success", f"Ticket #{ticket_id} created successfully with {payment_type} payment!")
+                discount_info = f" with ₱{charge_data['discount']:.2f} discount" if charge_data['discount'] > 0 else ""
+                messagebox.showinfo("Success", f"Ticket #{ticket_id} created successfully with {payment_type} payment{discount_info}!")
                 
                 # Show receipt popup
                 self.show_receipt_popup(ticket_id)

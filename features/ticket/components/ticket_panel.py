@@ -14,6 +14,7 @@ class TicketPanel(ctk.CTkFrame):
         self.cart = []
         self.discount_value = 0
         self.discount_type = "percent"
+        self.applied_discount = 0  # Initialize applied discount
         self.cash_received = 0
         self.current_total = 0.0
         self.items = []
@@ -94,6 +95,10 @@ class TicketPanel(ctk.CTkFrame):
         # === Discount Panel (Hidden by Default) ===
         self.discount_frame = ctk.CTkFrame(self.tab_content_container, fg_color="transparent")
 
+        # Configure columns for discount frame
+        for i in range(4):
+            self.discount_frame.grid_columnconfigure(i, weight=1, uniform="discount_col")
+
         discount_buttons = [
             ("5%", 5, "#f8961e"),
             ("10%", 10, "#c30e0e"),
@@ -104,26 +109,28 @@ class TicketPanel(ctk.CTkFrame):
         ]
 
         for idx, (label, value, color) in enumerate(discount_buttons):
-            mode = "percent"
-            cmd = lambda v=value: self.apply_discount(v, mode)
             if label == "Clear":
-                cmd = lambda: self.apply_discount(0, "percent")
+                cmd = self.clear_discount
+            else:
+                cmd = lambda v=value: self.apply_discount(v, "percent")
 
-            btn = ctk.CTkButton(self.discount_frame, text=label, width=90, height=40,
+            btn = ctk.CTkButton(self.discount_frame, text=label, height=40,
                                 font=("Unbounded", 13), text_color=color,
                                 border_color=color, fg_color="#f2efea",
                                 border_width=2, corner_radius=8, hover_color="#e8e4df",
                                 command=cmd)
-            btn.grid(row=0 if idx < 4 else 1, column=idx % 4, padx=5, pady=5)
+            btn.grid(row=0 if idx < 4 else 1, column=idx % 4, padx=1, pady=2, sticky="ew")
 
-        # === Move entry fields to row=1, column=4 and column=5 (next to buttons)
-        self.peso_input = ctk.CTkEntry(self.discount_frame, placeholder_text="₱ Amount", width=90, height=40,
+        # Custom discount input fields
+        self.peso_input = ctk.CTkEntry(self.discount_frame, placeholder_text="₱ Amount", height=40,
                                     font=("Inter", 13), text_color="#4e2d18", border_color="#f2efea")
-        self.peso_input.grid(row=1, column=2, padx=5, pady=5)
+        self.peso_input.grid(row=1, column=2, padx=1, pady=2, sticky="ew")
+        self.peso_input.bind("<KeyRelease>", self.on_peso_input_change)
 
-        self.percent_input = ctk.CTkEntry(self.discount_frame, placeholder_text="% Amount", width=90, height=40,
+        self.percent_input = ctk.CTkEntry(self.discount_frame, placeholder_text="% Amount", height=40,
                                         font=("Inter", 13), text_color="#4e2d18", border_color="#f2efea")
-        self.percent_input.grid(row=1, column=3, padx=5, pady=5)
+        self.percent_input.grid(row=1, column=3, padx=1, pady=2, sticky="ew")
+        self.percent_input.bind("<KeyRelease>", self.on_percent_input_change)
 
         # Show change_frame by default
         self.change_frame.tkraise()
@@ -213,19 +220,207 @@ class TicketPanel(ctk.CTkFrame):
         self.update_change()
 
     def apply_discount(self, value, mode):
-        self.discount_value = value
-        self.discount_type = mode
-        # Add logic to update total
+        """Apply discount to the current total"""
+        try:
+            if self.current_total <= 0:
+                print("No items in cart to apply discount")
+                return
+                
+            # Store discount info
+            self.discount_value = value
+            self.discount_type = mode
+            
+            # Calculate discount amount
+            if mode == "percent":
+                discount_amount = (self.current_total * value) / 100
+            else:  # fixed amount
+                discount_amount = min(value, self.current_total)  # Don't exceed total
+            
+            # Apply discount to total
+            discounted_total = max(0, self.current_total - discount_amount)
+            
+            # Update display
+            self.total_display.configure(text=f"₱ {discounted_total:.2f}")
+            self.update_change()
+            
+            # Store the actual discount amount applied
+            self.applied_discount = discount_amount
+            
+            print(f"Applied {mode} discount: {value}{'%' if mode == 'percent' else ''} = ₱{discount_amount:.2f}")
+            
+        except Exception as e:
+            print(f"Error applying discount: {e}")
+
+    def clear_discount(self):
+        """Clear any applied discount"""
+        try:
+            # Reset discount values
+            self.discount_value = 0
+            self.discount_type = "percent"
+            self.applied_discount = 0
+            
+            # Clear input fields
+            self.peso_input.delete(0, 'end')
+            self.percent_input.delete(0, 'end')
+            
+            # Restore original total
+            self.total_display.configure(text=f"₱ {self.current_total:.2f}")
+            self.update_change()
+            
+            print("Discount cleared")
+            
+        except Exception as e:
+            print(f"Error clearing discount: {e}")
+
+    def on_peso_input_change(self, event=None):
+        """Handle custom peso amount input"""
+        try:
+            peso_value = self.peso_input.get().strip()
+            if peso_value:
+                amount = float(peso_value)
+                self.apply_discount(amount, "fixed")
+            else:
+                self.clear_discount()
+        except ValueError:
+            # Invalid input, ignore
+            pass
+        except Exception as e:
+            print(f"Error processing peso input: {e}")
+
+    def on_percent_input_change(self, event=None):
+        """Handle custom percentage input"""
+        try:
+            percent_value = self.percent_input.get().strip()
+            if percent_value:
+                percentage = float(percent_value)
+                if 0 <= percentage <= 100:  # Validate percentage range
+                    self.apply_discount(percentage, "percent")
+                else:
+                    print("Percentage must be between 0 and 100")
+            else:
+                self.clear_discount()
+        except ValueError:
+            # Invalid input, ignore
+            pass
+        except Exception as e:
+            print(f"Error processing percent input: {e}")
 
     def update_change(self):
-        # Use actual total instead of dummy value
-        change = self.cash_received - self.current_total
-        self.change_display.configure(text=f"₱ {max(0, change)}")
+        """Update change calculation with discount consideration"""
+        try:
+            # Get the current displayed total (which includes discount)
+            displayed_total_text = self.total_display.cget("text")
+            displayed_total = float(displayed_total_text.replace("₱ ", "").replace(",", ""))
+            
+            change = self.cash_received - displayed_total
+            self.change_display.configure(text=f"₱ {max(0, change):.2f}")
+        except Exception as e:
+            print(f"Error updating change: {e}")
+            # Fallback to original calculation
+            change = self.cash_received - self.current_total
+            self.change_display.configure(text=f"₱ {max(0, change):.2f}")
+
+    def update_total(self, new_total):
+        """Update the total amount and recalculate discount if any"""
+        try:
+            self.current_total = new_total
+            
+            # If there's an active discount, reapply it
+            if hasattr(self, 'discount_value') and self.discount_value > 0:
+                if self.discount_type == "percent":
+                    discount_amount = (new_total * self.discount_value) / 100
+                else:  # fixed amount
+                    discount_amount = min(self.discount_value, new_total)
+                
+                discounted_total = max(0, new_total - discount_amount)
+                self.total_display.configure(text=f"₱ {discounted_total:.2f}")
+                self.applied_discount = discount_amount
+            else:
+                self.total_display.configure(text=f"₱ {new_total:.2f}")
+                self.applied_discount = 0
+            
+            self.update_change()  # Update change when total changes
+            print(f"Total updated to: ₱{new_total:.2f}, Applied discount: ₱{self.applied_discount:.2f}")
+            
+        except Exception as e:
+            print(f"Error updating total: {e}")
+
+    def clear_items(self):
+        """Clear all items from the ticket"""
+        try:
+            for item in self.items:
+                item.destroy()
+            self.items.clear()
+            # Reset discount when clearing items
+            self.clear_discount()
+            self.update_total(0.0)
+        except Exception as e:
+            print(f"Error clearing items: {e}")
+
+    def handle_charge(self):
+        """Handle charge button click - include discount in payment data"""
+        if hasattr(self, 'on_charge_callback') and self.on_charge_callback:
+            # Get the displayed total (after discount)
+            displayed_total_text = self.total_display.cget("text")
+            displayed_total = float(displayed_total_text.replace("₱ ", "").replace(",", ""))
+            
+            # Calculate change based on displayed (discounted) total
+            change = max(0, self.cash_received - displayed_total)
+            
+            charge_data = {
+                "total_amount": displayed_total,  # Final amount after discount
+                "cash_received": self.cash_received,
+                "change": change,
+                "discount": getattr(self, 'applied_discount', 0),  # Actual discount amount
+                "payment_type": "Cash"
+            }
+            
+            print(f"Charge - Total: {displayed_total}, Original: {self.current_total}, Discount: {charge_data['discount']}")
+            self.on_charge_callback(charge_data)
+        else:
+            print("No charge callback set")
+
+    def handle_gcash(self):
+        """Handle GCash payment button click - include discount"""
+        if hasattr(self, 'on_charge_callback') and self.on_charge_callback:
+            displayed_total_text = self.total_display.cget("text")
+            displayed_total = float(displayed_total_text.replace("₱ ", "").replace(",", ""))
+            
+            charge_data = {
+                "total_amount": displayed_total,
+                "cash_received": displayed_total,  # Full payment via GCash
+                "change": 0,
+                "discount": getattr(self, 'applied_discount', 0),
+                "payment_type": "GCash"
+            }
+            print(f"GCash - Total: {displayed_total}, Discount: {charge_data['discount']}")
+            self.on_charge_callback(charge_data)
+        else:
+            print("No charge callback set")
+
+    def handle_maya(self):
+        """Handle Maya payment button click - include discount"""
+        if hasattr(self, 'on_charge_callback') and self.on_charge_callback:
+            displayed_total_text = self.total_display.cget("text")
+            displayed_total = float(displayed_total_text.replace("₱ ", "").replace(",", ""))
+            
+            charge_data = {
+                "total_amount": displayed_total,
+                "cash_received": displayed_total,  # Full payment via Maya
+                "change": 0,
+                "discount": getattr(self, 'applied_discount', 0),
+                "payment_type": "Maya"
+            }
+            print(f"Maya - Total: {displayed_total}, Discount: {charge_data['discount']}")
+            self.on_charge_callback(charge_data)
+        else:
+            print("No charge callback set")
 
     def open_split_popup(self, total=None):
         # Open the SplitPopup window when split button is clicked
         if total is None:
-            total = self.current_total  # Use actual total
+            displayed_total_text = self.total_display.cget("text")
+            total = float(displayed_total_text.replace("₱ ", "").replace(",", ""))
         SplitPopup(self, total_amount=total)
 
     # New methods for compatibility with the updated ticket system
@@ -238,15 +433,9 @@ class TicketPanel(ctk.CTkFrame):
         except Exception as e:
             print(f"Error adding item to ticket panel: {e}")
 
-    def update_total(self, new_total):
-        """Update the total amount displayed"""
-        try:
-            self.current_total = new_total
-            self.total_display.configure(text=f"₱ {new_total:.2f}")
-            self.update_change()  # Update change when total changes
-            print(f"Total updated to: ₱{new_total:.2f}")
-        except Exception as e:
-            print(f"Error updating total: {e}")
+    def set_charge_callback(self, callback):
+        """Set the callback function for charge button"""
+        self.on_charge_callback = callback
 
     def clear_items(self):
         """Clear all items from the ticket"""
@@ -254,58 +443,8 @@ class TicketPanel(ctk.CTkFrame):
             for item in self.items:
                 item.destroy()
             self.items.clear()
+            # Reset discount when clearing items
+            self.clear_discount()
             self.update_total(0.0)
         except Exception as e:
             print(f"Error clearing items: {e}")
-            print(f"Error clearing items: {e}")
-
-    def handle_gcash(self):
-        """Handle GCash payment button click"""
-        if hasattr(self, 'on_charge_callback') and self.on_charge_callback:
-            # For digital payments, assume full payment (no change)
-            charge_data = {
-                "total_amount": self.current_total,
-                "cash_received": self.current_total,  # Full payment via GCash
-                "change": 0,  # No change for digital payments
-                "discount": 0,
-                "payment_type": "GCash"
-            }
-            self.on_charge_callback(charge_data)
-        else:
-            print("No charge callback set")
-
-    def handle_maya(self):
-        """Handle Maya payment button click"""
-        if hasattr(self, 'on_charge_callback') and self.on_charge_callback:
-            # For digital payments, assume full payment (no change)
-            charge_data = {
-                "total_amount": self.current_total,
-                "cash_received": self.current_total,  # Full payment via Maya
-                "change": 0,  # No change for digital payments
-                "discount": 0,
-                "payment_type": "Maya"
-            }
-            self.on_charge_callback(charge_data)
-        else:
-            print("No charge callback set")
-
-    def handle_charge(self):
-        """Handle charge button click - create ticket and show receipt"""
-        if hasattr(self, 'on_charge_callback') and self.on_charge_callback:
-            # Calculate change
-            change = max(0, self.cash_received - self.current_total)
-            
-            charge_data = {
-                "total_amount": self.current_total,
-                "cash_received": self.cash_received,
-                "change": change,
-                "discount": 0,
-                "payment_type": "Cash"  # Default to Cash for charge button
-            }
-            self.on_charge_callback(charge_data)
-        else:
-            print("No charge callback set")
-
-    def set_charge_callback(self, callback):
-        """Set the callback function for charge button"""
-        self.on_charge_callback = callback
