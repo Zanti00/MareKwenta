@@ -1,14 +1,15 @@
 import customtkinter as ctk
 import tkinter as tk
+from tkinter import messagebox
 
 class SplitPopup(ctk.CTkToplevel):
     def __init__(self, master, total_amount=0, on_charge_callback=None):
         super().__init__(master, fg_color="#f2efea")
         self.geometry("400x500")
         self.title("Split Payment")
-        self.total_amount = total_amount
+        self.total_amount = float(total_amount)  # Ensure it's a float
         self.payment_count = tk.IntVar(value=2)
-        self.entered_total = tk.IntVar(value=0)
+        self.entered_total = tk.DoubleVar(value=0.0)  # Changed to DoubleVar for decimals
         self.valid_split = tk.BooleanVar(value=True)
         self.payment_methods = ["Cash", "GCash", "Maya"]
         self.on_charge_callback = on_charge_callback
@@ -71,11 +72,16 @@ class SplitPopup(ctk.CTkToplevel):
             widget.destroy()
         self.payment_entries.clear()
 
-        base = self.total_amount // self.payment_count.get()
+        # Calculate split amounts with proper decimal handling
+        base = self.total_amount / self.payment_count.get()
         remainder = self.total_amount % self.payment_count.get()
 
         for i in range(self.payment_count.get()):
-            amount = base + (remainder if i == self.payment_count.get() - 1 else 0)
+            # For the last payment, add any remainder to avoid rounding issues
+            if i == self.payment_count.get() - 1:
+                amount = round(base + remainder, 2)
+            else:
+                amount = round(base, 2)
             self.add_payment_row(amount)
 
         self.check_total_amount()
@@ -92,7 +98,8 @@ class SplitPopup(ctk.CTkToplevel):
                                        button_color="#c0a891", button_hover_color="#e8e4df")
         method_menu.pack(side="left", padx=5, fill="x", expand=True)
 
-        amount_var = tk.IntVar(value=amount)
+        # Use DoubleVar for decimal amounts and set with proper formatting
+        amount_var = tk.DoubleVar(value=amount)
         amount_entry = ctk.CTkEntry(row, textvariable=amount_var, width=80)
         amount_entry.pack(side="right", padx=5)
 
@@ -103,15 +110,28 @@ class SplitPopup(ctk.CTkToplevel):
         self.payment_entries.append((method_var, amount_var))
 
     def check_total_amount(self):
-        total = sum(var.get() for _, var in self.payment_entries)
-        self.entered_total.set(total)
-        self.valid_split.set(total == self.total_amount)
+        try:
+            # Calculate total with proper decimal handling
+            total = sum(var.get() for _, var in self.payment_entries)
+            self.entered_total.set(total)
+            
+            # Check if totals match with small tolerance for floating point precision
+            tolerance = 0.01
+            difference = abs(total - self.total_amount)
+            is_valid = difference < tolerance
+            
+            self.valid_split.set(is_valid)
 
-        self.total_display.configure(
-            text=f"Total Entered: ₱{total} / ₱{self.total_amount}",
-            text_color="green" if total == self.total_amount else "red"
-        )
-        self.charge_button.configure(state="normal" if total == self.total_amount else "disabled")
+            self.total_display.configure(
+                text=f"Total Entered: ₱{total:.2f} / ₱{self.total_amount:.2f}",
+                text_color="green" if is_valid else "red"
+            )
+            self.charge_button.configure(state="normal" if is_valid else "disabled")
+            
+        except Exception as e:
+            print(f"Error checking total amount: {e}")
+            self.valid_split.set(False)
+            self.charge_button.configure(state="disabled")
 
     def decrease_payment_count(self):
         if self.payment_count.get() > 1:
@@ -123,12 +143,35 @@ class SplitPopup(ctk.CTkToplevel):
         self.update_split_rows()
 
     def submit_split(self):
-        data = [
-            {"method": method.get(), "amount": amount.get()}
-            for method, amount in self.payment_entries
-        ]
-        if self.on_charge_callback:
-            self.on_charge_callback(data)
+        """Submit split payment and process the transaction"""
+        if not self.valid_split.get():
+            messagebox.showwarning("Invalid Total", "Total entered does not match the order total.")
+            return
+            
+        # Prepare payment data for each method
+        payment_data = []
+        for method, amount in self.payment_entries:
+            amount_value = amount.get()
+            if amount_value > 0:  # Only include payments with amount > 0
+                payment_data.append({
+                    "payment_type": method.get(),
+                    "payment_amount": round(amount_value, 2)  # Round to 2 decimal places
+                })
+        
+        # Create charge data structure for the main handler
+        charge_data = {
+            "total_amount": round(self.total_amount, 2),
+            "cash_received": round(self.total_amount, 2),  # For split payment, total received equals total
+            "change": 0,  # No change in split payment
+            "discount": getattr(self.master, 'applied_discount', 0),  # Get discount from ticket panel
+            "payment_type": "Split",
+            "split_payments": payment_data  # Additional data for split payments
+        }
+        
+        # Get the charge callback from the ticket panel
+        if hasattr(self.master, 'on_charge_callback') and self.master.on_charge_callback:
+            self.master.on_charge_callback(charge_data)
+        
         self.destroy()
 
     def open_split_popup(self, total=None):

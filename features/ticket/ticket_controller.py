@@ -15,8 +15,8 @@ class TicketController:
             return None
 
     @staticmethod
-    def create_ticket(employee_id, cart_items, total_amount, cash_received, change, discount=0, payment_type="Cash"):
-        """Create a new ticket with ticket lines and payment record"""
+    def create_ticket(employee_id, cart_items, total_amount, cash_received, change, discount=0, payment_type="Cash", split_payments=None):
+        """Create a new ticket with ticket lines and payment record(s)"""
         conn = TicketController.connect_db()
         if conn is None:
             print("Failed to connect to database")
@@ -31,13 +31,10 @@ class TicketController:
             print(f"Creating ticket: employee_id={employee_id}, line_price={line_price}, final_total={total_amount}, discount={discount}, payment_type={payment_type}")
             
             # Insert main ticket record
-            # line_price = subtotal before discount
-            # total_amount = final amount after discount
-            # discount = discount amount applied
             cursor.execute("""
                 INSERT INTO ticket (employee_id, line_price, total_amount, change, discount, ticket_date)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (employee_id, line_price, total_amount, change, discount, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            """, (employee_id, round(line_price, 2), round(total_amount, 2), round(change, 2), round(discount, 2), datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             
             ticket_id = cursor.lastrowid
             print(f"Ticket created with ID: {ticket_id}, line_price: ₱{line_price:.2f}, total_amount: ₱{total_amount:.2f}, discount: ₱{discount:.2f}")
@@ -50,17 +47,28 @@ class TicketController:
                 cursor.execute("""
                     INSERT INTO ticket_line (ticket_id, product_type_id, product_quantity, unit_selling_price)
                     VALUES (?, ?, ?, ?)
-                """, (ticket_id, item["product_type_id"], item["quantity"], unit_selling_price))
+                """, (ticket_id, item["product_type_id"], item["quantity"], round(unit_selling_price, 2)))
                 
                 print(f"Added line: product_type_id={item['product_type_id']}, qty={item['quantity']}, price={unit_selling_price}")
             
-            # Insert payment record with specified payment type
-            cursor.execute("""
-                INSERT INTO ticket_payment (ticket_id, payment_type, payment_amount)
-                VALUES (?, ?, ?)
-            """, (ticket_id, payment_type, cash_received))
-            
-            print(f"Added payment: {payment_type} {cash_received}")
+            # Handle payment records
+            if payment_type == "Split" and split_payments:
+                # Insert multiple payment records for split payment
+                for payment in split_payments:
+                    cursor.execute("""
+                        INSERT INTO ticket_payment (ticket_id, payment_type, payment_amount)
+                        VALUES (?, ?, ?)
+                    """, (ticket_id, payment["payment_type"], round(payment["payment_amount"], 2)))
+                    
+                    print(f"Added split payment: {payment['payment_type']} ₱{payment['payment_amount']:.2f}")
+            else:
+                # Insert single payment record
+                cursor.execute("""
+                    INSERT INTO ticket_payment (ticket_id, payment_type, payment_amount)
+                    VALUES (?, ?, ?)
+                """, (ticket_id, payment_type, round(cash_received, 2)))
+                
+                print(f"Added payment: {payment_type} ₱{cash_received:.2f}")
             
             conn.commit()
             cursor.close()

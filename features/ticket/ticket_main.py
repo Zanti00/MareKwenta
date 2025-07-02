@@ -276,6 +276,18 @@ class TicketMainPage:
                 if charge_data["cash_received"] < charge_data["total_amount"]:
                     messagebox.showwarning("Insufficient Payment", "Cash received is less than total amount")
                     return
+            elif payment_type == "Split":
+                # For split payment, show confirmation dialog
+                split_payments = charge_data.get("split_payments", [])
+                payment_summary = ", ".join([f"{p['payment_type']}: ₱{p['payment_amount']:.2f}" for p in split_payments])
+                discount_text = f" (Discount: ₱{charge_data['discount']:.2f})" if charge_data['discount'] > 0 else ""
+                
+                result = messagebox.askyesno(
+                    "Split Payment", 
+                    f"Process split payment of ₱{charge_data['total_amount']:.2f}{discount_text}?\n\nPayment breakdown:\n{payment_summary}"
+                )
+                if not result:
+                    return
             else:
                 # For GCash/Maya, show confirmation dialog
                 discount_text = f" (Discount: ₱{charge_data['discount']:.2f})" if charge_data['discount'] > 0 else ""
@@ -296,12 +308,16 @@ class TicketMainPage:
                 cash_received=charge_data["cash_received"],
                 change=charge_data["change"],
                 discount=charge_data["discount"],  # Discount amount
-                payment_type=payment_type
+                payment_type=payment_type,
+                split_payments=charge_data.get("split_payments")  # Pass split payment data
             )
             
             if ticket_id:
                 discount_info = f" with ₱{charge_data['discount']:.2f} discount" if charge_data['discount'] > 0 else ""
-                messagebox.showinfo("Success", f"Ticket #{ticket_id} created successfully with {payment_type} payment{discount_info}!")
+                if payment_type == "Split":
+                    messagebox.showinfo("Success", f"Ticket #{ticket_id} created successfully with split payment{discount_info}!")
+                else:
+                    messagebox.showinfo("Success", f"Ticket #{ticket_id} created successfully with {payment_type} payment{discount_info}!")
                 
                 # Show receipt popup
                 self.show_receipt_popup(ticket_id)
