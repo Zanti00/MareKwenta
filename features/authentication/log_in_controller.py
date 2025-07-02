@@ -8,11 +8,11 @@ def authenticate_user(username_entry, password_entry):
 
         if not username or not password:
             print("Please enter both username and password")
-            return None
+            return None, None, None
         
         conn = sqlite3.connect('mare_kwenta.db')
 
-        query = "SELECT user_role FROM user WHERE username = ? AND password = ?"
+        query = "SELECT user_role, employee_id FROM user WHERE username = ? AND password = ?"
 
         cursor = conn.execute(query, (username, password))
 
@@ -20,15 +20,15 @@ def authenticate_user(username_entry, password_entry):
 
         if user_data:
             print("Login successful")
-            return True, user_data[0]
+            return True, user_data[0], user_data[1]
         else:
-            return False, None
+            return False, None, None
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        return None
+        return None, None, None
     except Exception as e:
         print(f"Error during authentication: {e}")
-        return None
+        return None, None, None
     finally:
         if conn:
             conn.close()

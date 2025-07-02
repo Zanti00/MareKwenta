@@ -172,7 +172,7 @@ class LoginWindow(ctk.CTk):
             self.attributes('-fullscreen', True)
     
     def handle_login(self):
-        success, user_role = log_in_controller.authenticate_user(self.username, self.password)
+        success, user_role, employee_id = log_in_controller.authenticate_user(self.username, self.password)
         
         if success:
             if user_role == "admin":
@@ -180,7 +180,7 @@ class LoginWindow(ctk.CTk):
                 InventoryManagement(user_role=user_role).mainloop()
             else:
                 self.destroy()
-                TicketMainPage(user_role=user_role).mainloop()
+                TicketMainPage(user_role=user_role, employee_id=employee_id).mainloop()
 
         elif success is False: # Explicitly check for False to differentiate from None (DB error)
             messagebox.showerror("Login Failed", "Invalid username or password")

@@ -13,7 +13,7 @@ from .ticket_controller import TicketController
 from .components.receipt_popup import ReceiptPopup
 
 class TicketMainPage:
-    def __init__(self, user_role="admin"):
+    def __init__(self, user_role="admin", employee_id=None):
         self.root = ctk.CTk()
         self.root.title("MareKwenta POS")
         
@@ -43,7 +43,7 @@ class TicketMainPage:
         self.current_total = 0.0
         
         # Store current user info
-        self.current_user_id = 1  # Default admin user, should be passed from login
+        self.current_user_id = employee_id  # Default admin user, should be passed from login
         
         self.setup_ui()
 
