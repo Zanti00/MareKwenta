@@ -268,9 +268,22 @@ class TicketMainPage:
                 messagebox.showwarning("Empty Cart", "Cannot create ticket with empty cart")
                 return
                 
-            if charge_data["cash_received"] < charge_data["total_amount"]:
-                messagebox.showwarning("Insufficient Payment", "Cash received is less than total amount")
-                return
+            # For digital payments, no cash validation needed
+            payment_type = charge_data.get("payment_type", "Cash")
+            
+            if payment_type == "Cash":
+                # Only validate cash for Cash payments
+                if charge_data["cash_received"] < charge_data["total_amount"]:
+                    messagebox.showwarning("Insufficient Payment", "Cash received is less than total amount")
+                    return
+            else:
+                # For GCash/Maya, show confirmation dialog
+                result = messagebox.askyesno(
+                    f"{payment_type} Payment", 
+                    f"Process {payment_type} payment of ₱{charge_data['total_amount']:.2f}?"
+                )
+                if not result:
+                    return
             
             # Create ticket in database
             ticket_id = TicketController.create_ticket(
@@ -279,11 +292,12 @@ class TicketMainPage:
                 total_amount=charge_data["total_amount"],
                 cash_received=charge_data["cash_received"],
                 change=charge_data["change"],
-                discount=charge_data["discount"]
+                discount=charge_data["discount"],
+                payment_type=payment_type
             )
             
             if ticket_id:
-                messagebox.showinfo("Success", f"Ticket #{ticket_id} created successfully!")
+                messagebox.showinfo("Success", f"Ticket #{ticket_id} created successfully with {payment_type} payment!")
                 
                 # Show receipt popup
                 self.show_receipt_popup(ticket_id)

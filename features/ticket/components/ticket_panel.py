@@ -161,6 +161,15 @@ class TicketPanel(ctk.CTkFrame):
 
         # Place all buttons in row 0 with no padding between buttons
         for i, (method, color) in enumerate(payment_methods):
+            if method == "GCash":
+                command = self.handle_gcash
+            elif method == "Maya":
+                command = self.handle_maya
+            elif method == "Split":
+                command = self.open_split_popup
+            else:  # Charge
+                command = self.handle_charge
+                
             btn = ctk.CTkButton(
                 self.payment_buttons_frame,
                 text=method,
@@ -168,7 +177,8 @@ class TicketPanel(ctk.CTkFrame):
                 font=ctk.CTkFont("Inter", size=14, weight="bold"),
                 fg_color=color,
                 text_color="#ffffff",
-                corner_radius=8
+                corner_radius=8,
+                command=command
             )
             btn.grid(row=0, column=i, padx=1, pady=2, sticky="ew")  # Minimal padx
 
@@ -249,6 +259,36 @@ class TicketPanel(ctk.CTkFrame):
             print(f"Error clearing items: {e}")
             print(f"Error clearing items: {e}")
 
+    def handle_gcash(self):
+        """Handle GCash payment button click"""
+        if hasattr(self, 'on_charge_callback') and self.on_charge_callback:
+            # For digital payments, assume full payment (no change)
+            charge_data = {
+                "total_amount": self.current_total,
+                "cash_received": self.current_total,  # Full payment via GCash
+                "change": 0,  # No change for digital payments
+                "discount": 0,
+                "payment_type": "GCash"
+            }
+            self.on_charge_callback(charge_data)
+        else:
+            print("No charge callback set")
+
+    def handle_maya(self):
+        """Handle Maya payment button click"""
+        if hasattr(self, 'on_charge_callback') and self.on_charge_callback:
+            # For digital payments, assume full payment (no change)
+            charge_data = {
+                "total_amount": self.current_total,
+                "cash_received": self.current_total,  # Full payment via Maya
+                "change": 0,  # No change for digital payments
+                "discount": 0,
+                "payment_type": "Maya"
+            }
+            self.on_charge_callback(charge_data)
+        else:
+            print("No charge callback set")
+
     def handle_charge(self):
         """Handle charge button click - create ticket and show receipt"""
         if hasattr(self, 'on_charge_callback') and self.on_charge_callback:
@@ -259,7 +299,8 @@ class TicketPanel(ctk.CTkFrame):
                 "total_amount": self.current_total,
                 "cash_received": self.cash_received,
                 "change": change,
-                "discount": 0  # Will implement discount later
+                "discount": 0,
+                "payment_type": "Cash"  # Default to Cash for charge button
             }
             self.on_charge_callback(charge_data)
         else:

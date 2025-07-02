@@ -15,7 +15,7 @@ class TicketController:
             return None
 
     @staticmethod
-    def create_ticket(employee_id, cart_items, total_amount, cash_received, change, discount=0):
+    def create_ticket(employee_id, cart_items, total_amount, cash_received, change, discount=0, payment_type="Cash"):
         """Create a new ticket with ticket lines and payment record"""
         conn = TicketController.connect_db()
         if conn is None:
@@ -28,7 +28,7 @@ class TicketController:
             # Calculate line price (subtotal before discount)
             line_price = sum((item["quantity"] * item["unit_price"]) + (item["quantity"] * item.get("extras_cost", 0)) for item in cart_items)
             
-            print(f"Creating ticket: employee_id={employee_id}, line_price={line_price}, total={total_amount}")
+            print(f"Creating ticket: employee_id={employee_id}, line_price={line_price}, total={total_amount}, payment_type={payment_type}")
             
             # Insert main ticket record
             cursor.execute("""
@@ -51,13 +51,13 @@ class TicketController:
                 
                 print(f"Added line: product_type_id={item['product_type_id']}, qty={item['quantity']}, price={unit_selling_price}")
             
-            # Insert payment record (Cash payment for charge button)
+            # Insert payment record with specified payment type
             cursor.execute("""
                 INSERT INTO ticket_payment (ticket_id, payment_type, payment_amount)
                 VALUES (?, ?, ?)
-            """, (ticket_id, "Cash", cash_received))
+            """, (ticket_id, payment_type, cash_received))
             
-            print(f"Added payment: Cash {cash_received}")
+            print(f"Added payment: {payment_type} {cash_received}")
             
             conn.commit()
             cursor.close()
@@ -84,10 +84,11 @@ class TicketController:
         try:
             cursor = conn.cursor()
             
-            # Get main ticket info - use employee_id and username from your actual schema
+            # Get main ticket info - concatenate first_name and last_name for cashier
             cursor.execute("""
                 SELECT t.ticket_id, t.employee_id, t.line_price, t.total_amount, 
-                       t.change, t.discount, t.ticket_date, u.username
+                       t.change, t.discount, t.ticket_date, 
+                       (u.first_name || ' ' || u.last_name) as cashier_name
                 FROM ticket t
                 LEFT JOIN user u ON t.employee_id = u.employee_id
                 WHERE t.ticket_id = ?
@@ -165,4 +166,3 @@ class TicketController:
             return None
         finally:
             conn.close()
-                   
