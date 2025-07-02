@@ -71,17 +71,18 @@ class TicketMainPage:
         # Main content area
         self.main_frame = ctk.CTkFrame(self.root, fg_color="#f2efea")
         self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 0), pady=0)
-        self.main_frame.grid_columnconfigure(0, weight=2)  # Product panel takes more space
-        self.main_frame.grid_columnconfigure(1, weight=1)  # Ticket panel
+        self.main_frame.grid_columnconfigure(0, weight=1)  # Product panel expands
+        self.main_frame.grid_columnconfigure(1, weight=0)  # Ticket panel fixed
         self.main_frame.grid_rowconfigure(0, weight=1)
         
         # Product panel (left side)
         self.product_panel = ProductPanel(self.main_frame, on_product_click=self.handle_product_click)
         self.product_panel.grid(row=0, column=0, sticky="nsew", padx=(10, 5), pady=10)
         
-        # Ticket panel (right side)
+        # Ticket panel (right side, fixed width)
         self.ticket_panel = TicketPanel(self.main_frame)
-        self.ticket_panel.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
+        self.ticket_panel.grid(row=0, column=1, sticky="ns", padx=(5, 10), pady=10)
+        self.ticket_panel.configure(width=320)
         
         # Set charge callback
         self.ticket_panel.set_charge_callback(self.handle_charge)
@@ -91,6 +92,10 @@ class TicketMainPage:
         print(f"Product clicked: {cart_item}")  # Debug print
         
         try:
+            # Check if product type is available
+            if not cart_item.get("product_type_id") and not cart_item.get("unit_price"):
+                messagebox.showerror("Product Not Available", "This product does not have a type or price set yet. Please set it up in the inventory.")
+                return
             # Check if this exact item already exists in cart
             existing_item_detail = self.find_existing_item(cart_item)
             

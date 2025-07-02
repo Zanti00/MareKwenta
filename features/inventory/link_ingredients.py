@@ -241,10 +241,12 @@ class LinkIngredientFinalPopup(ctk.CTkToplevel):
         qty_entry = ctk.CTkEntry(row_frame, width=80, height=32, font=ctk.CTkFont("Inter", 13), placeholder_text="Qty")
         qty_entry.pack(side="left", padx=(0, 10))
         
-        ingredient_combo = ctk.CTkOptionMenu(row_frame, values=self.inventory_list, width=180, height=32, font=ctk.CTkFont("Inter", 13),
+        # Add 'Choose Ingredient' as the first option
+        values = ["Choose Ingredient"] + self.inventory_list if self.inventory_list else ["Choose Ingredient"]
+        ingredient_combo = ctk.CTkOptionMenu(row_frame, values=values, width=180, height=32, font=ctk.CTkFont("Inter", 13),
             fg_color="#4e2d18", button_color="#4e2d18", button_hover_color="#3d2414", dropdown_fg_color="#ffffff", dropdown_text_color="#4e2d18", text_color="#ffffff", corner_radius=8)
         ingredient_combo.pack(side="left", padx=(0, 10))
-        ingredient_combo.set(self.inventory_list[0] if self.inventory_list else "")
+        ingredient_combo.set("Choose Ingredient")
         
         # Add X button to remove row
         remove_btn = ctk.CTkButton(row_frame, text="✕", width=30, height=30, font=ctk.CTkFont("Inter", 14, "bold"), 
@@ -654,6 +656,10 @@ class LinkIngredientsPage:
             )
             details_label.grid(row=1, column=0, sticky="w", pady=(2, 0))
             
+            def action_callback(action, p=product, combo_ref=None):
+                self.handle_action(p, action)
+                if combo_ref:
+                    combo_ref.set("Action")
             action_combo = ctk.CTkOptionMenu(
                 container,
                 values=["Link Ingredients", "View", "Edit", "Delete"],
@@ -667,7 +673,7 @@ class LinkIngredientsPage:
                 width=120,
                 height=36,
                 corner_radius=8,
-                command=lambda action, p=product: self.handle_action(p, action)
+                command=lambda action, p=product, combo_ref=None: action_callback(action, p, action_combo)
             )
             action_combo.set("Action")
             action_combo.grid(row=0, column=1, padx=(10, 20), pady=0)
@@ -1029,8 +1035,8 @@ class LinkIngredientsPage:
             corner_radius=20,
             command=self.on_fab_click
         )
-        # Place at bottom right, above padding
-        self.fab.place(relx=0.97, rely=0.96, anchor="se")
+        # Center horizontally at the bottom right, with margin
+        self.fab.place(relx=0.95, rely=0.96, anchor="se")
 
     def on_fab_click(self):
         def on_save(product):
