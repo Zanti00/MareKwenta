@@ -1,7 +1,7 @@
 import sqlite3
 import os
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 class CashboxController:
     def __init__(self):
@@ -225,6 +225,8 @@ class CashboxController:
         gross_sales = self.get_gross_sales_by_date(target_date)
         total_discount = self.get_total_discount_by_date(target_date)
         net_sales = self.get_net_sales_by_date(target_date)
+        cash_expenses = self.get_total_expenses_by_type(target_date, "CASH")
+        non_cash_expenses = self.get_total_expenses_by_type(target_date, "NON-CASH")
         
         return {
             'cash_amount': payment_amounts['cash'],
@@ -234,6 +236,8 @@ class CashboxController:
             'gross_sales': gross_sales,
             'total_discount': total_discount,
             'net_sales': net_sales,
+            'cash_expenses_amount': cash_expenses,
+            'non_cash_expenses_amount': non_cash_expenses,
             'date': target_date
         }
     
@@ -276,3 +280,183 @@ class CashboxController:
             print(f"Error in get_transaction_count_by_date: {e}")
             return 0
 
+    def add_expense(self, name: str, amount: float, category: str, employee_id: int) -> Optional[int]:
+        """
+        Adds a new expense record to the database.
+
+        Args:
+            name (str): The name of the expense.
+            amount (float): The cost of the expense.
+            category (str): The type of expense (e.g., 'CASH', 'NON-CASH').
+            employee_id (int): The ID of the employee who added the expense.
+
+        Returns:
+            Optional[int]: The ID of the newly added expense, or None if an error occurred.
+        """
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        try:
+            conn = self.get_db_connection()
+            cursor = conn.cursor()
+            
+            query = """
+                INSERT INTO expense (expense_name, expense_type, expense_cost, date, employee_id)
+                VALUES (?, ?, ?, ?, ?)
+            """
+            cursor.execute(query, (name, category, amount, current_date, employee_id))
+            conn.commit()
+            expense_id = cursor.lastrowid
+            
+            cursor.close()
+            conn.close()
+            return expense_id
+        except sqlite3.Error as e:
+            print(f"Database error in add_expense: {e}")
+            return None
+        except Exception as e:
+            print(f"Error in add_expense: {e}")
+            return None
+
+    def get_expenses_by_date(self, target_date: str = None) -> List[Dict]:
+        """
+        Retrieves all expenses for a specific date.
+
+        Args:
+            target_date (str, optional): Date in 'YYYY-MM-DD' format. 
+                                       If None, uses current date.
+
+        Returns:
+            List[Dict]: A list of dictionaries, each representing an expense.
+        """
+        if target_date is None:
+            target_date = datetime.now().strftime('%Y-%m-%d')
+        
+        try:
+            conn = self.get_db_connection()
+            cursor = conn.cursor()
+            
+            query = """
+                SELECT expense_id, expense_name, expense_cost, expense_type
+                FROM expense
+                WHERE DATE(date) = ?
+                ORDER BY expense_id DESC
+            """
+            cursor.execute(query, (target_date,))
+            results = cursor.fetchall()
+            
+            expenses = []
+            for row in results:
+                expenses.append({
+                    "id": row[0],
+                    "name": row[1],
+                    "amount": float(row[2]),
+                    "category": row[3]
+                })
+            
+            cursor.close()
+            conn.close()
+            return expenses
+        except sqlite3.Error as e:
+            print(f"Database error in get_expenses_by_date: {e}")
+            return []
+        except Exception as e:
+            print(f"Error in get_expenses_by_date: {e}")
+            return []
+
+    def update_expense(self, expense_id: int, name: str, amount: float, category: str) -> bool:
+        """
+        Updates an existing expense record in the database.
+
+        Args:
+            expense_id (int): The ID of the expense to update.
+            name (str): The new name of the expense.
+            amount (float): The new cost of the expense.
+            category (str): The new type of expense.
+
+        Returns:
+            bool: True if the update was successful, False otherwise.
+        """
+        try:
+            conn = self.get_db_connection()
+            cursor = conn.cursor()
+            
+            query = """
+                UPDATE expense
+                SET expense_name = ?, expense_cost = ?, expense_type = ?
+                WHERE expense_id = ?
+            """
+            cursor.execute(query, (name, amount, category, expense_id))
+            conn.commit()
+            
+            cursor.close()
+            conn.close()
+            return True
+        except sqlite3.Error as e:
+            print(f"Database error in update_expense: {e}")
+            return False
+        except Exception as e:
+            print(f"Error in update_expense: {e}")
+            return False
+
+    def delete_expense(self, expense_id: int) -> bool:
+        """
+        Deletes an expense record from the database.
+
+        Args:
+            expense_id (int): The ID of the expense to delete.
+
+        Returns:
+            bool: True if the deletion was successful, False otherwise.
+        """
+        try:
+            conn = self.get_db_connection()
+            cursor = conn.cursor()
+            
+            query = "DELETE FROM expense WHERE expense_id = ?"
+            cursor.execute(query, (expense_id,))
+            conn.commit()
+            
+            cursor.close()
+            conn.close()
+            return True
+        except sqlite3.Error as e:
+            print(f"Database error in delete_expense: {e}")
+            return False
+        except Exception as e:
+            print(f"Error in delete_expense: {e}")
+            return False
+
+    def get_total_expenses_by_type(self, target_date: str = None, expense_type: str = None) -> float:
+        """
+        Calculates the total amount of expenses for a specific date and expense type.
+
+        Args:
+            target_date (str, optional): Date in 'YYYY-MM-DD' format. If None, uses current date.
+            expense_type (str, optional): The type of expense ('CASH' or 'NON-CASH').
+
+        Returns:
+            float: The total expense amount for the specified type and date.
+        """
+        if target_date is None:
+            target_date = datetime.now().strftime('%Y-%m-%d')
+        
+        try:
+            conn = self.get_db_connection()
+            cursor = conn.cursor()
+            
+            query = """
+                SELECT SUM(expense_cost)
+                FROM expense
+                WHERE DATE(date) = ? AND expense_type = ?
+            """
+            cursor.execute(query, (target_date, expense_type))
+            result = cursor.fetchone()
+            
+            cursor.close()
+            conn.close()
+            return float(result[0]) if result[0] is not None else 0.00
+        except sqlite3.Error as e:
+            print(f"Database error in get_total_expenses_by_type: {e}")
+            return 0.00
+        except Exception as e:
+            print(f"Error in get_total_expenses_by_type: {e}")
+            return 0.00

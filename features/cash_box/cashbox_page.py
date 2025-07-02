@@ -5,6 +5,8 @@ import tkinter as tk
 import math
 from nav_bar import Navbar
 from cash_box.cashbox_controller import CashboxController
+from .add_expense import AddExpenseDialog
+from .edit_expense import EditExpenseDialog
 
 class CashBoxApp:
     def __init__(self, user_role="employee"):
@@ -20,29 +22,12 @@ class CashBoxApp:
         
         # Store user role
         self.user_role = user_role
+        # For now, using a hardcoded employee_id. In a real app, this would come from login.
+        self.employee_id = 1 
 
         self.controller = CashboxController()
-        cashbox_data = self.controller.get_cashbox_summary_by_date()
-
-        self.cash_amount = cashbox_data['cash_amount']
-        self.gcash_amount = cashbox_data['gcash_amount'] 
-        self.maya_amount = cashbox_data['maya_amount']
-        self.petty_cash_amount = 1000.00
-        self.cash_sales_amount = cashbox_data['cash_sales_amount']
-        self.cash_expenses_amount = 3100.00
-        self.non_cash_expenses_amount = 3100.00
-        
-        # Sample expense data
-        self.expenses = [
-            {"name": "1 Sack of Rice", "amount": 300.00, "category": "CASH"},
-            {"name": "1 Sack of Rice", "amount": 300.00, "category": "CASH"},
-            {"name": "1 Sack of Rice", "amount": 300.00, "category": "CASH"},
-            {"name": "1 Sack of Rice", "amount": 300.00, "category": "CASH"},
-            {"name": "1 Sack of Rice", "amount": 300.00, "category": "CASH"},
-            {"name": "1 Sack of Rice", "amount": 300.00, "category": "CASH"},
-            {"name": "1 Sack of Rice", "amount": 300.00, "category": "CASH"},
-            {"name": "1 Sack of Rice", "amount": 300.00, "category": "CASH"}
-        ]
+        self.current_date = datetime.now().strftime('%Y-%m-%d')
+        self.update_cashbox_data()
         
         # Configure grid weights for main layout
         self.root.grid_columnconfigure(1, weight=1)
@@ -52,8 +37,20 @@ class CashBoxApp:
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
         self.setup_ui()
+        self.refresh_expense_list() # Initial load of expenses
         
-        
+    def update_cashbox_data(self):
+        """Fetches and updates all cashbox related data from the controller."""
+        cashbox_data = self.controller.get_cashbox_summary_by_date(self.current_date)
+        self.cash_amount = cashbox_data['cash_amount']
+        self.gcash_amount = cashbox_data['gcash_amount'] 
+        self.maya_amount = cashbox_data['maya_amount']
+        self.petty_cash_amount = 1000.00 # This might still be hardcoded or managed differently
+        self.cash_sales_amount = cashbox_data['cash_sales_amount']
+        self.cash_expenses_amount = cashbox_data['cash_expenses_amount']
+        self.non_cash_expenses_amount = cashbox_data['non_cash_expenses_amount']
+        self.expenses = self.controller.get_expenses_by_date(self.current_date)
+
     def on_closing(self):
         """Handle window closing"""
         try:
@@ -110,7 +107,7 @@ class CashBoxApp:
         )
         date_frame.grid(row=0, column=1, padx=30, pady=20, sticky="e")
         date_frame.grid_propagate(False)
-        current_date = datetime.now().strftime("%B %d, %Y")
+        current_date_formatted = datetime.now().strftime("%B %d, %Y")
         date_label = ctk.CTkLabel(
             date_frame,
             text="DATE:",
@@ -120,7 +117,7 @@ class CashBoxApp:
         date_label.place(x=8, y=11)
         date_value_label = ctk.CTkLabel(
             date_frame,
-            text=current_date,
+            text=current_date_formatted,
             font=ctk.CTkFont(family="Inter", size=18, weight="bold"),
             text_color="#4d2d18"
         )
@@ -156,6 +153,8 @@ class CashBoxApp:
             cards_frame.grid_columnconfigure(i, weight=1, uniform="col")
         for i in range(4):
             cards_frame.grid_rowconfigure(i, weight=1, uniform="row")
+        
+        # Update payment methods with current data
         payment_methods = [
             ("CASH", self.cash_amount, "#4d2d18", "cash.png"),
             ("GCASH", self.gcash_amount, "#0091f7", "gcash.png"),
@@ -279,10 +278,18 @@ class CashBoxApp:
         self.refresh_expense_list()
         
     def refresh_expense_list(self):
+        # Clear existing widgets
         for widget in self.expense_list_frame.winfo_children():
             widget.destroy()
+        
+        # Fetch latest expenses from DB
+        self.expenses = self.controller.get_expenses_by_date(self.current_date)
+
+        # Populate with new data
         for i, expense in enumerate(self.expenses):
             self.create_expense_item(i, expense)
+        
+        self.update_totals() # Update totals after refreshing the list
 
     def create_expense_item(self, index, expense):
         item_frame = ctk.CTkFrame(
@@ -319,7 +326,7 @@ class CashBoxApp:
             border_color="#ff6b6b",
             corner_radius=8,
             hover_color="#fff5f5",
-            command=lambda idx=index: self.delete_expense(idx)
+            command=lambda exp_id=expense["id"]: self.delete_expense(exp_id)
         )
         delete_btn.grid(row=0, column=0, padx=(0, 6), pady=0, sticky="")
         
@@ -335,7 +342,7 @@ class CashBoxApp:
             border_color="#4caf50",
             corner_radius=8,
             hover_color="#f5fff5",
-            command=lambda idx=index: self.edit_expense(idx)
+            command=lambda exp_data=expense: self.edit_expense(exp_data)
         )
         edit_btn.grid(row=0, column=1, padx=0, pady=0, sticky="")
 
@@ -373,29 +380,51 @@ class CashBoxApp:
         amount_label.grid(row=0, column=2, sticky="nsew", padx=(0, 24), pady=0)
         
     def add_expense_clicked(self):
-        from .add_expense import AddExpenseDialog
-        def on_save(expense):
-            self.expenses.append(expense)
-            self.refresh_expense_list()
+        def on_save(expense_data):
+            # Pass employee_id to the controller
+            success = self.controller.add_expense(
+                expense_data["name"], 
+                expense_data["amount"], 
+                expense_data["category"], 
+                self.employee_id
+            )
+            if success:
+                messagebox.showinfo("Success", "Expense added successfully!")
+                self.refresh_expense_list()
+            else:
+                messagebox.showerror("Error", "Failed to add expense.")
         AddExpenseDialog(self.root, on_save=on_save)
     
-    def delete_expense(self, index):
+    def delete_expense(self, expense_id):
         if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this expense?"):
-            del self.expenses[index]
-            self.refresh_expense_list()
-            self.update_totals()
+            success = self.controller.delete_expense(expense_id)
+            if success:
+                messagebox.showinfo("Success", "Expense deleted successfully!")
+                self.refresh_expense_list()
+            else:
+                messagebox.showerror("Error", "Failed to delete expense.")
         
-    def edit_expense(self, index):
-        from .edit_expense import EditExpenseDialog
-        def on_save(updated_expense):
-            self.expenses[index] = updated_expense
-            self.refresh_expense_list()
-        EditExpenseDialog(self.root, self.expenses[index], on_save=on_save)
+    def edit_expense(self, expense_data):
+        def on_save(updated_expense_data):
+            success = self.controller.update_expense(
+                updated_expense_data["id"],
+                updated_expense_data["name"],
+                updated_expense_data["amount"],
+                updated_expense_data["category"]
+            )
+            if success:
+                messagebox.showinfo("Success", "Expense updated successfully!")
+                self.refresh_expense_list()
+            else:
+                messagebox.showerror("Error", "Failed to update expense.")
+        EditExpenseDialog(self.root, expense_data, on_save=on_save)
     
     def update_totals(self):
-        # This method would update the payment method totals
-        # Implementation depends on your business logic
-        pass
+        """Updates the cashbox summary and refreshes the payment cards."""
+        self.update_cashbox_data()
+        # Re-setup payment cards to reflect updated amounts
+        # This will clear and recreate the cards with new values
+        self.setup_payment_cards(self.main_frame.winfo_children()[1]) # Pass the content_frame
         
     def run(self):
         """Start the application with error handling"""

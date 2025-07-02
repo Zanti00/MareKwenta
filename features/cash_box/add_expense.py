@@ -12,6 +12,10 @@ class AddExpenseDialog:
         self.dialog.transient(parent)
         self.dialog.grab_set()
         self.dialog.update_idletasks()
+        # Center the dialog on the screen
+        x = (self.dialog.winfo_screenwidth() // 2) - (400 // 2)
+        y = (self.dialog.winfo_screenheight() // 2) - (400 // 2)
+        self.dialog.geometry(f"400x400+{x}+{y}")
         self.setup_form()
         self.dialog.wait_window()
 
@@ -121,13 +125,10 @@ class AddExpenseDialog:
         except ValueError:
             messagebox.showerror("Error", "Please enter a valid positive amount")
             return
-        self.result = {
-            "name": name,
-            "amount": amount,
-            "category": category
-        }
+        
+        # Pass the data to the on_save callback
         if self.on_save:
-            self.on_save(self.result)
+            self.on_save({"name": name, "amount": amount, "category": category})
         self.dialog.destroy()
 
     def cancel(self):
