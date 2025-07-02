@@ -11,39 +11,18 @@ from .inventory_controller import InventoryController
 from staff.staff_admin import StaffPageAdmin
 from staff.staff_employee import StaffPageEmployee
 
-class InventoryManagement:
-    def __init__(self, user_role="admin"):
-        # Initialize the main window
-        self.root = ctk.CTk()
-        self.root.title("MareKwenta POS")
-        taskbar_height = 70  # Adjust this value as needed
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        usable_height = screen_height - taskbar_height
-        self.root.geometry(f"{screen_width}x{usable_height}+0+0")
-        self.root.configure(fg_color="#f2efea")
-        
-        # Store user role
+class InventoryManagement(ctk.CTkFrame):
+    def __init__(self, parent, main_app, user_role="admin"):
+        super().__init__(parent)
+        self.main_app = main_app
         self.user_role = user_role
-        
-        # Configure appearance
-        ctk.set_appearance_mode("light")
-        ctk.set_default_color_theme("blue")
-        
         # Sample data for demonstration
         self.inventory_data = []
         
         # Performance tracking
         self.is_updating = False
         self.update_queue = []
-        
-        # Configure grid weights for main layout
-        self.root.grid_columnconfigure(1, weight=1)  # Content area expands
-        self.root.grid_rowconfigure(0, weight=1)
-        
-        # Bind window close event
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-        
+        self.configure(fg_color="#f2efea")
         self.setup_ui()
         self.load_inventory_from_db()  # <-- Add this line
     
@@ -56,39 +35,18 @@ class InventoryManagement:
             pass
         
     def setup_ui(self):
-        # Create navbar with user role
-        self.navbar = Navbar(self.root, width=124, user_role=self.user_role, active_tab="inventory")
-        self.navbar.grid(row=0, column=0, sticky="ns", padx=(0, 0), pady=0)
-        self.navbar.set_nav_callback("ticket", self.show_ticket)
-        self.navbar.set_nav_callback("receipt", self.show_receipt)
-        self.navbar.set_nav_callback("inventory", self.show_inventory)
-        self.navbar.set_nav_callback("staff", self.show_staff)
-        self.navbar.set_nav_callback("cashbox", self.show_cashbox)
-        self.navbar.set_nav_callback("dashboard", self.show_dashboard)
-        self.main_frame = ctk.CTkFrame(self.root, fg_color="#f2efea")
-        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(20, 20), pady=20)
-        
-        # Configure main frame grid
-        self.main_frame.grid_columnconfigure(0, weight=1)
-        
-        # Setup inventory content
+        # Main frame for content
+        self.main_frame = ctk.CTkFrame(self, fg_color="#f2efea")
+        self.main_frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.9, relheight=0.9)
         self.setup_inventory_content()
-        
+
     def setup_inventory_content(self):
-        # Hello User section
         self.setup_hello_user()
-        
-        # Navigation section
         self.setup_navigation()
-        
-        # Create ingredient section
         self.setup_create_ingredient()
-        
-        # Inventory list section
         self.setup_inventory_list()
-        
+
     def setup_hello_user(self):
-        # Replace Hello User with Inventory header in Unbounded font
         header_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         header_frame.grid(row=0, column=0, sticky="w", pady=(10, 5))
         self.header_label = ctk.CTkLabel(
@@ -98,15 +56,13 @@ class InventoryManagement:
             text_color="#4e2d18"
         )
         self.header_label.grid(row=0, column=0, sticky="w")
-        
+
     def setup_navigation(self):
-        # Navigation frame with minimal padding
         self.nav_frame = ctk.CTkFrame(self.main_frame, fg_color="#f2efea")
         self.nav_frame.grid(row=1, column=0, sticky="ew", pady=(0, 15))
         self.nav_frame.grid_columnconfigure(0, weight=1)
         nav_container = ctk.CTkFrame(self.nav_frame, fg_color="transparent")
         nav_container.grid(row=0, column=0, pady=0)
-        # Inventory tab (active) in its own frame for vertical stacking
         inventory_tab_frame = ctk.CTkFrame(nav_container, fg_color="transparent")
         inventory_tab_frame.grid(row=0, column=0)
         self.inventory_tab = ctk.CTkLabel(
@@ -116,10 +72,8 @@ class InventoryManagement:
             text_color="#4e2d18"
         )
         self.inventory_tab.pack()
-        # Underline for active tab
         separator = ctk.CTkFrame(inventory_tab_frame, width=200, height=4, fg_color="#4e2d18")
         separator.pack(pady=(2, 0))
-        # Link Ingredients tab as a button
         self.link_ingredients_tab = ctk.CTkButton(
             nav_container,
             text="Link Ingredient",
@@ -132,43 +86,31 @@ class InventoryManagement:
         )
         self.link_ingredients_tab.grid(row=0, column=1, padx=(60, 0))
 
-        
     def setup_create_ingredient(self):
         self.create_frame = ctk.CTkFrame(
             self.main_frame,
             fg_color="#ffffff",
             corner_radius=16
         )
-        self.create_frame.grid(row=2, column=0, sticky="ew", pady=(0, 30), padx=80)
-    
-        # Configure main frame columns for centering
-        self.create_frame.grid_columnconfigure(0, weight=1)  # Left spacer
-        self.create_frame.grid_columnconfigure(1, weight=0)  # Content container
-        self.create_frame.grid_columnconfigure(2, weight=1)  # Right spacer
-    
-        # Create inner container for the form
+        self.create_frame.grid(row=2, column=0, sticky="ew", pady=(0, 30), padx=40)
+        self.create_frame.grid_columnconfigure(0, weight=1)
+        self.create_frame.grid_columnconfigure(1, weight=0)
+        self.create_frame.grid_columnconfigure(2, weight=1)
         inner_frame = ctk.CTkFrame(
             self.create_frame,
             fg_color="transparent"
         )
         inner_frame.grid(row=0, column=1, sticky="", pady=20)
-    
-        # Configure inner frame columns with even spacing
         for i in range(6):
             inner_frame.grid_columnconfigure(i, weight=1, uniform="col")
-
-        # Title
         title_label = ctk.CTkLabel(
             inner_frame,
             text="Create Ingredient",
             font=ctk.CTkFont("Unbounded", size=16, weight="bold"),
             text_color="#4e2d18"
-     )
+        )
         title_label.grid(row=0, column=0, columnspan=6, pady=(0, 20))
-    
-        # Input fields with consistent spacing
         entry_padx = 10
-    
         self.ingredient_name_entry = ctk.CTkEntry(
             inner_frame,
             height=32,
@@ -180,8 +122,7 @@ class InventoryManagement:
             corner_radius=8,
             text_color="#4e2d18"
         )
-        self.ingredient_name_entry.grid(row=1, column=0, padx=entry_padx, pady=(0, 20))
-    
+        self.ingredient_name_entry.grid(row=1, column=0, padx=(35, 10), pady=(0, 20))
         self.amount_stock_entry = ctk.CTkEntry(
             inner_frame,
             height=32,
@@ -194,7 +135,6 @@ class InventoryManagement:
             text_color="#4e2d18"
         )
         self.amount_stock_entry.grid(row=1, column=1, padx=entry_padx, pady=(0, 20))
-    
         self.cost_entry = ctk.CTkEntry(
             inner_frame,
             height=32,
@@ -207,7 +147,6 @@ class InventoryManagement:
             text_color="#4e2d18"
         )
         self.cost_entry.grid(row=1, column=2, padx=entry_padx, pady=(0, 20))
-
         self.restock_point_entry = ctk.CTkEntry(
             inner_frame,
             height=32,
@@ -220,7 +159,6 @@ class InventoryManagement:
             text_color="#4e2d18"
         )
         self.restock_point_entry.grid(row=1, column=3, padx=entry_padx, pady=(0, 20))
-    
         self.measurement_combo = ctk.CTkOptionMenu(
             inner_frame,
             height=32,
@@ -236,7 +174,6 @@ class InventoryManagement:
         )
         self.measurement_combo.grid(row=1, column=4, padx=entry_padx, pady=(0, 20))
         self.measurement_combo.set("Unit")
-
         plus_btn = ctk.CTkButton(
             inner_frame,
             width=90,
@@ -248,26 +185,23 @@ class InventoryManagement:
             corner_radius=16,
             command=self.save_ingredient
         )
-        plus_btn.grid(row=1, column=5, padx=entry_padx, pady=(0, 20))
-        
+        plus_btn.grid(row=1, column=5, padx=(10, 20), pady=(0, 20))
+
     def setup_inventory_list(self):
         self.list_frame = ctk.CTkFrame(
             self.main_frame,
             fg_color="#ffffff",
             corner_radius=16
         )
-        self.list_frame.grid(row=3, column=0, sticky="nsew", padx=80)
+        self.list_frame.grid(row=3, column=0, sticky="nsew", padx=40)
         self.list_frame.grid_columnconfigure(0, weight=1)
         self.list_frame.grid_rowconfigure(2, weight=1)
         self.main_frame.grid_rowconfigure(3, weight=1)
-
-        # Responsive headers frame
         self.header_padx = 10
         headers_frame = ctk.CTkFrame(self.list_frame, fg_color="transparent")
         headers_frame.grid(row=0, column=0, sticky="ew", pady=(20, 10))
         for i in range(5):
             headers_frame.grid_columnconfigure(i, weight=1, uniform="col")
-
         headers = ["Ingredient", "Quantity", "Measurement", "Status", "Action"]
         for i, text in enumerate(headers):
             header = ctk.CTkLabel(
@@ -278,10 +212,8 @@ class InventoryManagement:
                 anchor="center"
             )
             header.grid(row=0, column=i, pady=5, padx=self.header_padx, sticky="ew")
-
         separator1 = ctk.CTkFrame(self.list_frame, height=2, fg_color="#222222")
         separator1.grid(row=1, column=0, sticky="ew", pady=(0, 15))
-
         self.inventory_container = ctk.CTkScrollableFrame(
             self.list_frame,
             fg_color="#ffffff"
@@ -290,7 +222,6 @@ class InventoryManagement:
         self.inventory_container.grid_rowconfigure(0, weight=1)
         for i in range(5):
             self.inventory_container.grid_columnconfigure(i, weight=1, uniform="col")
-
         self.display_inventory_items()
 
     def display_inventory_items(self):
@@ -312,7 +243,7 @@ class InventoryManagement:
                         text=item["ingredient"],
                         font=ctk.CTkFont("Inter", size=15, weight="normal"),
                         text_color="#222222",
-                        anchor="center"  # Center align like create ingredient panel
+                        anchor="center"
                     )
                     ingredient_label.grid(row=2*i, column=0, pady=8, padx=self.header_padx, sticky="ew")
                     
@@ -321,7 +252,7 @@ class InventoryManagement:
                         text=item["quantity"],
                         font=ctk.CTkFont("Inter", size=15, weight="normal"),
                         text_color="#222222",
-                        anchor="center"  # Center align like create ingredient panel
+                        anchor="center"
                     )
                     quantity_label.grid(row=2*i, column=1, pady=8, padx=self.header_padx, sticky="ew")
                     
@@ -330,7 +261,7 @@ class InventoryManagement:
                         text=item["measurement"],
                         font=ctk.CTkFont("Inter", size=15, weight="normal"),
                         text_color="#222222",
-                        anchor="center"  # Center align like create ingredient panel
+                        anchor="center"
                     )
                     measurement_label.grid(row=2*i, column=2, pady=8, padx=self.header_padx, sticky="ew")
                     
@@ -356,15 +287,13 @@ class InventoryManagement:
                         text_color="#4e2d18",
                         command=lambda choice, idx=i: self.handle_action(choice, idx)
                     )
-                    # Center the combo box in its column
                     action_combo.grid(row=2*i, column=4, pady=8, padx=self.header_padx, sticky="")
                     action_combo.set("Action")
                     
-                    # Insert a thin separator after each row except the last
                     if i < len(self.inventory_data) - 1:
                         separator = ctk.CTkFrame(self.inventory_container, height=1, fg_color="#e0e0e0")
                         separator.grid(row=2*i+1, column=0, columnspan=5, sticky="ew", pady=(0, 0), padx=self.header_padx)
-                        
+                    
                 except Exception as e:
                     print(f"Error creating item {i}: {e}")
                     continue
@@ -517,34 +446,22 @@ class InventoryManagement:
     
     def link_ingredients_clicked(self):
         from .link_ingredients import LinkIngredientsPage
-        self.root.destroy()
-        LinkIngredientsPage(user_role=self.user_role).mainloop()
-    
-    # Navigation callback methods with error handling
-    def show_inventory(self):
-        pass  # Already on this page, do nothing!
-    
-    def show_staff(self):
-        self.root.destroy()
-        if self.user_role == "admin":
-            StaffPageAdmin(user_role="admin").run()
-        else:
-            StaffPageEmployee(user_role="employee").run()
-    
-    def show_receipt(self):
-        from receipt.sales_history import SalesHistoryMain
-        self.root.destroy()
-        SalesHistoryMain(user_role=self.user_role).mainloop()
-    
-    def show_cashbox(self):
-        self.root.destroy()
-        from cash_box.cashbox_page import CashBoxApp
-        CashBoxApp(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("link_ingredients")
     
     def show_ticket(self):
-        from ticket.ticket_main import TicketMainPage
-        self.root.destroy()
-        TicketMainPage(user_role=self.user_role).mainloop()
+        self.main_app.show_frame("ticket")
+    
+    def show_receipt(self):
+        self.main_app.show_frame("receipt")
+    
+    def show_cashbox(self):
+        self.main_app.show_frame("cashbox")
+    
+    def show_inventory(self):
+        self.main_app.show_frame("inventory")
+    
+    def show_staff(self):
+        self.main_app.show_frame("staff")
     
     def show_dashboard(self):
         from dashboard.sales_dashboard import SalesDashboard

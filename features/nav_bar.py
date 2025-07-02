@@ -79,7 +79,7 @@ class Navbar(ctk.CTkFrame):
         ]
         
         # Filter buttons based on user role
-        if self.user_role == "employee":
+        if self.user_role in ["employee"]:
             # Employees can only access: ticket, staff, receipts, cashbox
             nav_buttons = [
                 {"name": "ticket", "text": "Ticket", "icon": "Ticket.png"},
@@ -88,7 +88,7 @@ class Navbar(ctk.CTkFrame):
                 {"name": "cashbox", "text": "Cash Box", "icon": "cashbox.png"}
             ]
         else:
-            # Owners can access all buttons
+            # Owners/admins can access all buttons
             nav_buttons = all_nav_buttons
         
         self.nav_buttons = {}
@@ -107,8 +107,7 @@ class Navbar(ctk.CTkFrame):
                 corner_radius=16,
                 width=90,
                 height=70,
-                border_width=1 if is_active else 0,
-                border_color="#D5C8B0" if is_active else "#f7f3ee",
+                border_width=0,  # Always no border
                 command=lambda n=button_data["name"]: self.on_nav_click(n)
             )
             btn.grid(row=i, column=0, pady=(0, 8), padx=0, sticky="ew")
