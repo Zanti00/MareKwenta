@@ -8,6 +8,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from nav_bar import Navbar
+from sales_dashboard_controller import SalesDashboardController
 
 
 class SalesDashboard(ctk.CTkFrame):
@@ -15,6 +16,8 @@ class SalesDashboard(ctk.CTkFrame):
         super().__init__(parent)
         self.main_app = main_app
         self.user_role = user_role
+        self.controller = SalesDashboardController()
+        
         taskbar_height = 70
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
@@ -92,8 +95,8 @@ class SalesDashboard(ctk.CTkFrame):
 
         self.card_data = [
             {"label": "Revenue", "value": "₱ 287.00", "change": "+₱287.00 (+100%)", "color": "#4e2d18", "change_color": "#7a9c33"},
-            {"label": "Net Profit", "value": "₱ 200,00.00", "change": "+₱20,000.00", "color": "#4e2d18", "change_color": "#7a9c33"},
-            {"label": "Expenses", "value": "₱ 145.00", "change": "-₱500.00", "color": "#4e2d18", "change_color": "#c30e0e"},
+            {"label": "Net Profit", "value": "₱ 200.00", "change": "+₱20,000.00", "color": "#4e2d18", "change_color": "#7a9c33"},
+            {"label": "Expenses", "value": "₱ 0.00", "change": "No data", "color": "#4e2d18", "change_color": "#4e2d18"},
         ]
         self.card_labels = []
         for i, card in enumerate(self.card_data):
@@ -127,28 +130,81 @@ class SalesDashboard(ctk.CTkFrame):
         self.on_periodicity_change("Daily")
 
     def update_data(self):
-        # Placeholder update function
+        """Update dashboard data including revenue, net profit, and expenses from database"""
         category = self.sales_type_var.get()
         periodicity = self.periodicity_var.get()
         date = self.date_var.get()
 
         print(f"Generating report for {category}, {periodicity}, {date}")
-        # Update cards (example, you can update with real data)
-        if category == "Sales by Category":
-            row = ["Food", "12", "₱200.00", "₱50.00", "₱150.00"]
-        elif category == "Sales by Product":
-            row = ["Americano", "5", "₱100.00", "₱30.00", "₱70.00"]
-        else:
-            row = ["Summary", "17", "₱300.00", "₱80.00", "₱220.00"]
-        self.card_labels[0][0].configure(text=row[2])  # Gross Sales value
-        self.card_labels[1][0].configure(text="₱ 0.00")  # Refunds value
-        self.card_labels[2][0].configure(text="₱ 145.00")  # Discounts value
-        self.card_labels[3][0].configure(text=row[3])  # Net Sales value
-        self.card_labels[4][0].configure(text=row[4])  # Gross Profits value
         
+        # Fetch comprehensive financial data from database
+        sales_summary = self.controller.get_sales_summary(periodicity, date)
+        revenue_comparison = self.controller.get_revenue_comparison(periodicity, date)
+        expense_comparison = self.controller.get_expense_comparison(periodicity, date)
+        net_profit_comparison = self.controller.get_net_profit_comparison(periodicity, date)
+        
+        # Format values for display
+        revenue_value = self.controller.format_currency(sales_summary['total_revenue'])
+        net_profit_value = self.controller.format_currency(sales_summary['net_profit'])
+        expense_value = self.controller.format_currency(sales_summary['total_expenses'])
+        
+        # Format change displays
+        revenue_change_text, revenue_change_color = self.controller.format_change_display(
+            revenue_comparison['change_amount'], 
+            revenue_comparison['change_percentage']
+        )
+        
+        net_profit_change_text, net_profit_change_color = self.controller.format_change_display(
+            net_profit_comparison['change_amount'], 
+            net_profit_comparison['change_percentage']
+        )
+        
+        expense_change_text, expense_change_color = self.controller.format_change_display(
+            expense_comparison['change_amount'], 
+            expense_comparison['change_percentage']
+        )
+        
+        # Update card displays with real data
+        self.card_labels[0][0].configure(text=revenue_value)  # Revenue value
+        self.card_labels[1][0].configure(text=net_profit_value)  # Net Profit value
+        self.card_labels[2][0].configure(text=expense_value)  # Expenses value
+        
+        # Update change labels with real data
+        self.card_labels[0][1].configure(text=revenue_change_text, text_color=revenue_change_color)  # Revenue change
+        self.card_labels[1][1].configure(text=net_profit_change_text, text_color=net_profit_change_color)  # Net Profit change
+        self.card_labels[2][1].configure(text=expense_change_text, text_color=expense_change_color)  # Expenses change
+        
+        # Print financial details for debugging
+        print(f"Financial summary for {periodicity} period '{date}':")
+        print(f"Total Revenue: {revenue_value}")
+        print(f"Total Expenses: {expense_value}")
+        print(f"Net Profit: {net_profit_value}")
+        print(f"Ticket Count: {sales_summary['ticket_count']}")
+        print(f"Average Ticket Value: {self.controller.format_currency(sales_summary['avg_ticket_value'])}")
+        print(f"Gross Profit: {self.controller.format_currency(sales_summary['gross_profit'])}")
+        print(f"Gross Margin: {sales_summary['gross_margin']:.1f}%")
+        print(f"Net Margin: {sales_summary['net_margin']:.1f}%")
+        
+        print(f"\nChanges from previous period:")
+        print(f"Revenue change: {revenue_change_text}")
+        print(f"Net Profit change: {net_profit_change_text}")
+        print(f"Expense change: {expense_change_text}")
+        
+        if sales_summary['expense_data']['breakdown_by_type']:
+            print("\nExpense breakdown by type:")
+            for breakdown in sales_summary['expense_data']['breakdown_by_type']:
+                print(f"  {breakdown['type']}: {self.controller.format_currency(breakdown['total'])} ({breakdown['count']} items)")
+                
+        if sales_summary['revenue_data']['category_breakdown']:
+            print("\nRevenue breakdown by category:")
+            for breakdown in sales_summary['revenue_data']['category_breakdown']:
+                print(f"  {breakdown['category']}: {self.controller.format_currency(breakdown['revenue'])} ({breakdown['items_sold']} items)")
+        
+        # Update chart
         self.fig.clf()
         poppins = {'fontname': 'Poppins', 'fontsize': 12}
         lighter_brown = '#bfa074'
+        
         if category == "Sales by Product":
             self.ax = self.fig.add_subplot(111)
             labels = ["Americano", "Latte", "Mocha", "Cappuccino"]
@@ -215,9 +271,9 @@ class SalesDashboard(ctk.CTkFrame):
             self.date_var.set(options[0])
         else:
             self.date_var.set("Select Date")
-        #self.update_data()
 
     def on_generate(self):
+        """Handle generate button click - fetch and display expense data"""
         self.update_data()
         print("Generate button clicked")
         print(f"Sales Type: {self.sales_type_var.get()}")
