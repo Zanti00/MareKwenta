@@ -433,19 +433,6 @@ class TicketPanel(ctk.CTkFrame):
         """Set the callback function for charge button"""
         self.on_charge_callback = callback
 
-    def clear_items(self):
-        """Clear all items from the ticket"""
-        try:
-            for item in self.items:
-                item.destroy()
-            self.items.clear()
-            # Reset discount when clearing items
-            self.clear_discount()
-            self.update_total(0.0)
-        except Exception as e:
-            print(f"Error clearing items: {e}")
-            # Reset discount when clearing items
-            self.clear_discount()
-            self.update_total(0.0)
-        except Exception as e:
-            print(f"Error clearing items: {e}")
+    def clear_cart(self):
+        """Alias for clear_items for compatibility with TicketMainPage."""
+        self.clear_items()

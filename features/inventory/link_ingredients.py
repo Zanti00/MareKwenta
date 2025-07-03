@@ -662,11 +662,6 @@ class LinkIngredientsPage(ctk.CTkFrame):
                     price_info_parts.append(f"{ptype['size']} {ptype['temperature']}: ₱{ptype['selling_price']:.2f}")
                 else:
                     price_info_parts.append(f"₱{ptype['selling_price']:.2f}")
-                
-                # Add a separator line between variants
-                if price_info_parts:
-                    separator_line = ctk.CTkFrame(container, height=2, fg_color="#f2efea")
-                    separator_line.grid(row=index, column=0, sticky="ew", padx=10, pady=(0, 8))
             
             price_display = f"{product['category']} • " + " | ".join(price_info_parts)
         else:
