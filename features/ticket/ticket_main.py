@@ -65,8 +65,8 @@ class TicketMainPage(ctk.CTkFrame):
         # Main content area
         self.main_frame = ctk.CTkFrame(self, fg_color="#f2efea")
         self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 0), pady=0)
-        self.main_frame.grid_columnconfigure(0, weight=1)  # Product panel expands
-        self.main_frame.grid_columnconfigure(1, weight=0)  # Ticket panel fixed
+        self.main_frame.grid_columnconfigure(0, weight=2)  # Product panel takes more space
+        self.main_frame.grid_columnconfigure(1, weight=0)  # Ticket panel column does not expand
         self.main_frame.grid_rowconfigure(0, weight=1)
         
         # Product panel (left side)
@@ -76,7 +76,6 @@ class TicketMainPage(ctk.CTkFrame):
         # Ticket panel (right side, fixed width)
         self.ticket_panel = TicketPanel(self.main_frame)
         self.ticket_panel.grid(row=0, column=1, sticky="ns", padx=(5, 10), pady=10)
-        self.ticket_panel.configure(width=320)
         
         # Set charge callback
         self.ticket_panel.set_charge_callback(self.handle_charge)

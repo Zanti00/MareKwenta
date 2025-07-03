@@ -5,7 +5,8 @@ from .split_popup import SplitPopup
 
 class TicketPanel(ctk.CTkFrame):
     def __init__(self, master, on_split_popup=None, *args, **kwargs):
-        super().__init__(master, width=440, fg_color="#f2efea", border_width=1, border_color="lightgray", *args, **kwargs)
+        super().__init__(master, width=400, fg_color="#f2efea", border_width=1, border_color="lightgray", *args, **kwargs)
+        self.grid_propagate(False)  # Prevent expansion to fit children
         self.grid_rowconfigure(1, weight=1)  # Make the item list expandable
         self.grid_columnconfigure(0, weight=1)
 
