@@ -515,17 +515,7 @@ class LinkIngredientsPage(ctk.CTkFrame):
         self.user_role = user_role
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
-        # either remove this three lines or use parent widget 
-        # self.parent_widget = parent
-        # then 
-        # self.parent_widget.grid_columnconfigure(1, weight=1)
-        # self.parent_widget.grid_rowconfigure(0, weight=1)
-        # self.parent_widget.protocol("WM_DELETE_WINDOW", self.on_closing)
-        
-        # remove this
-        # self.grid_columnconfigure(1, weight=1)
-        # self.grid_rowconfigure(0, weight=1)
-        # self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.configure(fg_color="#f2efea")
         self.products = []  # Will be loaded from database
         self.linked_ingredients = {}
         self.setup_ui()
@@ -553,7 +543,7 @@ class LinkIngredientsPage(ctk.CTkFrame):
         header_label = ctk.CTkLabel(
             header_frame,
             text="Link Ingredient",
-            font=ctk.CTkFont("Unbounded", size=36, weight="bold"),
+            font=ctk.CTkFont("Unbounded", size=35, weight="bold"),
             text_color="#4d2d18"
         )
         header_label.grid(row=0, column=0, sticky="w")
@@ -593,10 +583,11 @@ class LinkIngredientsPage(ctk.CTkFrame):
         self.list_frame = ctk.CTkFrame(self.main_frame, fg_color="#f2efea", corner_radius=16)
         self.list_frame.grid(row=3, column=0, sticky="nsew", padx=(70, 40))
         self.list_frame.grid_columnconfigure(0, weight=1)
-        self.main_frame.grid_rowconfigure(2, weight=1)
-        
+        self.list_frame.grid_rowconfigure(0, weight=1)  # Make scrollable expand
+        self.main_frame.grid_rowconfigure(3, weight=1)  # Make list_frame expand
+
         self.scrollable = ctk.CTkScrollableFrame(self.list_frame, fg_color="#f2efea", height=500, width=950)
-        self.scrollable.grid(row=0, column=0, sticky="n", pady=(20, 20))
+        self.scrollable.grid(row=0, column=0, sticky="nsew", pady=(20, 20))  # sticky="nsew"
         self.scrollable.grid_columnconfigure(0, weight=1)
         self.refresh_product_list()
 

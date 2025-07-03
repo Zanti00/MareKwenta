@@ -142,7 +142,7 @@ class CashBoxApp(ctk.CTkFrame):
             ("GCASH", self.gcash_amount, "#0091f7", "gcash.png"),
             ("PETTY CASH", self.petty_cash_amount, "#6B3F19", "cash.png"),
             ("MAYA", self.maya_amount, "#00894c", "maya.png"),
-            ("CASH SALES", self.cash_sales_amount, "#6B3F19", "cash.png"),
+            ("NET PROFIT", self.cash_sales_amount, "#6B3F19", "cash.png"),
             ("CASH EXPENSES", self.cash_expenses_amount, "#6B3F19", "cash.png"),
             ("NON - CASH EXPENSES", self.non_cash_expenses_amount, "#6B3F19", "cash.png"),
         ]

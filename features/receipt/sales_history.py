@@ -28,7 +28,7 @@ class SalesHistoryMain(ctk.CTkFrame):
         main_content.place(relx=0.0, x=40, rely=0.13, relheight=0.82)
         main_content.grid_rowconfigure(0, weight=1)
         main_content.grid_columnconfigure(0, weight=1)
-        main_content.grid_columnconfigure(1, weight=1)
+        main_content.grid_columnconfigure(1, weight=2)
 
         self.selected_receipt = None
         self.receipts_data = []  # Store fetched receipts
@@ -40,10 +40,6 @@ class SalesHistoryMain(ctk.CTkFrame):
         left_column = ctk.CTkFrame(main_content, fg_color="transparent", width=300)
         left_column.grid(row=0, column=0, sticky="ns", padx=(20, 20), pady=40)
         left_column.grid_rowconfigure(2, weight=1)
-
-        # === SALES HISTORY HEADER ===
-        history_label = ctk.CTkLabel(left_column, text="Sales History", font=("Unbounded", 28, "bold"), text_color="#4e2d18")
-        history_label.grid(row=0, column=0, sticky="w", pady=(0, 10))
 
         # === RECEIPT LIST ===
         self.receipt_list_frame = ctk.CTkScrollableFrame(left_column, fg_color="#ffffff", corner_radius=15, width=250, height=600)
