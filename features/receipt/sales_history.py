@@ -46,9 +46,10 @@ class SalesHistoryMain(ctk.CTkFrame):
         history_label.grid(row=0, column=0, sticky="w", pady=(0, 10))
 
         # === RECEIPT LIST ===
-        self.receipt_list_frame = ctk.CTkScrollableFrame(left_column, fg_color="#ffffff", corner_radius=15, width=250, height=600)
-        self.receipt_list_frame.grid(row=1, column=0, sticky="ns", pady=(0, 20))
+        self.receipt_list_frame = ctk.CTkScrollableFrame(left_column, fg_color="#ffffff", corner_radius=15, width=250, height=800)
+        self.receipt_list_frame.grid(row=1, column=0, sticky="nsew", pady=(0, 20))
         left_column.grid_rowconfigure(1, weight=1)
+        self.receipt_list_frame.grid_columnconfigure(0, weight=1)
 
         self.populate_receipt_list()
 
@@ -164,27 +165,33 @@ class SalesHistoryMain(ctk.CTkFrame):
                 receipt_frame.grid(row=len(self.receipt_list_frame.winfo_children()), column=0, sticky="ew", padx=(5,10), pady=5)
                 receipt_frame.grid_columnconfigure(0, weight=1)
                 receipt_frame.grid_columnconfigure(1, weight=0)
+                receipt_frame.grid_columnconfigure(0, weight=1)
+                receipt_frame.grid_columnconfigure(1, weight=0)
 
                 # Left side - Amount and Time
                 left_info = ctk.CTkFrame(receipt_frame, fg_color="transparent")
-                left_info.grid(row=0, column=0, sticky="w", padx=(15, 0), pady=12)
+                left_info.grid(row=0, column=0, sticky="nsew", padx=(15, 10), pady=12)
+                left_info.grid_rowconfigure(0, weight=1)
+                left_info.grid_rowconfigure(1, weight=1)
+                left_info.grid_columnconfigure(0, weight=1)
 
                 amount_label = ctk.CTkLabel(left_info, text=f"₱{receipt['totalAmount']:.2f}", font=("Inter", 16, "bold"), text_color="#4e2d18")
                 amount_label.grid(row=0, column=0, sticky="w")
 
-                # Format time from database datetime
+                # Time below price
                 try:
                     dt = datetime.strptime(receipt['dateTime'], "%Y-%m-%d %H:%M:%S")
                     time_str = dt.strftime("%I:%M %p")
                 except:
                     time_str = "Unknown"
-                
                 time_label = ctk.CTkLabel(left_info, text=time_str, font=("Inter", 12), text_color="#666666")
-                time_label.grid(row=0, column=1, sticky="w")
+                time_label.grid(row=1, column=0, sticky="w")
 
-                # Right side - Order ID
+                # Right side - Order ID (always right-aligned)
                 right_info = ctk.CTkFrame(receipt_frame, fg_color="transparent")
-                right_info.grid(row=0, column=1, sticky="e", padx=(10, 15), pady=5)
+                right_info.grid(row=0, column=1, sticky="nsew", padx=(10, 15), pady=5)
+                right_info.grid_rowconfigure(0, weight=1)
+                right_info.grid_columnconfigure(0, weight=1)
 
                 order_id_label = ctk.CTkLabel(right_info, text=receipt['orderId'], font=("Inter", 18, "bold"), text_color="#4e2d18")
                 order_id_label.grid(row=0, column=0, sticky="e", pady=18)
