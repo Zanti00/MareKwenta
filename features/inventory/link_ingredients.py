@@ -64,8 +64,15 @@ class AddProductDialog:
         name_label = ctk.CTkLabel(card, text="Product Name", font=ctk.CTkFont("Unbounded", 15, "bold"), text_color="#4d2d18")
         name_label.grid(row=card_row, column=0, sticky="w", padx=16, pady=(8, 2))
         card_row += 1
+        def limit_length(P):
+            if len(P) > 12:
+                messagebox.showwarning("Limit Exceeded", "Product name can only be up to 12 characters.")
+                return False
+            return True
+        vcmd = self.dialog.register(limit_length)
         self.name_entry = ctk.CTkEntry(card, width=300, height=38, font=ctk.CTkFont("Inter", 14), 
-                                      corner_radius=10, fg_color="#f7f3ee")
+                                      corner_radius=10, fg_color="#f7f3ee",
+                                      validate="key", validatecommand=(vcmd, '%P'))
         self.name_entry.grid(row=card_row, column=0, padx=16, pady=(0, 10), sticky="ew")
         card_row += 1
 
@@ -623,66 +630,83 @@ class LinkIngredientsPage(ctk.CTkFrame):
             no_products_label.grid(row=0, column=0, pady=50)
             return
             
-        for idx, product in enumerate(self.products):
-            container = ctk.CTkFrame(self.scrollable, fg_color="#ffffff", corner_radius=16)
-            container.grid(row=idx, column=0, sticky="ew", pady=8, padx=10)
-            container.grid_columnconfigure(0, weight=1)
-            container.grid_rowconfigure(0, minsize=100)
+        for i, product in enumerate(self.products):
+            self.create_product_card(product, i)
+
+    def refresh(self):
+        """Refresh the link ingredients page"""
+        print("Refreshing Link Ingredients page...")
+        self.load_products()
+
+    def load_products(self):
+        """Load products from database and refresh display"""
+        try:
+            self.products = ProductController.get_all_products()
+            self.refresh_product_list()
+        except Exception as e:
+            print(f"Error loading products: {e}")
+            messagebox.showerror("Error", f"Failed to load products: {e}")
+
+    def create_product_card(self, product, index):
+        container = ctk.CTkFrame(self.scrollable, fg_color="#ffffff", corner_radius=16)
+        container.grid(row=index, column=0, sticky="ew", pady=8, padx=10)
+        container.grid_columnconfigure(0, weight=1)
+        container.grid_rowconfigure(0, minsize=100)
+        
+        # Product info frame
+        info_frame = ctk.CTkFrame(container, fg_color="transparent")
+        info_frame.grid(row=0, column=0, sticky="w", padx=(20, 10), pady=10)
+        
+        name_label = ctk.CTkLabel(
+            info_frame,
+            text=product["name"],
+            font=ctk.CTkFont("Unbounded", size=16, weight="bold"),
+            text_color="#4d2d18"
+        )
+        name_label.grid(row=0, column=0, sticky="w")
+        
+        # Get all product types for this product to show pricing info
+        product_types = ProductController.get_product_types_by_product_id(product['product_id'])
+        
+        if product_types:
+            # Show all variants with their prices
+            price_info_parts = []
+            for ptype in product_types:
+                if ptype['size'] and ptype['temperature']:
+                    price_info_parts.append(f"{ptype['size']} {ptype['temperature']}: ₱{ptype['selling_price']:.2f}")
+                else:
+                    price_info_parts.append(f"₱{ptype['selling_price']:.2f}")
             
-            # Product info frame
-            info_frame = ctk.CTkFrame(container, fg_color="transparent")
-            info_frame.grid(row=0, column=0, sticky="w", padx=(20, 10), pady=10)
-            
-            name_label = ctk.CTkLabel(
-                info_frame,
-                text=product["name"],
-                font=ctk.CTkFont("Unbounded", size=16, weight="bold"),
-                text_color="#4d2d18"
-            )
-            name_label.grid(row=0, column=0, sticky="w")
-            
-            # Get all product types for this product to show pricing info
-            product_types = ProductController.get_product_types_by_product_id(product['product_id'])
-            
-            if product_types:
-                # Show all variants with their prices
-                price_info_parts = []
-                for ptype in product_types:
-                    if ptype['size'] and ptype['temperature']:
-                        price_info_parts.append(f"{ptype['size']} {ptype['temperature']}: ₱{ptype['selling_price']:.2f}")
-                    else:
-                        price_info_parts.append(f"₱{ptype['selling_price']:.2f}")
-                
-                price_display = f"{product['category']} • " + " | ".join(price_info_parts)
-            else:
-                price_display = f"{product['category']} • No pricing set"
-            
-            # Category and price info
-            details_label = ctk.CTkLabel(
-                info_frame,
-                text=price_display,
-                font=ctk.CTkFont("Inter", size=12),
-                text_color="#666666"
-            )
-            details_label.grid(row=1, column=0, sticky="w", pady=(2, 0))
-            
-            action_combo = ctk.CTkOptionMenu(
-                container,
-                values=["Link Ingredients", "View", "Edit", "Delete"],
-                font=ctk.CTkFont("Inter", size=14, weight="bold"),
-                fg_color="#4e2d18",
-                button_color="#4e2d18",
-                button_hover_color="#3d2414",
-                dropdown_fg_color="#ffffff",
-                dropdown_text_color="#4e2d18",
-                text_color="#ffffff",
-                width=120,
-                height=36,
-                corner_radius=8,
-                command=lambda action, p=product: self.handle_action(p, action)
-            )
-            action_combo.set("Action")
-            action_combo.grid(row=0, column=1, padx=(10, 20), pady=0)
+            price_display = f"{product['category']} • " + " | ".join(price_info_parts)
+        else:
+            price_display = f"{product['category']} • No pricing set"
+        
+        # Category and price info
+        details_label = ctk.CTkLabel(
+            info_frame,
+            text=price_display,
+            font=ctk.CTkFont("Inter", size=12),
+            text_color="#666666"
+        )
+        details_label.grid(row=1, column=0, sticky="w", pady=(2, 0))
+        
+        action_combo = ctk.CTkOptionMenu(
+            container,
+            values=["Link Ingredients", "View", "Edit", "Delete"],
+            font=ctk.CTkFont("Inter", size=14, weight="bold"),
+            fg_color="#4e2d18",
+            button_color="#4e2d18",
+            button_hover_color="#3d2414",
+            dropdown_fg_color="#ffffff",
+            dropdown_text_color="#4e2d18",
+            text_color="#ffffff",
+            width=120,
+            height=36,
+            corner_radius=8,
+            command=lambda action, p=product: self.handle_action(p, action)
+        )
+        action_combo.set("Action")
+        action_combo.grid(row=0, column=1, padx=(10, 20), pady=0)
 
     def handle_action(self, product, action):
         """Handle actions with specific product type context"""

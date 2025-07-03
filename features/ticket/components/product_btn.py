@@ -1,11 +1,14 @@
 import customtkinter as ctk
 from PIL import Image
+from PIL import ImageTk
 from customtkinter import CTkImage
 import os
 
 class ProductButton(ctk.CTkFrame):
     def __init__(self, master, product_name="Product Name", product_image_path="", product_type="", price_display="", has_variants=False, command=None):
-        super().__init__(master, width=173, height=213, corner_radius=16, fg_color="#ffffff")
+        super().__init__(master, width=173, corner_radius=16, fg_color="#ffffff")
+        self.grid_propagate(True)  # Allow dynamic height
+        self.configure(height=213)  # Set minimum height
         self.product_name = product_name
         self.product_image_path = product_image_path
         self.product_type = product_type

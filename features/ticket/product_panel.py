@@ -11,9 +11,9 @@ from inventory.product_controller import ProductController
 
 class ProductPanel(ctk.CTkFrame):
     def __init__(self, master, on_product_click=None, *args, **kwargs):
-        super().__init__(master,*args, **kwargs, width=950, height=938, fg_color="#f2efea")
+        super().__init__(master, *args, **kwargs, width=1300, height=938, fg_color="#f2efea")
 
-        self.on_product_click_callback = on_product_click
+        self.on_product_click = on_product_click
         self.current_tab = "All"
         self.selected_tab = "All"  
 
@@ -189,6 +189,7 @@ class ProductPanel(ctk.CTkFrame):
         from .components.food_quantity_popup import FoodQuantityPopup
         
         def on_food_submit(product_name, quantity):
+            print("on_food_submit called!", product_name, quantity)
             cart_item = {
                 "name": product_name,
                 "quantity": quantity,
@@ -220,31 +221,34 @@ class ProductPanel(ctk.CTkFrame):
                     selected_type = ptype
                     break
             
-            if selected_type:
-                # Calculate extras pricing
-                extra_shots = extras.get("extra_shots", 0)
-                whip_cream = extras.get("whip_cream", 0)
-                extras_cost = (extra_shots * 15) + (whip_cream * 5)
-                
-                # Format extras for display
-                extras_list = []
-                if extra_shots > 0:
-                    extras_list.append(f"Extra Shot x{extra_shots}")
-                if whip_cream > 0:
-                    extras_list.append(f"Whip Cream x{whip_cream}")
-                
-                cart_item = {
-                    "name": product_name,
-                    "quantity": quantity,
-                    "size": size,
-                    "temperature": temperature,
-                    "extras": extras_list,
-                    "extras_cost": extras_cost,
-                    "unit_price": selected_type['selling_price'],
-                    "product_type_id": selected_type['product_type_id']
-                }
-                if self.on_product_click_callback:
-                    self.on_product_click_callback(cart_item)
+            if not selected_type:
+                messagebox.showerror("Recipe Not Available", f"No recipe found for {size} {temperature}. Please set it up in the inventory.")
+                return
+            
+            # Calculate extras pricing
+            extra_shots = extras.get("extra_shots", 0)
+            whip_cream = extras.get("whip_cream", 0)
+            extras_cost = (extra_shots * 15) + (whip_cream * 5)
+            
+            # Format extras for display
+            extras_list = []
+            if extra_shots > 0:
+                extras_list.append(f"Extra Shot x{extra_shots}")
+            if whip_cream > 0:
+                extras_list.append(f"Whip Cream x{whip_cream}")
+            
+            cart_item = {
+                "name": product_name,
+                "quantity": quantity,
+                "size": size,
+                "temperature": temperature,
+                "extras": extras_list,
+                "extras_cost": extras_cost,
+                "unit_price": selected_type['selling_price'],
+                "product_type_id": selected_type['product_type_id']
+            }
+            if self.on_product_click:
+                self.on_product_click(cart_item)
         
         ModifierPopup(
             self.master, 

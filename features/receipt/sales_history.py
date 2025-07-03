@@ -42,7 +42,7 @@ class SalesHistoryMain(ctk.CTkFrame):
         left_column.grid_rowconfigure(2, weight=1)
 
         # === RECEIPT LIST ===
-        self.receipt_list_frame = ctk.CTkScrollableFrame(left_column, fg_color="#ffffff", corner_radius=15, width=250, height=800)
+        self.receipt_list_frame = ctk.CTkScrollableFrame(left_column, fg_color="#ffffff", corner_radius=15, width=200, height=900)
         self.receipt_list_frame.grid(row=1, column=0, sticky="nsew", pady=(0, 20))
         left_column.grid_rowconfigure(1, weight=1)
         self.receipt_list_frame.grid_columnconfigure(0, weight=1)
@@ -50,8 +50,8 @@ class SalesHistoryMain(ctk.CTkFrame):
         self.populate_receipt_list()
 
         # RIGHT: Details Container (fixed width)
-        right_container = ctk.CTkFrame(main_content, fg_color="#ffffff", corner_radius=20, width=420)
-        right_container.grid(row=0, column=1, sticky="ns", padx=(60, 0), pady=0)
+        right_container = ctk.CTkFrame(main_content, fg_color="#ffffff", corner_radius=20, width=400)
+        right_container.grid(row=0, column=1, sticky="ns", padx=(250, 0), pady=0)
         right_container.grid_propagate(False)
         right_container.grid_rowconfigure(0, weight=1)
         right_container.grid_columnconfigure(0, weight=1)

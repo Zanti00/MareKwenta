@@ -243,15 +243,21 @@ class TicketMainPage(ctk.CTkFrame):
             # Update total
             self.current_total -= item_total
             self.ticket_panel.update_total(self.current_total)
-            
+
             # Remove from cart items list
             self.cart_items = [item for item in self.cart_items if not (
                 item["name"] == product_name and 
                 (item["quantity"] * item["unit_price"]) + (item["quantity"] * item.get("extras_cost", 0)) == item_total
             )]
-            
+
+            # Remove the corresponding ItemDetail from the ticket panel's items list
+            self.ticket_panel.items = [
+                item for item in self.ticket_panel.items
+                if not (item.product_name == product_name and item.item_total == item_total)
+            ]
+
             print(f"Item removed. New total: ₱{self.current_total:.2f}")
-            
+
         except Exception as e:
             print(f"Error removing item: {e}")
 
