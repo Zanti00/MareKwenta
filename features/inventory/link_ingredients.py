@@ -262,12 +262,10 @@ class LinkIngredientFinalPopup(ctk.CTkToplevel):
         qty_entry = ctk.CTkEntry(row_frame, width=80, height=32, font=ctk.CTkFont("Inter", 13), placeholder_text="Qty")
         qty_entry.pack(side="left", padx=(0, 10))
         
-        # Add 'Choose Ingredient' as the first option
-        values = ["Choose Ingredient"] + self.inventory_list if self.inventory_list else ["Choose Ingredient"]
-        ingredient_combo = ctk.CTkOptionMenu(row_frame, values=values, width=180, height=32, font=ctk.CTkFont("Inter", 13),
+        ingredient_combo = ctk.CTkOptionMenu(row_frame, values=self.inventory_list, width=180, height=32, font=ctk.CTkFont("Inter", 13),
             fg_color="#4e2d18", button_color="#4e2d18", button_hover_color="#3d2414", dropdown_fg_color="#ffffff", dropdown_text_color="#4e2d18", text_color="#ffffff", corner_radius=8)
         ingredient_combo.pack(side="left", padx=(0, 10))
-        ingredient_combo.set("Choose Ingredient")
+        ingredient_combo.set(self.inventory_list[0] if self.inventory_list else "")
         
         # Add X button to remove row
         remove_btn = ctk.CTkButton(row_frame, text="✕", width=30, height=30, font=ctk.CTkFont("Inter", 14, "bold"), 
@@ -525,7 +523,17 @@ class LinkIngredientsPage(ctk.CTkFrame):
         self.user_role = user_role
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
-        self.configure(fg_color="#f2efea")
+        # either remove this three lines or use parent widget 
+        # self.parent_widget = parent
+        # then 
+        # self.parent_widget.grid_columnconfigure(1, weight=1)
+        # self.parent_widget.grid_rowconfigure(0, weight=1)
+        # self.parent_widget.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
+        # remove this
+        # self.grid_columnconfigure(1, weight=1)
+        # self.grid_rowconfigure(0, weight=1)
+        # self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.products = []  # Will be loaded from database
         self.linked_ingredients = {}
         self.setup_ui()
@@ -553,7 +561,7 @@ class LinkIngredientsPage(ctk.CTkFrame):
         header_label = ctk.CTkLabel(
             header_frame,
             text="Link Ingredient",
-            font=ctk.CTkFont("Unbounded", size=35, weight="bold"),
+            font=ctk.CTkFont("Unbounded", size=36, weight="bold"),
             text_color="#4d2d18"
         )
         header_label.grid(row=0, column=0, sticky="w")
@@ -593,11 +601,10 @@ class LinkIngredientsPage(ctk.CTkFrame):
         self.list_frame = ctk.CTkFrame(self.main_frame, fg_color="#f2efea", corner_radius=16)
         self.list_frame.grid(row=3, column=0, sticky="nsew", padx=(70, 40))
         self.list_frame.grid_columnconfigure(0, weight=1)
-        self.list_frame.grid_rowconfigure(0, weight=1)  # Make scrollable expand
-        self.main_frame.grid_rowconfigure(3, weight=1)  # Make list_frame expand
-
+        self.main_frame.grid_rowconfigure(2, weight=1)
+        
         self.scrollable = ctk.CTkScrollableFrame(self.list_frame, fg_color="#f2efea", height=500, width=950)
-        self.scrollable.grid(row=0, column=0, sticky="nsew", pady=(20, 20))  # sticky="nsew"
+        self.scrollable.grid(row=0, column=0, sticky="n", pady=(20, 20))
         self.scrollable.grid_columnconfigure(0, weight=1)
         self.refresh_product_list()
 
@@ -616,88 +623,66 @@ class LinkIngredientsPage(ctk.CTkFrame):
             no_products_label.grid(row=0, column=0, pady=50)
             return
             
-        for i, product in enumerate(self.products):
-            self.create_product_card(product, i)
-
-    def refresh(self):
-        """Refresh the link ingredients page"""
-        print("Refreshing Link Ingredients page...")
-        self.load_products()
-
-    def load_products(self):
-        """Load products from database and refresh display"""
-        try:
-            self.products = ProductController.get_all_products()
-            self.refresh_product_list()
-        except Exception as e:
-            print(f"Error loading products: {e}")
-            messagebox.showerror("Error", f"Failed to load products: {e}")
-
-    def create_product_card(self, product, index):
-        container = ctk.CTkFrame(self.scrollable, fg_color="#ffffff", corner_radius=16)
-        container.grid(row=index, column=0, sticky="ew", pady=8, padx=10)
-        container.grid_columnconfigure(0, weight=1)
-        container.grid_rowconfigure(0, minsize=100)
-        
-        # Product info frame
-        info_frame = ctk.CTkFrame(container, fg_color="transparent")
-        info_frame.grid(row=0, column=0, sticky="w", padx=(20, 10), pady=10)
-        
-        name_label = ctk.CTkLabel(
-            info_frame,
-            text=product["name"],
-            font=ctk.CTkFont("Unbounded", size=16, weight="bold"),
-            text_color="#4d2d18"
-        )
-        name_label.grid(row=0, column=0, sticky="w")
-        
-        # Get all product types for this product to show pricing info
-        product_types = ProductController.get_product_types_by_product_id(product['product_id'])
-        
-        if product_types:
-            # Show all variants with their prices
-            price_info_parts = []
-            for ptype in product_types:
-                if ptype['size'] and ptype['temperature']:
-                    price_info_parts.append(f"{ptype['size']} {ptype['temperature']}: ₱{ptype['selling_price']:.2f}")
-                else:
-                    price_info_parts.append(f"₱{ptype['selling_price']:.2f}")
-                
-                # Add a separator line between variants
-                if price_info_parts:
-                    separator_line = ctk.CTkFrame(container, height=2, fg_color="#f2efea")
-                    separator_line.grid(row=index, column=0, sticky="ew", padx=10, pady=(0, 8))
+        for idx, product in enumerate(self.products):
+            container = ctk.CTkFrame(self.scrollable, fg_color="#ffffff", corner_radius=16)
+            container.grid(row=idx, column=0, sticky="ew", pady=8, padx=10)
+            container.grid_columnconfigure(0, weight=1)
+            container.grid_rowconfigure(0, minsize=100)
             
-            price_display = f"{product['category']} • " + " | ".join(price_info_parts)
-        else:
-            price_display = f"{product['category']} • No pricing set"
-        
-        # Category and price info
-        details_label = ctk.CTkLabel(
-            info_frame,
-            text=price_display,
-            font=ctk.CTkFont("Inter", size=12),
-            text_color="#666666"
-        )
-        details_label.grid(row=1, column=0, sticky="w", pady=(2, 0))
-        
-        action_combo = ctk.CTkOptionMenu(
-            container,
-            values=["Link Ingredients", "View", "Edit", "Delete"],
-            font=ctk.CTkFont("Inter", size=14, weight="bold"),
-            fg_color="#4e2d18",
-            button_color="#4e2d18",
-            button_hover_color="#3d2414",
-            dropdown_fg_color="#ffffff",
-            dropdown_text_color="#4e2d18",
-            text_color="#ffffff",
-            width=120,
-            height=36,
-            corner_radius=8,
-            command=lambda action, p=product: self.handle_action(p, action)
-        )
-        action_combo.set("Action")
-        action_combo.grid(row=0, column=1, padx=(10, 20), pady=0)
+            # Product info frame
+            info_frame = ctk.CTkFrame(container, fg_color="transparent")
+            info_frame.grid(row=0, column=0, sticky="w", padx=(20, 10), pady=10)
+            
+            name_label = ctk.CTkLabel(
+                info_frame,
+                text=product["name"],
+                font=ctk.CTkFont("Unbounded", size=16, weight="bold"),
+                text_color="#4d2d18"
+            )
+            name_label.grid(row=0, column=0, sticky="w")
+            
+            # Get all product types for this product to show pricing info
+            product_types = ProductController.get_product_types_by_product_id(product['product_id'])
+            
+            if product_types:
+                # Show all variants with their prices
+                price_info_parts = []
+                for ptype in product_types:
+                    if ptype['size'] and ptype['temperature']:
+                        price_info_parts.append(f"{ptype['size']} {ptype['temperature']}: ₱{ptype['selling_price']:.2f}")
+                    else:
+                        price_info_parts.append(f"₱{ptype['selling_price']:.2f}")
+                
+                price_display = f"{product['category']} • " + " | ".join(price_info_parts)
+            else:
+                price_display = f"{product['category']} • No pricing set"
+            
+            # Category and price info
+            details_label = ctk.CTkLabel(
+                info_frame,
+                text=price_display,
+                font=ctk.CTkFont("Inter", size=12),
+                text_color="#666666"
+            )
+            details_label.grid(row=1, column=0, sticky="w", pady=(2, 0))
+            
+            action_combo = ctk.CTkOptionMenu(
+                container,
+                values=["Link Ingredients", "View", "Edit", "Delete"],
+                font=ctk.CTkFont("Inter", size=14, weight="bold"),
+                fg_color="#4e2d18",
+                button_color="#4e2d18",
+                button_hover_color="#3d2414",
+                dropdown_fg_color="#ffffff",
+                dropdown_text_color="#4e2d18",
+                text_color="#ffffff",
+                width=120,
+                height=36,
+                corner_radius=8,
+                command=lambda action, p=product: self.handle_action(p, action)
+            )
+            action_combo.set("Action")
+            action_combo.grid(row=0, column=1, padx=(10, 20), pady=0)
 
     def handle_action(self, product, action):
         """Handle actions with specific product type context"""
@@ -969,8 +954,8 @@ class LinkIngredientsPage(ctk.CTkFrame):
             corner_radius=20,
             command=self.on_fab_click
         )
-        # Center horizontally at the bottom right, with margin
-        self.fab.place(relx=0.95, rely=0.96, anchor="se")
+        # Place at bottom right, above padding
+        self.fab.place(relx=0.97, rely=0.96, anchor="se")
 
     def on_fab_click(self):
         def on_save(product):

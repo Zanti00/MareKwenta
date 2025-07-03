@@ -66,16 +66,16 @@ class TicketMainPage(ctk.CTkFrame):
         self.main_frame = ctk.CTkFrame(self, fg_color="#f2efea")
         self.main_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 0), pady=0)
         self.main_frame.grid_columnconfigure(0, weight=2)  # Product panel takes more space
-        self.main_frame.grid_columnconfigure(1, weight=0)  # Ticket panel column does not expand
+        self.main_frame.grid_columnconfigure(1, weight=1)  # Ticket panel
         self.main_frame.grid_rowconfigure(0, weight=1)
         
         # Product panel (left side)
         self.product_panel = ProductPanel(self.main_frame, on_product_click=self.handle_product_click)
         self.product_panel.grid(row=0, column=0, sticky="nsew", padx=(10, 5), pady=10)
         
-        # Ticket panel (right side, fixed width)
+        # Ticket panel (right side)
         self.ticket_panel = TicketPanel(self.main_frame)
-        self.ticket_panel.grid(row=0, column=1, sticky="ns", padx=(5, 10), pady=10)
+        self.ticket_panel.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
         
         # Set charge callback
         self.ticket_panel.set_charge_callback(self.handle_charge)
@@ -85,10 +85,6 @@ class TicketMainPage(ctk.CTkFrame):
         print(f"Product clicked: {cart_item}")  # Debug print
         
         try:
-            # Check if product type is available
-            if not cart_item.get("product_type_id") and not cart_item.get("unit_price"):
-                messagebox.showerror("Product Not Available", "This product does not have a type or price set yet. Please set it up in the inventory.")
-                return
             # Check if this exact item already exists in cart
             existing_item_detail = self.find_existing_item(cart_item)
             
@@ -360,30 +356,23 @@ class TicketMainPage(ctk.CTkFrame):
     def clear_cart(self):
         """Clear the shopping cart"""
         try:
+            # Clear cart items
             self.cart_items = []
             self.current_total = 0.0
-            self.ticket_panel.clear_cart()
+            
+            # Clear ticket panel
+            self.ticket_panel.clear_items()
             self.ticket_panel.update_total(0.0)
+            
+            # Reset cash received
+            self.ticket_panel.cash_received = 0
+            self.ticket_panel.cash_received_display.configure(text="₱ 0")
+            self.ticket_panel.update_change()
+            
             print("Cart cleared successfully")
+            
         except Exception as e:
             print(f"Error clearing cart: {e}")
-
-    def refresh(self):
-        """Refresh the ticket page - reload products and clear cart"""
-        print("Refreshing Ticket page...")
-        try:
-            # Refresh product panel
-            if hasattr(self, 'product_panel'):
-                self.product_panel.refresh_products()
-            # Clear the current cart
-            self.clear_cart()
-        except Exception as e:
-            print(f"Error refreshing ticket page: {e}")
-
-    def refresh_products(self):
-        """Refresh only the product list"""
-        if hasattr(self, 'product_panel'):
-            self.product_panel.refresh_products()
 
     # Navigation methods
     def show_ticket(self):

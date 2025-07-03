@@ -41,6 +41,9 @@ class CashBoxApp(ctk.CTkFrame):
         self.cash_sales_amount = cashbox_data['cash_sales_amount']
         self.cash_expenses_amount = cashbox_data['cash_expenses_amount']
         self.non_cash_expenses_amount = cashbox_data['non_cash_expenses_amount']
+        # Calculate net profit as: (cash + gcash + maya) - (cash expenses + non-cash expenses)
+        # This will be displayed as "NET PROFIT" in the UI
+        self.net_profit = (self.cash_amount + self.gcash_amount + self.maya_amount) - (self.cash_expenses_amount + self.non_cash_expenses_amount)
         self.expenses = self.controller.get_expenses_by_date(self.current_date)
 
     def on_closing(self):
@@ -126,15 +129,13 @@ class CashBoxApp(ctk.CTkFrame):
         cards_container.grid_propagate(False)
         cards_container.grid_rowconfigure(0, weight=1)
         cards_container.grid_columnconfigure(0, weight=1)
-        # Inner grid for cards: 2 columns, 3 rows
+        # Inner grid for cards: 2 columns, 4 rows
         cards_frame = ctk.CTkFrame(cards_container, fg_color="transparent")
         cards_frame.grid(row=0, column=0, sticky="nsew", padx=24, pady=24)
-        for i in range(3):
+        for i in range(4):
             cards_frame.grid_rowconfigure(i, weight=1, uniform="row")
         for i in range(2):
             cards_frame.grid_columnconfigure(i, weight=1, uniform="col")
-        for i in range(4):
-            cards_frame.grid_rowconfigure(i, weight=1, uniform="row")
         
         # Update payment methods with current data
         payment_methods = [
@@ -142,11 +143,11 @@ class CashBoxApp(ctk.CTkFrame):
             ("GCASH", self.gcash_amount, "#0091f7", "gcash.png"),
             ("PETTY CASH", self.petty_cash_amount, "#6B3F19", "cash.png"),
             ("MAYA", self.maya_amount, "#00894c", "maya.png"),
-            ("NET PROFIT", self.cash_sales_amount, "#6B3F19", "cash.png"),
+            ("NET PROFIT", self.net_profit, "#6B3F19", "cash.png"),
             ("CASH EXPENSES", self.cash_expenses_amount, "#6B3F19", "cash.png"),
             ("NON - CASH EXPENSES", self.non_cash_expenses_amount, "#6B3F19", "cash.png"),
         ]
-        # Arrange as 2 columns, 3 rows (first 6 cards)
+        # Arrange as 2 columns: first 6 cards in rows 0-2
         for idx, (method, amount, color, icon_file) in enumerate(payment_methods[:6]):
             row = idx // 2
             col = idx % 2

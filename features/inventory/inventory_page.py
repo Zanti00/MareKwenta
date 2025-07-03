@@ -345,7 +345,8 @@ class InventoryManagement(ctk.CTkFrame):
                 ingredient_name, amount_stock, measurement, cost, restock_point
             )
             if success:
-                self.refresh()  # Use refresh method instead of individual calls
+                self.clear_input_fields()
+                self.load_inventory_from_db()  # Reload from DB
                 messagebox.showinfo("Success", f"Ingredient '{ingredient_name}' saved successfully!")
             else:
                 messagebox.showerror("Error", "Failed to save ingredient to database.")
@@ -394,7 +395,7 @@ class InventoryManagement(ctk.CTkFrame):
                         if inventory_id is not None:
                             success = InventoryController.update_quantity_by_id(inventory_id, new_qty)
                             if success:
-                                self.refresh_inventory_list()
+                                self.load_inventory_from_db()
                                 messagebox.showinfo("Success", "Quantity updated successfully!")
                             else:
                                 messagebox.showerror("Error", "Failed to update quantity in database.")
@@ -414,7 +415,7 @@ class InventoryManagement(ctk.CTkFrame):
                             inventory_id, name, qty, measurement, cost, restock_point
                         )
                         if success:
-                            self.refresh_inventory_list()
+                            self.load_inventory_from_db()
                             messagebox.showinfo("Success", f"Ingredient '{name}' updated successfully!")
                         else:
                             messagebox.showerror("Error", "Failed to update ingredient in database.")
@@ -432,7 +433,8 @@ class InventoryManagement(ctk.CTkFrame):
                         success = InventoryController.delete_inventory_by_id(inventory_id)
                         if success:
                             print(f"Deleted ingredient with id {inventory_id}")
-                            self.refresh_inventory_list()
+                            self.inventory_data.pop(index)
+                            self.display_inventory_items()
                             messagebox.showinfo("Success", "Ingredient deleted successfully!")
                         else:
                             messagebox.showerror("Error", "Failed to delete ingredient from database.")
@@ -457,7 +459,6 @@ class InventoryManagement(ctk.CTkFrame):
     
     def show_inventory(self):
         self.main_app.show_frame("inventory")
-        self.refresh()
     
     def show_staff(self):
         self.main_app.show_frame("staff")
@@ -515,14 +516,3 @@ class InventoryManagement(ctk.CTkFrame):
         except Exception as e:
             print(f"Error loading inventory from DB: {e}")
             messagebox.showerror("Error", f"Failed to load inventory from database: {e}")
-
-    def refresh(self):
-        """Refresh the inventory data and update the UI."""
-        print("Refreshing Inventory data...")
-        self.load_inventory_from_db()
-        # Clear input fields after refresh
-        self.clear_input_fields()
-
-    def refresh_inventory_list(self):
-        """Refresh only the inventory list display"""
-        self.load_inventory_from_db()
