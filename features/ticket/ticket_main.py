@@ -380,6 +380,18 @@ class TicketMainPage(ctk.CTkFrame):
         except Exception as e:
             print(f"Error clearing cart: {e}")
 
+    def refresh(self):
+        """Refresh the ticket page - mainly refreshes the product panel to show new products"""
+        try:
+            if hasattr(self, 'product_panel') and hasattr(self.product_panel, 'refresh'):
+                self.product_panel.refresh()
+                print("Product panel refreshed successfully")
+                # Force a UI update
+                self.product_panel.update_idletasks()
+                self.update_idletasks()
+        except Exception as e:
+            print(f"Error refreshing ticket page: {e}")
+
     # Navigation methods
     def show_ticket(self):
         pass  # Already on this page, do nothing!

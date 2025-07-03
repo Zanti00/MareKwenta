@@ -31,12 +31,20 @@ class ProductPanel(ctk.CTkFrame):
     def load_products_from_db(self):
         """Load products from the database grouped by product, not by variant"""
         try:
+            print("ProductPanel: Loading products from database...")
+            
+            # Import ProductController here to avoid circular imports
+            sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'inventory'))
+            from inventory.product_controller import ProductController
+            
             db_products = ProductController.get_all_products()
+            print(f"ProductPanel: Retrieved {len(db_products)} products from database")
             self.products = []
             
             for product in db_products:
                 # Get all product types for this product to check if it has pricing
                 product_types = ProductController.get_product_types_by_product_id(product['product_id'])
+                print(f"ProductPanel: Product '{product['name']}' has {len(product_types)} product types")
                 
                 if product_types:
                     # Product has variants with pricing - show as single product
@@ -64,6 +72,7 @@ class ProductPanel(ctk.CTkFrame):
                     })
                 else:
                     # Product with no types yet - show as unavailable
+                    print(f"ProductPanel: Product '{product['name']}' has no product types, showing as unavailable")
                     self.products.append({
                         "name": product['name'],
                         "image": product.get('image', 'default.png'),
@@ -74,9 +83,13 @@ class ProductPanel(ctk.CTkFrame):
                         "product_id": product['product_id'],
                         "product_types": []
                     })
+            
+            print(f"ProductPanel: Processed {len(self.products)} products total")
                     
         except Exception as e:
             print(f"Error loading products from database: {e}")
+            import traceback
+            traceback.print_exc()
             self.products = []
 
     def create_tabs(self):
@@ -120,8 +133,12 @@ class ProductPanel(ctk.CTkFrame):
         
         self.filtered_products = [p for p in self.products if category == "All" or p["category"] == category]
 
+        # Clear existing widgets
         for widget in self.product_container.winfo_children():
             widget.destroy()
+
+        # Force update to ensure widgets are properly destroyed
+        self.product_container.update_idletasks()
 
         row = 0
         col = 0
@@ -147,6 +164,10 @@ class ProductPanel(ctk.CTkFrame):
             if col >= max_cols:
                 col = 0
                 row += 1
+
+        # Force update to ensure new widgets are properly displayed
+        self.product_container.update_idletasks()
+        self.update_idletasks()
 
     def handle_product_click(self, product):
         """Handle product click - show modifier popup for beverages, quantity popup for food"""
@@ -258,7 +279,12 @@ class ProductPanel(ctk.CTkFrame):
             on_submit=on_modifier_submit
         )
 
-    def refresh_products(self):
+    def refresh(self):
         """Refresh the product list from database"""
+        print("ProductPanel: Starting refresh...")
+        old_count = len(self.products)
         self.load_products_from_db()
+        new_count = len(self.products)
+        print(f"ProductPanel: Loaded {new_count} products (was {old_count})")
         self.filter_products(self.current_tab)
+        print(f"ProductPanel: Filtered to {len(self.filtered_products)} products for tab '{self.current_tab}'")
