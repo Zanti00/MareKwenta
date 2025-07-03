@@ -356,23 +356,30 @@ class TicketMainPage(ctk.CTkFrame):
     def clear_cart(self):
         """Clear the shopping cart"""
         try:
-            # Clear cart items
             self.cart_items = []
             self.current_total = 0.0
-            
-            # Clear ticket panel
-            self.ticket_panel.clear_items()
+            self.ticket_panel.clear_cart()
             self.ticket_panel.update_total(0.0)
-            
-            # Reset cash received
-            self.ticket_panel.cash_received = 0
-            self.ticket_panel.cash_received_display.configure(text="₱ 0")
-            self.ticket_panel.update_change()
-            
             print("Cart cleared successfully")
-            
         except Exception as e:
             print(f"Error clearing cart: {e}")
+
+    def refresh(self):
+        """Refresh the ticket page - reload products and clear cart"""
+        print("Refreshing Ticket page...")
+        try:
+            # Refresh product panel
+            if hasattr(self, 'product_panel'):
+                self.product_panel.refresh_products()
+            # Clear the current cart
+            self.clear_cart()
+        except Exception as e:
+            print(f"Error refreshing ticket page: {e}")
+
+    def refresh_products(self):
+        """Refresh only the product list"""
+        if hasattr(self, 'product_panel'):
+            self.product_panel.refresh_products()
 
     # Navigation methods
     def show_ticket(self):

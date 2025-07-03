@@ -258,3 +258,8 @@ class ProductPanel(ctk.CTkFrame):
         """Refresh the product list from database"""
         self.load_products_from_db()
         self.filter_products(self.current_tab)
+
+    def refresh(self):
+        """Refresh the product panel"""
+        print("Refreshing Product Panel...")
+        self.refresh_products()
