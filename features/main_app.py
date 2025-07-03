@@ -50,7 +50,10 @@ class MainApp(ctk.CTk):
         for frame in self.frames.values():
             frame.grid(row=0, column=0, sticky="nsew")
 
-        self.show_frame("ticket")
+        if self.user_role == "admin":
+            self.show_frame("inventory")
+        else:
+            self.show_frame("ticket")
 
     def show_frame(self, page_name):
         frame = self.frames[page_name]
