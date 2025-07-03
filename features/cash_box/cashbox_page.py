@@ -254,9 +254,10 @@ class CashBoxApp(ctk.CTkFrame):
             expense_container,
             fg_color="transparent",
             border_width=0,  # Ensure no border
-            corner_radius=0
+            corner_radius=0,
+            width=370  # Set fixed width to prevent overlap
         )
-        self.expense_list_frame.grid(row=1, column=0, sticky="nsew", padx=0, pady=(0, 20))
+        self.expense_list_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 20))  # Add horizontal padding
         self.expense_list_frame.grid_columnconfigure(0, weight=1)
         self.refresh_expense_list()
         

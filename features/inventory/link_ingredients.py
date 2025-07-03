@@ -64,8 +64,15 @@ class AddProductDialog:
         name_label = ctk.CTkLabel(card, text="Product Name", font=ctk.CTkFont("Unbounded", 15, "bold"), text_color="#4d2d18")
         name_label.grid(row=card_row, column=0, sticky="w", padx=16, pady=(8, 2))
         card_row += 1
+        def limit_length(P):
+            if len(P) > 12:
+                messagebox.showwarning("Limit Exceeded", "Product name can only be up to 12 characters.")
+                return False
+            return True
+        vcmd = self.dialog.register(limit_length)
         self.name_entry = ctk.CTkEntry(card, width=300, height=38, font=ctk.CTkFont("Inter", 14), 
-                                      corner_radius=10, fg_color="#f7f3ee")
+                                      corner_radius=10, fg_color="#f7f3ee",
+                                      validate="key", validatecommand=(vcmd, '%P'))
         self.name_entry.grid(row=card_row, column=0, padx=16, pady=(0, 10), sticky="ew")
         card_row += 1
 
