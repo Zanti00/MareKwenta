@@ -530,21 +530,12 @@ class LinkIngredientsPage(ctk.CTkFrame):
         self.user_role = user_role
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
-        # either remove this three lines or use parent widget 
-        # self.parent_widget = parent
-        # then 
-        # self.parent_widget.grid_columnconfigure(1, weight=1)
-        # self.parent_widget.grid_rowconfigure(0, weight=1)
-        # self.parent_widget.protocol("WM_DELETE_WINDOW", self.on_closing)
-        
-        # remove this
-        # self.grid_columnconfigure(1, weight=1)
-        # self.grid_rowconfigure(0, weight=1)
-        # self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.configure(fg_color="#f2efea")
         self.products = []  # Will be loaded from database
         self.linked_ingredients = {}
         self.setup_ui()
         self.load_products_from_db()
+
 
     def on_closing(self):
         try:
