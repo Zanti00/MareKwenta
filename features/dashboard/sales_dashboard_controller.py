@@ -716,6 +716,385 @@ class SalesDashboardController:
                 'error': str(e)
             }
 
+    def get_sales_by_category(self, periodicity: str, date_selection: str) -> Dict[str, any]:
+        """
+        Fetch sales data grouped by product category
+        Returns dictionary with sales breakdown by category
+        """
+        print(f"\nDEBUG: ======== Getting sales by category for {periodicity} - {date_selection} ========")
+        
+        start_date, end_date = self._parse_date_selection(periodicity, date_selection)
+        
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            
+            print(f"DEBUG: Querying sales by category between {start_date} and {end_date}")
+            
+            # Get sales by category with detailed metrics
+            query = """
+                SELECT 
+                    p.category,
+                    COUNT(DISTINCT t.ticket_id) as tickets_count,
+                    SUM(tl.product_quantity) as items_sold,
+                    SUM(tl.unit_selling_price * tl.product_quantity) as total_revenue,
+                    SUM(pt.unit_price * tl.product_quantity) as total_cogs,
+                    AVG(tl.unit_selling_price) as avg_selling_price,
+                    AVG(pt.unit_price) as avg_unit_cost
+                FROM ticket_line tl
+                JOIN product_type pt ON tl.product_type_id = pt.product_type_id
+                JOIN products p ON pt.product_id = p.product_id
+                JOIN ticket t ON tl.ticket_id = t.ticket_id
+                WHERE DATE(t.ticket_date) BETWEEN ? AND ?
+                GROUP BY p.category
+                ORDER BY total_revenue DESC
+            """
+            print(f"DEBUG: Executing sales by category query: {query}")
+            print(f"DEBUG: Query parameters: {start_date}, {end_date}")
+            
+            cursor.execute(query, (start_date, end_date))
+            results = cursor.fetchall()
+            print(f"DEBUG: Sales by category results: {results}")
+            
+            # Calculate totals for percentage calculations
+            total_revenue = sum(row[3] for row in results)
+            total_items = sum(row[2] for row in results)
+            
+            category_data = []
+            for row in results:
+                category, tickets_count, items_sold, revenue, cogs, avg_selling, avg_cost = row
+                gross_profit = float(revenue) - float(cogs)
+                gross_margin = (gross_profit / float(revenue) * 100) if revenue > 0 else 0
+                revenue_percentage = (float(revenue) / total_revenue * 100) if total_revenue > 0 else 0
+                items_percentage = (items_sold / total_items * 100) if total_items > 0 else 0
+                
+                category_data.append({
+                    'category': category,
+                    'tickets_count': tickets_count,
+                    'items_sold': items_sold,
+                    'total_revenue': float(revenue),
+                    'total_cogs': float(cogs),
+                    'gross_profit': gross_profit,
+                    'gross_margin': gross_margin,
+                    'avg_selling_price': float(avg_selling),
+                    'avg_unit_cost': float(avg_cost),
+                    'revenue_percentage': revenue_percentage,
+                    'items_percentage': items_percentage
+                })
+            
+            # Get top selling categories for chart
+            top_categories = category_data[:5]  # Top 5 categories
+            
+            conn.close()
+            
+            result_data = {
+                'category_breakdown': category_data,
+                'top_categories': top_categories,
+                'total_revenue': total_revenue,
+                'total_items': total_items,
+                'date_range': {
+                    'start': start_date,
+                    'end': end_date,
+                    'periodicity': periodicity
+                }
+            }
+            
+            print(f"DEBUG: Final sales by category data: {result_data}")
+            return result_data
+            
+        except sqlite3.Error as e:
+            print(f"DEBUG: Database error while fetching sales by category: {e}")
+            return {
+                'category_breakdown': [],
+                'top_categories': [],
+                'total_revenue': 0,
+                'total_items': 0,
+                'date_range': {
+                    'start': start_date,
+                    'end': end_date,
+                    'periodicity': periodicity
+                },
+                'error': str(e)
+            }
+
+    def get_sales_by_product(self, periodicity: str, date_selection: str) -> Dict[str, any]:
+        """
+        Fetch sales data grouped by specific products
+        Returns dictionary with sales breakdown by individual products
+        """
+        print(f"\nDEBUG: ======== Getting sales by product for {periodicity} - {date_selection} ========")
+        
+        start_date, end_date = self._parse_date_selection(periodicity, date_selection)
+        
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            
+            print(f"DEBUG: Querying sales by product between {start_date} and {end_date}")
+            
+            # Get sales by individual products with detailed metrics
+            query = """
+                SELECT 
+                    p.product_name,
+                    p.category,
+                    pt.size,
+                    pt.temperature,
+                    COUNT(DISTINCT t.ticket_id) as tickets_count,
+                    SUM(tl.product_quantity) as items_sold,
+                    SUM(tl.unit_selling_price * tl.product_quantity) as total_revenue,
+                    SUM(pt.unit_price * tl.product_quantity) as total_cogs,
+                    AVG(tl.unit_selling_price) as avg_selling_price,
+                    AVG(pt.unit_price) as avg_unit_cost,
+                    SUM(tl.extra_shots) as total_extra_shots,
+                    SUM(tl.whipped_cream) as total_whipped_cream
+                FROM ticket_line tl
+                JOIN product_type pt ON tl.product_type_id = pt.product_type_id
+                JOIN products p ON pt.product_id = p.product_id
+                JOIN ticket t ON tl.ticket_id = t.ticket_id
+                WHERE DATE(t.ticket_date) BETWEEN ? AND ?
+                GROUP BY p.product_name, p.category, pt.size, pt.temperature, pt.product_type_id
+                ORDER BY total_revenue DESC
+            """
+            print(f"DEBUG: Executing sales by product query: {query}")
+            print(f"DEBUG: Query parameters: {start_date}, {end_date}")
+            
+            cursor.execute(query, (start_date, end_date))
+            results = cursor.fetchall()
+            print(f"DEBUG: Sales by product results: {results}")
+            
+            # Calculate totals for percentage calculations
+            total_revenue = sum(row[6] for row in results)
+            total_items = sum(row[5] for row in results)
+            
+            product_data = []
+            for row in results:
+                (product_name, category, size, temperature, tickets_count, items_sold, 
+                 revenue, cogs, avg_selling, avg_cost, extra_shots, whipped_cream) = row
+                
+                gross_profit = float(revenue) - float(cogs)
+                gross_margin = (gross_profit / float(revenue) * 100) if revenue > 0 else 0
+                revenue_percentage = (float(revenue) / total_revenue * 100) if total_revenue > 0 else 0
+                items_percentage = (items_sold / total_items * 100) if total_items > 0 else 0
+                
+                # Create product display name
+                product_display = f"{product_name}"
+                if size or temperature:
+                    details = []
+                    if size: details.append(size)
+                    if temperature: details.append(temperature)
+                    product_display += f" ({', '.join(details)})"
+                
+                product_data.append({
+                    'product_name': product_name,
+                    'product_display': product_display,
+                    'category': category,
+                    'size': size,
+                    'temperature': temperature,
+                    'tickets_count': tickets_count,
+                    'items_sold': items_sold,
+                    'total_revenue': float(revenue),
+                    'total_cogs': float(cogs),
+                    'gross_profit': gross_profit,
+                    'gross_margin': gross_margin,
+                    'avg_selling_price': float(avg_selling),
+                    'avg_unit_cost': float(avg_cost),
+                    'revenue_percentage': revenue_percentage,
+                    'items_percentage': items_percentage,
+                    'total_extra_shots': extra_shots,
+                    'total_whipped_cream': whipped_cream
+                })
+            
+            # Get top selling products for chart
+            top_products = product_data[:10]  # Top 10 products
+            
+            conn.close()
+            
+            result_data = {
+                'product_breakdown': product_data,
+                'top_products': top_products,
+                'total_revenue': total_revenue,
+                'total_items': total_items,
+                'date_range': {
+                    'start': start_date,
+                    'end': end_date,
+                    'periodicity': periodicity
+                }
+            }
+            
+            print(f"DEBUG: Final sales by product data: {result_data}")
+            return result_data
+            
+        except sqlite3.Error as e:
+            print(f"DEBUG: Database error while fetching sales by product: {e}")
+            return {
+                'product_breakdown': [],
+                'top_products': [],
+                'total_revenue': 0,
+                'total_items': 0,
+                'date_range': {
+                    'start': start_date,
+                    'end': end_date,
+                    'periodicity': periodicity
+                },
+                'error': str(e)
+            }
+
+    def get_sales_trend(self, periodicity: str, date_selection: str, periods: int = 7) -> Dict[str, any]:
+        """
+        Get sales trend data for chart display
+        Returns revenue data for the specified number of periods
+        """
+        print(f"\nDEBUG: ======== Getting sales trend for {periodicity} - {date_selection} ========")
+        
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            
+            if periodicity == "Daily":
+                # Get daily revenue for the last 'periods' days
+                selected_date = datetime.datetime.strptime(date_selection, "%B %d, %Y").date()
+                
+                # Generate date range
+                dates = [(selected_date - datetime.timedelta(days=i)) for i in range(periods-1, -1, -1)]
+                
+                trend_data = []
+                for d in dates:
+                    query = """
+                        SELECT 
+                            COALESCE(SUM(total_amount), 0) as daily_revenue,
+                            COUNT(*) as daily_tickets
+                        FROM ticket 
+                        WHERE DATE(ticket_date) = ?
+                    """
+                    cursor.execute(query, (d.strftime("%Y-%m-%d"),))
+                    result = cursor.fetchone()
+                    
+                    trend_data.append({
+                        'date': d,
+                        'label': d.strftime("%b %d"),
+                        'revenue': float(result[0]) if result else 0,
+                        'tickets': result[1] if result else 0
+                    })
+                    
+            elif periodicity == "Monthly":
+                # Get monthly revenue for the last 'periods' months
+                selected_date = datetime.datetime.strptime(date_selection, "%B %Y").date()
+                
+                trend_data = []
+                for i in range(periods-1, -1, -1):
+                    # Calculate month
+                    month_date = selected_date
+                    if i > 0:
+                        # Go back i months
+                        year = selected_date.year
+                        month = selected_date.month - i
+                        while month <= 0:
+                            month += 12
+                            year -= 1
+                        month_date = datetime.date(year, month, 1)
+                    
+                    # Get start and end of month
+                    start_date = month_date.replace(day=1)
+                    if month_date.month == 12:
+                        end_date = month_date.replace(year=month_date.year + 1, month=1, day=1) - datetime.timedelta(days=1)
+                    else:
+                        end_date = month_date.replace(month=month_date.month + 1, day=1) - datetime.timedelta(days=1)
+                    
+                    query = """
+                        SELECT 
+                            COALESCE(SUM(total_amount), 0) as monthly_revenue,
+                            COUNT(*) as monthly_tickets
+                        FROM ticket 
+                        WHERE DATE(ticket_date) BETWEEN ? AND ?
+                    """
+                    cursor.execute(query, (start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")))
+                    result = cursor.fetchone()
+                    
+                    trend_data.append({
+                        'date': month_date,
+                        'label': month_date.strftime("%b %Y"),
+                        'revenue': float(result[0]) if result else 0,
+                        'tickets': result[1] if result else 0
+                    })
+                    
+            elif periodicity == "Yearly":
+                # Get yearly revenue for the last 'periods' years
+                selected_year = int(date_selection)
+                
+                trend_data = []
+                for i in range(periods-1, -1, -1):
+                    year = selected_year - i
+                    
+                    query = """
+                        SELECT 
+                            COALESCE(SUM(total_amount), 0) as yearly_revenue,
+                            COUNT(*) as yearly_tickets
+                        FROM ticket 
+                        WHERE strftime('%Y', ticket_date) = ?
+                    """
+                    cursor.execute(query, (str(year),))
+                    result = cursor.fetchone()
+                    
+                    trend_data.append({
+                        'date': datetime.date(year, 1, 1),
+                        'label': str(year),
+                        'revenue': float(result[0]) if result else 0,
+                        'tickets': result[1] if result else 0
+                    })
+                    
+            else:  # Weekly - simplified approach
+                # Get last few weeks of data
+                selected_date = datetime.datetime.strptime(date_selection.split('(')[1].split(')')[0], "%b %d").date()
+                selected_date = selected_date.replace(year=datetime.date.today().year)
+                
+                trend_data = []
+                for i in range(periods-1, -1, -1):
+                    week_start = selected_date - datetime.timedelta(weeks=i)
+                    week_end = week_start + datetime.timedelta(days=6)
+                    
+                    query = """
+                        SELECT 
+                            COALESCE(SUM(total_amount), 0) as weekly_revenue,
+                            COUNT(*) as weekly_tickets
+                        FROM ticket 
+                        WHERE DATE(ticket_date) BETWEEN ? AND ?
+                    """
+                    cursor.execute(query, (week_start.strftime("%Y-%m-%d"), week_end.strftime("%Y-%m-%d")))
+                    result = cursor.fetchone()
+                    
+                    trend_data.append({
+                        'date': week_start,
+                        'label': f"Week {i+1}",
+                        'revenue': float(result[0]) if result else 0,
+                        'tickets': result[1] if result else 0
+                    })
+            
+            conn.close()
+            
+            result_data = {
+                'trend_data': trend_data,
+                'total_revenue': sum(item['revenue'] for item in trend_data),
+                'total_tickets': sum(item['tickets'] for item in trend_data),
+                'avg_revenue': sum(item['revenue'] for item in trend_data) / len(trend_data) if trend_data else 0,
+                'periodicity': periodicity,
+                'periods': periods
+            }
+            
+            print(f"DEBUG: Sales trend data: {result_data}")
+            return result_data
+            
+        except Exception as e:
+            print(f"DEBUG: Error while fetching sales trend: {e}")
+            return {
+                'trend_data': [],
+                'total_revenue': 0,
+                'total_tickets': 0,
+                'avg_revenue': 0,
+                'periodicity': periodicity,
+                'periods': periods,
+                'error': str(e)
+            }
+
     def format_currency(self, amount: float) -> str:
         """Format amount as Philippine Peso currency"""
         return f"₱ {amount:,.2f}"
