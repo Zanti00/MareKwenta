@@ -23,7 +23,7 @@ class TicketPanel(ctk.CTkFrame):
         ctk.CTkLabel(header_frame, text="Ticket", font=("Unbounded", 24), text_color="#4d2d18").pack(anchor="w")
 
         # === Item List ===
-        self.item_list_scroll = ctk.CTkScrollableFrame(self, fg_color="transparent", width=260)
+        self.item_list_scroll = ctk.CTkScrollableFrame(self, fg_color="transparent", width=100)
         self.item_list_scroll.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
         self.add_item_detail("Americano", 3, "Grande", "Iced", "Whipped Cream", 90.00)
 
