@@ -247,8 +247,8 @@ class ProductPanel(ctk.CTkFrame):
                 "unit_price": selected_type['selling_price'],
                 "product_type_id": selected_type['product_type_id']
             }
-            if self.on_product_click:
-                self.on_product_click(cart_item)
+            if self.on_product_click_callback:
+                self.on_product_click_callback(cart_item)
         
         ModifierPopup(
             self.master, 
