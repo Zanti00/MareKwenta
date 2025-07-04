@@ -45,16 +45,21 @@ class TicketPanel(ctk.CTkFrame):
         # === Tabs (Change / Discount) ===
         self.tab_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.tab_frame.grid(row=3, column=0, sticky="ew", pady=(10, 5))
+        # Add empty columns to center the buttons inside tab_frame
+        self.tab_frame.grid_columnconfigure(0, weight=1)
+        self.tab_frame.grid_columnconfigure(1, weight=0)
+        self.tab_frame.grid_columnconfigure(2, weight=0)
+        self.tab_frame.grid_columnconfigure(3, weight=1)
 
         self.change_tab_btn = ctk.CTkButton(self.tab_frame, text="Change", width=100,
                                             command=lambda: self.switch_tab(0), hover_color="#e8e4df",
                                             font=("Unbounded", 14), fg_color="#f2efea", text_color="#4e2d18")
-        self.change_tab_btn.grid(row=0, column=0, padx=10)
+        self.change_tab_btn.grid(row=0, column=1, padx=10)
 
         self.discount_tab_btn = ctk.CTkButton(self.tab_frame, text="Discount", width=100,
                                               command=lambda: self.switch_tab(1), hover_color="#e8e4df",
                                               font=("Unbounded", 14), fg_color="#f2efea", text_color="#4e2d18")
-        self.discount_tab_btn.grid(row=0, column=1, padx=10)
+        self.discount_tab_btn.grid(row=0, column=2, padx=10)
 
         self.tab_content_container = ctk.CTkFrame(self, fg_color="transparent")
         self.tab_content_container.grid(row=4, column=0, sticky="ew", padx=0, pady=(0, 5))  # Remove padx here too
