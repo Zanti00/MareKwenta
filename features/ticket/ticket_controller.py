@@ -1,6 +1,7 @@
 import sqlite3
 import os
 from datetime import datetime
+from tkinter import messagebox
 
 class TicketController:
     @staticmethod
@@ -27,13 +28,11 @@ class TicketController:
         # First, check if we have enough inventory
         has_enough, error_msg = RecipeController.check_inventory_availability(cart_items)
         if not has_enough:
-            print(f"Insufficient inventory: {error_msg}")
             return None, error_msg
         
         # Get database connection
         conn = TicketController.connect_db()
         if conn is None:
-            print("Failed to connect to database")
             return None, "Database connection failed"
             
         try:
@@ -42,8 +41,6 @@ class TicketController:
             # Calculate line price (subtotal before discount)
             line_price = sum((item["quantity"] * item["unit_price"]) + (item["quantity"] * item.get("extras_cost", 0)) for item in cart_items)
             
-            print(f"Creating ticket: employee_id={employee_id}, line_price={line_price}, final_total={total_amount}, discount={discount}, payment_type={payment_type}")
-            
             # Insert main ticket record
             cursor.execute("""
                 INSERT INTO ticket (employee_id, line_price, total_amount, change, discount, ticket_date)
@@ -51,7 +48,6 @@ class TicketController:
             """, (employee_id, round(line_price, 2), round(total_amount, 2), round(change, 2), round(discount, 2), datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             
             ticket_id = cursor.lastrowid
-            print(f"Ticket created with ID: {ticket_id}, line_price: ₱{line_price:.2f}, total_amount: ₱{total_amount:.2f}, discount: ₱{discount:.2f}")
             
             # Insert ticket lines for each cart item
             for item in cart_items:
@@ -84,7 +80,6 @@ class TicketController:
                     VALUES (?, ?, ?, ?, ?, ?)
                 """, (ticket_id, item["product_type_id"], item["quantity"], round(unit_selling_price, 2), extra_shots, whipped_cream))
                 
-                print(f"Added line: product_type_id={item['product_type_id']}, qty={item['quantity']}, price={unit_selling_price}, extra_shots={extra_shots}, whipped_cream={whipped_cream}")
             
             # Handle payment records
             if payment_type == "Split" and split_payments:
@@ -95,15 +90,12 @@ class TicketController:
                         VALUES (?, ?, ?)
                     """, (ticket_id, payment["payment_type"], round(payment["payment_amount"], 2)))
                     
-                    print(f"Added split payment: {payment['payment_type']} ₱{payment['payment_amount']:.2f}")
             else:
                 # Insert single payment record
                 cursor.execute("""
                     INSERT INTO ticket_payment (ticket_id, payment_type, payment_amount)
                     VALUES (?, ?, ?)
                 """, (ticket_id, payment_type, round(cash_received, 2)))
-                
-                print(f"Added payment: {payment_type} ₱{cash_received:.2f}")
             
             # Commit the ticket creation first
             conn.commit()
@@ -113,14 +105,10 @@ class TicketController:
             # Now deduct inventory using a separate connection to avoid locks
             inventory_deducted = RecipeController.deduct_inventory(cart_items)
             if not inventory_deducted:
-                print("Warning: Failed to deduct inventory, but ticket was created")
-                # Note: You might want to implement a rollback mechanism here or add to a queue for retry
-            
-            print(f"Ticket {ticket_id} created successfully with discount: ₱{discount:.2f}")
+                messagebox.showwarning("Warning: Failed to deduct inventory, but ticket was created")
             return ticket_id, None
             
         except Exception as e:
-            print(f"Error creating ticket: {e}")
             conn.rollback()
             return None, f"Error creating ticket: {e}"
         finally:
@@ -132,11 +120,9 @@ class TicketController:
     @staticmethod
     def get_ticket_details(ticket_id):
         """Get complete ticket details including lines and payment"""
-        print(f"Retrieving ticket details for ID: {ticket_id}")
         
         conn = TicketController.connect_db()
         if conn is None:
-            print("Failed to connect to database")
             return None
             
         try:
@@ -154,10 +140,8 @@ class TicketController:
             
             ticket_row = cursor.fetchone()
             if not ticket_row:
-                print(f"No ticket found with ID: {ticket_id}")
                 return None
                 
-            print(f"Found ticket: {ticket_row}")
                 
             ticket_info = {
                 "ticket_id": ticket_row[0],
@@ -182,7 +166,6 @@ class TicketController:
             
             lines = []
             line_rows = cursor.fetchall()
-            print(f"Found {len(line_rows)} ticket lines")
             
             for line_row in line_rows:
                 lines.append({
@@ -202,7 +185,6 @@ class TicketController:
             
             payments = []
             payment_rows = cursor.fetchall()
-            print(f"Found {len(payment_rows)} payments")
             
             for payment_row in payment_rows:
                 payments.append({
@@ -214,11 +196,9 @@ class TicketController:
             ticket_info["payments"] = payments
             
             cursor.close()
-            print("Ticket details retrieved successfully")
             return ticket_info
             
         except Exception as e:
-            print(f"Error getting ticket details: {e}")
             import traceback
             traceback.print_exc()
             return None

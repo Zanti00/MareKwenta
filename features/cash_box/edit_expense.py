@@ -5,7 +5,7 @@ class EditExpenseDialog:
     def __init__(self, parent, expense_data, on_save=None):
         self.result = None
         self.on_save = on_save
-        self.expense_data = expense_data # Store original expense data including ID
+        self.expense_data = expense_data
         self.dialog = ctk.CTkToplevel(parent)
         self.dialog.title("Edit Expense")
         self.dialog.geometry("400x400")
@@ -72,7 +72,6 @@ class EditExpenseDialog:
         )
         category_label.grid(row=row, column=0, sticky="w", padx=40, pady=(8, 2))
         row += 1
-        # Radio buttons for category
         self.category_var = ctk.StringVar(value=expense_data["category"].upper())
         radio_frame = ctk.CTkFrame(self.dialog, fg_color="transparent")
         radio_frame.grid(row=row, column=0, sticky="w", padx=40, pady=(0, 8))
@@ -87,7 +86,6 @@ class EditExpenseDialog:
         )
         noncash_radio.grid(row=0, column=1, padx=0, pady=0)
         row += 1
-        # Button frame
         button_frame = ctk.CTkFrame(self.dialog, fg_color="transparent")
         button_frame.grid(row=row, column=0, pady=16)
         save_button = ctk.CTkButton(
@@ -128,9 +126,8 @@ class EditExpenseDialog:
             messagebox.showerror("Error", "Please enter a valid positive amount")
             return
         
-        # Include the original expense ID when saving
         updated_expense = {
-            "id": self.expense_data["id"], # Pass the ID back
+            "id": self.expense_data["id"],
             "name": name,
             "amount": amount,
             "category": category

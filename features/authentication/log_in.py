@@ -16,7 +16,6 @@ class LoginWindow(ctk.CTk):
         self.after(100, lambda: self.username.focus())
     
     def setup_window(self):
-        """Configure the login window"""
         self.title("MareKwenta POS")
         self.configure(fg_color="#CABA9C")
         taskbar_height = 70  # Adjust this value as needed

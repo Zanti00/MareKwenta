@@ -5,11 +5,8 @@ from typing import List, Dict, Optional, Tuple
 
 class SalesDashboardController:
     def __init__(self):
-        # Go up three levels: dashboard -> features -> project root
         self.base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         self.db_name = os.path.join(self.base_path, "mare_kwenta.db")
-        print(f"DEBUG: Database path: {self.db_name}")
-        print(f"DEBUG: Database exists: {os.path.exists(self.db_name)}")
         
     def _get_connection(self) -> sqlite3.Connection:
         """Get database connection"""
@@ -20,145 +17,85 @@ class SalesDashboardController:
         Parse the date selection based on periodicity and return start and end dates
         Returns tuple of (start_date, end_date) in 'YYYY-MM-DD' format
         """
-        print(f"DEBUG: Parsing date - Periodicity: {periodicity}, Selection: {date_selection}")
         
         today = datetime.date.today()
         
         if periodicity == "Daily":
-            # Parse "Month DD, YYYY" format
             try:
                 selected_date = datetime.datetime.strptime(date_selection, "%B %d, %Y").date()
                 result = selected_date.strftime("%Y-%m-%d"), selected_date.strftime("%Y-%m-%d")
-                print(f"DEBUG: Daily date parsed - Start: {result[0]}, End: {result[1]}")
                 return result
             except ValueError as e:
-                print(f"DEBUG: Date parsing failed: {e}")
                 fallback = today.strftime("%Y-%m-%d"), today.strftime("%Y-%m-%d")
-                print(f"DEBUG: Using fallback - Start: {fallback[0]}, End: {fallback[1]}")
                 return fallback
                 
         elif periodicity == "Weekly":
-            # Parse "Week X (Mon DD)" format and calculate week range
             try:
-                # Extract the date part from "Week X (Mon DD)"
                 import re
                 match = re.search(r'\((\w{3} \d{1,2})\)', date_selection)
                 if match:
                     date_str = match.group(1)
-                    # Add current year
                     date_with_year = f"{date_str} {today.year}"
                     selected_date = datetime.datetime.strptime(date_with_year, "%b %d %Y").date()
                     
-                    # Calculate start of week (Monday) and end of week (Sunday)
                     start_of_week = selected_date - datetime.timedelta(days=selected_date.weekday())
                     end_of_week = start_of_week + datetime.timedelta(days=6)
                     
                     result = start_of_week.strftime("%Y-%m-%d"), end_of_week.strftime("%Y-%m-%d")
-                    print(f"DEBUG: Weekly date parsed - Start: {result[0]}, End: {result[1]}")
                     return result
             except (ValueError, AttributeError) as e:
-                print(f"DEBUG: Weekly date parsing failed: {e}")
+                print(f"An error has occurred: {e}")
             fallback = today.strftime("%Y-%m-%d"), today.strftime("%Y-%m-%d")
-            print(f"DEBUG: Using fallback - Start: {fallback[0]}, End: {fallback[1]}")
             return fallback
             
         elif periodicity == "Monthly":
-            # Parse "Month YYYY" format
             try:
                 selected_date = datetime.datetime.strptime(date_selection, "%B %Y").date()
-                # First day of the month
                 start_date = selected_date.replace(day=1)
-                # Last day of the month
                 if selected_date.month == 12:
                     end_date = selected_date.replace(year=selected_date.year + 1, month=1, day=1) - datetime.timedelta(days=1)
                 else:
                     end_date = selected_date.replace(month=selected_date.month + 1, day=1) - datetime.timedelta(days=1)
                 
                 result = start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
-                print(f"DEBUG: Monthly date parsed - Start: {result[0]}, End: {result[1]}")
                 return result
             except ValueError as e:
-                print(f"DEBUG: Monthly date parsing failed: {e}")
-                # Default to current month
                 start_date = today.replace(day=1)
                 if today.month == 12:
                     end_date = today.replace(year=today.year + 1, month=1, day=1) - datetime.timedelta(days=1)
                 else:
                     end_date = today.replace(month=today.month + 1, day=1) - datetime.timedelta(days=1)
                 result = start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
-                print(f"DEBUG: Using fallback - Start: {result[0]}, End: {result[1]}")
                 return result
                 
         elif periodicity == "Yearly":
-            # Parse "YYYY" format
             try:
                 year = int(date_selection)
                 start_date = datetime.date(year, 1, 1)
                 end_date = datetime.date(year, 12, 31)
                 result = start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
-                print(f"DEBUG: Yearly date parsed - Start: {result[0]}, End: {result[1]}")
                 return result
             except ValueError as e:
-                print(f"DEBUG: Yearly date parsing failed: {e}")
                 # Default to current year
                 start_date = datetime.date(today.year, 1, 1)
                 end_date = datetime.date(today.year, 12, 31)
                 result = start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
-                print(f"DEBUG: Using fallback - Start: {result[0]}, End: {result[1]}")
                 return result
         
         # Default fallback
         fallback = today.strftime("%Y-%m-%d"), today.strftime("%Y-%m-%d")
-        print(f"DEBUG: Using default fallback - Start: {fallback[0]}, End: {fallback[1]}")
         return fallback
-    
-    def debug_database_content(self):
-        """Debug function to check database content"""
-        try:
-            conn = self._get_connection()
-            cursor = conn.cursor()
-            
-            # Check if table exists
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='expense'")
-            table_exists = cursor.fetchone()
-            print(f"DEBUG: Expense table exists: {table_exists is not None}")
-            
-            if table_exists:
-                # Get all expenses
-                cursor.execute("SELECT * FROM expense ORDER BY date DESC")
-                all_expenses = cursor.fetchall()
-                print(f"DEBUG: Total expense records: {len(all_expenses)}")
-                
-                for expense in all_expenses:
-                    print(f"DEBUG: Expense record: {expense}")
-                
-                # Get table schema
-                cursor.execute("PRAGMA table_info(expense)")
-                schema = cursor.fetchall()
-                print(f"DEBUG: Expense table schema: {schema}")
-            
-            conn.close()
-            
-        except sqlite3.Error as e:
-            print(f"DEBUG: Database error during debug: {e}")
     
     def get_expenses_by_date_range(self, periodicity: str, date_selection: str) -> Dict[str, any]:
         """
         Fetch expenses data based on periodicity and date selection
         Returns dictionary with total expenses and breakdown
         """
-        print(f"\nDEBUG: ======== Getting expenses for {periodicity} - {date_selection} ========")
-        
-        # Debug database content first
-        self.debug_database_content()
-        
         start_date, end_date = self._parse_date_selection(periodicity, date_selection)
         
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
-            
-            print(f"DEBUG: Querying expenses between {start_date} and {end_date}")
             
             # Get total expenses for the date range
             query = """
@@ -168,19 +105,13 @@ class SalesDashboardController:
                 FROM expense 
                 WHERE date BETWEEN ? AND ?
             """
-            print(f"DEBUG: Executing query: {query}")
-            print(f"DEBUG: Query parameters: {start_date}, {end_date}")
             
             cursor.execute(query, (start_date, end_date))
             result = cursor.fetchone()
-            print(f"DEBUG: Query result: {result}")
             
             total_expenses = result[0] if result else 0
             expense_count = result[1] if result else 0
             
-            print(f"DEBUG: Total expenses: {total_expenses}, Count: {expense_count}")
-            
-            # Get expenses breakdown by type
             cursor.execute("""
                 SELECT 
                     expense_type,
@@ -193,7 +124,6 @@ class SalesDashboardController:
             """, (start_date, end_date))
             
             breakdown = cursor.fetchall()
-            print(f"DEBUG: Breakdown by type: {breakdown}")
             
             # Get detailed expenses list
             cursor.execute("""
@@ -209,7 +139,6 @@ class SalesDashboardController:
             """, (start_date, end_date))
             
             detailed_expenses = cursor.fetchall()
-            print(f"DEBUG: Detailed expenses: {detailed_expenses}")
             
             conn.close()
             
@@ -239,11 +168,9 @@ class SalesDashboardController:
                 }
             }
             
-            print(f"DEBUG: Final result data: {result_data}")
             return result_data
             
         except sqlite3.Error as e:
-            print(f"DEBUG: Database error while fetching expenses: {e}")
             return {
                 'total_expenses': 0,
                 'expense_count': 0,
@@ -262,7 +189,6 @@ class SalesDashboardController:
         Fetch revenue data based on periodicity and date selection
         Returns dictionary with total revenue and breakdown
         """
-        print(f"\nDEBUG: ======== Getting revenue for {periodicity} - {date_selection} ========")
         
         start_date, end_date = self._parse_date_selection(periodicity, date_selection)
         
@@ -270,9 +196,6 @@ class SalesDashboardController:
             conn = self._get_connection()
             cursor = conn.cursor()
             
-            print(f"DEBUG: Querying revenue between {start_date} and {end_date}")
-            
-            # Get total revenue for the date range
             query = """
                 SELECT 
                     COALESCE(SUM(total_amount), 0) as total_revenue,
@@ -281,20 +204,14 @@ class SalesDashboardController:
                 FROM ticket 
                 WHERE DATE(ticket_date) BETWEEN ? AND ?
             """
-            print(f"DEBUG: Executing revenue query: {query}")
-            print(f"DEBUG: Query parameters: {start_date}, {end_date}")
             
             cursor.execute(query, (start_date, end_date))
             result = cursor.fetchone()
-            print(f"DEBUG: Revenue query result: {result}")
             
             total_revenue = result[0] if result else 0
             ticket_count = result[1] if result else 0
             avg_ticket_value = result[2] if result else 0
             
-            print(f"DEBUG: Total revenue: {total_revenue}, Ticket count: {ticket_count}, Avg ticket: {avg_ticket_value}")
-            
-            # Get revenue breakdown by payment method
             cursor.execute("""
                 SELECT 
                     tp.payment_type,
@@ -308,9 +225,7 @@ class SalesDashboardController:
             """, (start_date, end_date))
             
             payment_breakdown = cursor.fetchall()
-            print(f"DEBUG: Payment breakdown: {payment_breakdown}")
             
-            # Get revenue breakdown by product category
             cursor.execute("""
                 SELECT 
                     p.category,
@@ -326,7 +241,6 @@ class SalesDashboardController:
             """, (start_date, end_date))
             
             category_breakdown = cursor.fetchall()
-            print(f"DEBUG: Category breakdown: {category_breakdown}")
             
             conn.close()
             
@@ -355,11 +269,9 @@ class SalesDashboardController:
                 }
             }
             
-            print(f"DEBUG: Final revenue data: {result_data}")
             return result_data
             
         except sqlite3.Error as e:
-            print(f"DEBUG: Database error while fetching revenue: {e}")
             return {
                 'total_revenue': 0,
                 'ticket_count': 0,
@@ -379,7 +291,6 @@ class SalesDashboardController:
         Fetch cost data (COGS - Cost of Goods Sold) based on periodicity and date selection
         Returns dictionary with total costs and breakdown
         """
-        print(f"\nDEBUG: ======== Getting costs for {periodicity} - {date_selection} ========")
         
         start_date, end_date = self._parse_date_selection(periodicity, date_selection)
         
@@ -387,9 +298,6 @@ class SalesDashboardController:
             conn = self._get_connection()
             cursor = conn.cursor()
             
-            print(f"DEBUG: Querying costs between {start_date} and {end_date}")
-            
-            # Get total cost of goods sold for the date range
             query = """
                 SELECT 
                     COALESCE(SUM(pt.unit_price * tl.product_quantity), 0) as total_cogs
@@ -398,18 +306,12 @@ class SalesDashboardController:
                 JOIN ticket t ON tl.ticket_id = t.ticket_id
                 WHERE DATE(t.ticket_date) BETWEEN ? AND ?
             """
-            print(f"DEBUG: Executing COGS query: {query}")
-            print(f"DEBUG: Query parameters: {start_date}, {end_date}")
             
             cursor.execute(query, (start_date, end_date))
             result = cursor.fetchone()
-            print(f"DEBUG: COGS query result: {result}")
             
-            total_cogs = result[0] if result else 0
+            total_cogs = result[0] if result else 0 
             
-            print(f"DEBUG: Total COGS: {total_cogs}")
-            
-            # Get COGS breakdown by product category
             cursor.execute("""
                 SELECT 
                     p.category,
@@ -425,7 +327,6 @@ class SalesDashboardController:
             """, (start_date, end_date))
             
             cogs_breakdown = cursor.fetchall()
-            print(f"DEBUG: COGS breakdown: {cogs_breakdown}")
             
             conn.close()
             
@@ -445,11 +346,9 @@ class SalesDashboardController:
                 }
             }
             
-            print(f"DEBUG: Final COGS data: {result_data}")
             return result_data
             
         except sqlite3.Error as e:
-            print(f"DEBUG: Database error while fetching COGS: {e}")
             return {
                 'total_cogs': 0,
                 'cogs_breakdown': [],
@@ -466,8 +365,6 @@ class SalesDashboardController:
         Get comprehensive sales summary including revenue, costs, expenses, and net profit
         Returns dictionary with all financial metrics
         """
-        print(f"\nDEBUG: ======== Getting sales summary for {periodicity} - {date_selection} ========")
-        
         # Fetch all data
         revenue_data = self.get_revenue_by_date_range(periodicity, date_selection)
         expense_data = self.get_expenses_by_date_range(periodicity, date_selection)
@@ -481,8 +378,8 @@ class SalesDashboardController:
         # Gross Profit = Revenue - COGS
         gross_profit = total_revenue - total_cogs
         
-        # Net Profit = Gross Profit - Operating Expenses
-        net_profit = gross_profit - total_expenses
+        # Net Profit = Revenue - Expenses (simplified calculation as requested)
+        net_profit = total_revenue - total_expenses
         
         # Calculate margins
         gross_margin = (gross_profit / total_revenue * 100) if total_revenue > 0 else 0
@@ -508,13 +405,6 @@ class SalesDashboardController:
             }
         }
         
-        print(f"DEBUG: Sales summary calculated:")
-        print(f"  Revenue: {self.format_currency(total_revenue)}")
-        print(f"  COGS: {self.format_currency(total_cogs)}")
-        print(f"  Expenses: {self.format_currency(total_expenses)}")
-        print(f"  Gross Profit: {self.format_currency(gross_profit)} ({gross_margin:.1f}%)")
-        print(f"  Net Profit: {self.format_currency(net_profit)} ({net_margin:.1f}%)")
-        
         return summary
 
     def get_expense_comparison(self, periodicity: str, date_selection: str) -> Dict[str, any]:
@@ -531,8 +421,6 @@ class SalesDashboardController:
         
         prev_end_date = start_dt - datetime.timedelta(days=1)
         prev_start_date = prev_end_date - datetime.timedelta(days=period_length - 1)
-        
-        print(f"DEBUG: Comparison - Current: {start_date} to {end_date}, Previous: {prev_start_date.strftime('%Y-%m-%d')} to {prev_end_date.strftime('%Y-%m-%d')}")
         
         try:
             conn = self._get_connection()
@@ -556,8 +444,6 @@ class SalesDashboardController:
             
             conn.close()
             
-            print(f"DEBUG: Comparison results - Current: {current_expenses}, Previous: {previous_expenses}")
-            
             # Calculate change
             if previous_expenses > 0:
                 change_amount = current_expenses - previous_expenses
@@ -576,7 +462,6 @@ class SalesDashboardController:
             }
             
         except sqlite3.Error as e:
-            print(f"DEBUG: Database error while fetching expense comparison: {e}")
             return {
                 'current_expenses': 0,
                 'previous_expenses': 0,
@@ -600,7 +485,6 @@ class SalesDashboardController:
         prev_end_date = start_dt - datetime.timedelta(days=1)
         prev_start_date = prev_end_date - datetime.timedelta(days=period_length - 1)
         
-        print(f"DEBUG: Revenue comparison - Current: {start_date} to {end_date}, Previous: {prev_start_date.strftime('%Y-%m-%d')} to {prev_end_date.strftime('%Y-%m-%d')}")
         
         try:
             conn = self._get_connection()
@@ -624,8 +508,6 @@ class SalesDashboardController:
             
             conn.close()
             
-            print(f"DEBUG: Revenue comparison results - Current: {current_revenue}, Previous: {previous_revenue}")
-            
             # Calculate change
             if previous_revenue > 0:
                 change_amount = float(current_revenue) - float(previous_revenue)
@@ -644,7 +526,6 @@ class SalesDashboardController:
             }
             
         except sqlite3.Error as e:
-            print(f"DEBUG: Database error while fetching revenue comparison: {e}")
             return {
                 'current_revenue': 0,
                 'previous_revenue': 0,
@@ -687,8 +568,6 @@ class SalesDashboardController:
             prev_summary = self.get_sales_summary(periodicity, prev_date_selection)
             previous_net_profit = prev_summary['net_profit']
             
-            print(f"DEBUG: Net profit comparison - Current: {current_net_profit}, Previous: {previous_net_profit}")
-            
             # Calculate change
             if previous_net_profit != 0:
                 change_amount = current_net_profit - previous_net_profit
@@ -707,7 +586,6 @@ class SalesDashboardController:
             }
             
         except Exception as e:
-            print(f"DEBUG: Error while calculating net profit comparison: {e}")
             return {
                 'current_net_profit': current_net_profit,
                 'previous_net_profit': 0,
@@ -721,15 +599,12 @@ class SalesDashboardController:
         Fetch sales data grouped by product category
         Returns dictionary with sales breakdown by category
         """
-        print(f"\nDEBUG: ======== Getting sales by category for {periodicity} - {date_selection} ========")
         
         start_date, end_date = self._parse_date_selection(periodicity, date_selection)
         
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
-            
-            print(f"DEBUG: Querying sales by category between {start_date} and {end_date}")
             
             # Get sales by category with detailed metrics
             query = """
@@ -749,12 +624,9 @@ class SalesDashboardController:
                 GROUP BY p.category
                 ORDER BY total_revenue DESC
             """
-            print(f"DEBUG: Executing sales by category query: {query}")
-            print(f"DEBUG: Query parameters: {start_date}, {end_date}")
             
             cursor.execute(query, (start_date, end_date))
             results = cursor.fetchall()
-            print(f"DEBUG: Sales by category results: {results}")
             
             # Calculate totals for percentage calculations
             total_revenue = sum(row[3] for row in results)
@@ -799,11 +671,9 @@ class SalesDashboardController:
                 }
             }
             
-            print(f"DEBUG: Final sales by category data: {result_data}")
             return result_data
             
         except sqlite3.Error as e:
-            print(f"DEBUG: Database error while fetching sales by category: {e}")
             return {
                 'category_breakdown': [],
                 'top_categories': [],
@@ -822,15 +692,12 @@ class SalesDashboardController:
         Fetch sales data grouped by specific products
         Returns dictionary with sales breakdown by individual products
         """
-        print(f"\nDEBUG: ======== Getting sales by product for {periodicity} - {date_selection} ========")
         
         start_date, end_date = self._parse_date_selection(periodicity, date_selection)
         
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
-            
-            print(f"DEBUG: Querying sales by product between {start_date} and {end_date}")
             
             # Get sales by individual products with detailed metrics
             query = """
@@ -855,12 +722,9 @@ class SalesDashboardController:
                 GROUP BY p.product_name, p.category, pt.size, pt.temperature, pt.product_type_id
                 ORDER BY total_revenue DESC
             """
-            print(f"DEBUG: Executing sales by product query: {query}")
-            print(f"DEBUG: Query parameters: {start_date}, {end_date}")
             
             cursor.execute(query, (start_date, end_date))
             results = cursor.fetchall()
-            print(f"DEBUG: Sales by product results: {results}")
             
             # Calculate totals for percentage calculations
             total_revenue = sum(row[6] for row in results)
@@ -921,11 +785,9 @@ class SalesDashboardController:
                 }
             }
             
-            print(f"DEBUG: Final sales by product data: {result_data}")
             return result_data
             
         except sqlite3.Error as e:
-            print(f"DEBUG: Database error while fetching sales by product: {e}")
             return {
                 'product_breakdown': [],
                 'top_products': [],
@@ -944,7 +806,6 @@ class SalesDashboardController:
         Get sales trend data for chart display
         Returns revenue data for the specified number of periods
         """
-        print(f"\nDEBUG: ======== Getting sales trend for {periodicity} - {date_selection} ========")
         
         try:
             conn = self._get_connection()
@@ -1080,11 +941,9 @@ class SalesDashboardController:
                 'periods': periods
             }
             
-            print(f"DEBUG: Sales trend data: {result_data}")
             return result_data
             
         except Exception as e:
-            print(f"DEBUG: Error while fetching sales trend: {e}")
             return {
                 'trend_data': [],
                 'total_revenue': 0,

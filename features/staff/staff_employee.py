@@ -174,7 +174,5 @@ class StaffPageEmployee(ctk.CTkFrame):
         self.mainloop()
 
 if __name__ == "__main__":
-    # You must provide the required arguments: parent and main_app
-    # For standalone testing, you can use None or suitable mock objects
     app = StaffPageEmployee(parent=None, main_app=None)
     app.run()

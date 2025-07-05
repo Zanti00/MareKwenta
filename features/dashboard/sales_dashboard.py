@@ -142,8 +142,6 @@ class SalesDashboard(ctk.CTkFrame):
         category = self.sales_type_var.get()
         periodicity = self.periodicity_var.get()
         date = self.date_var.get()
-
-        print(f"Generating report for {category}, {periodicity}, {date}")
         
         # Fetch comprehensive financial data from database
         sales_summary = self.controller.get_sales_summary(periodicity, date)
@@ -236,32 +234,6 @@ class SalesDashboard(ctk.CTkFrame):
             self.card_labels[1][1].configure(text=net_profit_change_text, text_color=net_profit_change_color)  # Net Profit change
             self.card_labels[2][1].configure(text=expense_change_text, text_color=expense_change_color)  # Expenses change
         
-        # Print financial details for debugging
-        print(f"Financial summary for {periodicity} period '{date}':")
-        print(f"Total Revenue: {revenue_value}")
-        print(f"Total Expenses: {expense_value}")
-        print(f"Net Profit: {net_profit_value}")
-        print(f"Ticket Count: {sales_summary['ticket_count']}")
-        print(f"Average Ticket Value: {self.controller.format_currency(sales_summary['avg_ticket_value'])}")
-        print(f"Gross Profit: {self.controller.format_currency(sales_summary['gross_profit'])}")
-        print(f"Gross Margin: {sales_summary['gross_margin']:.1f}%")
-        print(f"Net Margin: {sales_summary['net_margin']:.1f}%")
-        
-        print(f"\nChanges from previous period:")
-        print(f"Revenue change: {revenue_change_text}")
-        print(f"Net Profit change: {net_profit_change_text}")
-        print(f"Expense change: {expense_change_text}")
-        
-        if sales_summary['expense_data']['breakdown_by_type']:
-            print("\nExpense breakdown by type:")
-            for breakdown in sales_summary['expense_data']['breakdown_by_type']:
-                print(f"  {breakdown['type']}: {self.controller.format_currency(breakdown['total'])} ({breakdown['count']} items)")
-                
-        if sales_summary['revenue_data']['category_breakdown']:
-            print("\nRevenue breakdown by category:")
-            for breakdown in sales_summary['revenue_data']['category_breakdown']:
-                print(f"  {breakdown['category']}: {self.controller.format_currency(breakdown['revenue'])} ({breakdown['items_sold']} items)")
-        
         # Update chart based on selected category using dedicated methods
         self.fig.clf()
         
@@ -309,10 +281,6 @@ class SalesDashboard(ctk.CTkFrame):
                 # Rotate x-axis labels if too many
                 if len(labels) > 5:
                     self.ax.tick_params(axis='x', rotation=45)
-                
-                print(f"\nRevenue trend for {periodicity} period:")
-                for item in trend_data['trend_data']:
-                    print(f"  {item['label']}: {self.controller.format_currency(item['revenue'])} ({item['tickets']} tickets)")
                     
             else:
                 # Fallback chart with current period data
@@ -357,10 +325,6 @@ class SalesDashboard(ctk.CTkFrame):
                            f'{items}\n{self.controller.format_currency(revenue)}',
                            ha='center', va='bottom', fontname='Poppins', fontsize=9)
             
-            # Print category details
-            print(f"\nSales by category for {periodicity} period '{date}':")
-            for cat in category_data['category_breakdown']:
-                print(f"  {cat['category']}: {self.controller.format_currency(cat['total_revenue'])} ({cat['items_sold']} items, {cat['gross_margin']:.1f}% margin)")
         else:
             # Fallback if no data
             self.ax.text(0.5, 0.5, 'No category sales data available', 
@@ -392,18 +356,12 @@ class SalesDashboard(ctk.CTkFrame):
             )
             self.ax.set_title("Sales by Product", fontname='Poppins', fontsize=14, fontweight='bold')
             
-            # Print product details
-            print(f"\nTop selling products for {periodicity} period '{date}':")
-            for product in top_products:
-                print(f"  {product['product_display']}: {self.controller.format_currency(product['total_revenue'])} ({product['items_sold']} sold)")
         else:
             # Fallback if no data
             self.ax.text(0.5, 0.5, 'No product sales data available', 
                        horizontalalignment='center', verticalalignment='center',
                        fontname='Poppins', fontsize=14)
             self.ax.set_title("Sales by Product", fontname='Poppins', fontsize=14, fontweight='bold')
-
-    # ...existing code...
 
     def on_periodicity_change(self, value):
         periodicity = self.periodicity_var.get()
@@ -445,15 +403,9 @@ class SalesDashboard(ctk.CTkFrame):
     def on_generate(self):
         """Handle generate button click - fetch and display expense data"""
         self.update_data()
-        print("Generate button clicked")
-        print(f"Sales Type: {self.sales_type_var.get()}")
-        print(f"Periodicity: {self.periodicity_var.get()}")
-        print(f"Date: {self.date_var.get()}")
 
     def on_sales_type_change(self, value):
         """Handle sales type dropdown change - automatically update the view"""
-        print(f"Sales type changed to: {value}")
-        # Automatically update the display when sales type changes
         self.update_data()
 
     def show_ticket(self):
@@ -478,7 +430,6 @@ class SalesDashboard(ctk.CTkFrame):
 if __name__ == "__main__":
     import tkinter as tk
     root = tk.Tk()
-    # Replace 'main_app' with 'root' as parent, and pass 'root' as main_app if needed
     app = SalesDashboard(parent=root, main_app=root)
     app.pack(fill="both", expand=True)
     root.mainloop()

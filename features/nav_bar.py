@@ -115,7 +115,6 @@ class Navbar(ctk.CTkFrame):
     
     def setup_logout_button(self):
         icon = self.load_icon("Log out.png", size=(24, 24))
-        # Set row 4 to weight 0, and row 3 (spacer) to weight 1 to push logout to bottom
         self.grid_rowconfigure(3, weight=1)  # Spacer
         self.grid_rowconfigure(4, weight=0)  # Log out
         self.logout_btn = ctk.CTkButton(
@@ -170,17 +169,13 @@ class Navbar(ctk.CTkFrame):
                 while hasattr(root_window, 'master') and root_window.master:
                     root_window = root_window.master
                 
-                # Import login window here to avoid circular imports
                 try:
-                    # First try to import from the current directory structure
                     from log_in import LoginWindow
                 except ImportError:
                     try:
-                        # Try alternative import paths
                         from authentication.log_in import LoginWindow
                     except ImportError:
                         try:
-                            # Try another common structure
                             import sys
                             import os
                             sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -197,7 +192,6 @@ class Navbar(ctk.CTkFrame):
                 login_window.mainloop()
                 
         except Exception as e:
-            print(f"Error during logout: {e}")
             # Fallback: just destroy the current window
             try:
                 root_window = self.parent_window

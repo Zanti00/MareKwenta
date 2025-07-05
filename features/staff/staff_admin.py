@@ -149,7 +149,6 @@ class StaffPageAdmin(ctk.CTkFrame):
 
     def edit_employee(self, employee):
         """Edit an existing employee"""
-        # TODO: Implement edit functionality (will also use the controller)
         self.custom_messagebox("Edit Employee", f"Edit functionality for {employee['first_name']} {employee['last_name']}")
 
     def open_add_employee_popup(self):

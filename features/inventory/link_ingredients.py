@@ -17,7 +17,7 @@ class AddProductDialog:
         self.on_save = on_save
         self.dialog = ctk.CTkToplevel(parent)
         self.dialog.title("Add Product")
-        self.dialog.geometry("420x400")  # Reduced height since removing price field
+        self.dialog.geometry("420x400")
         self.dialog.configure(fg_color="#f2efea")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -626,7 +626,6 @@ class LinkIngredientsPage(ctk.CTkFrame):
 
     def refresh(self):
         """Refresh the link ingredients page"""
-        print("Refreshing Link Ingredients page...")
         self.load_products()
 
     def load_products(self):
@@ -635,7 +634,6 @@ class LinkIngredientsPage(ctk.CTkFrame):
             self.products = ProductController.get_all_products()
             self.refresh_product_list()
         except Exception as e:
-            print(f"Error loading products: {e}")
             messagebox.showerror("Error", f"Failed to load products: {e}")
 
     def create_product_card(self, product, index):

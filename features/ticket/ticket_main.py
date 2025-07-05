@@ -22,16 +22,9 @@ class TicketMainPage(ctk.CTkFrame):
         self.main_app = main_app
         self.current_user_id = employee_id
         
-        # Configure appearance
-        # ctk.set_appearance_mode("light")
-        # ctk.set_default_color_theme("blue")
-        
         # Configure grid
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
-        
-        # Bind window close event
-        # self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
         # Initialize cart items list
         self.cart_items = []
@@ -50,17 +43,6 @@ class TicketMainPage(ctk.CTkFrame):
             pass
 
     def setup_ui(self):
-        # Create navbar
-        # self.navbar = Navbar(self, width=124, user_role=self.user_role, active_tab="ticket")
-        # self.navbar.grid(row=0, column=0, sticky="ns")
-        
-        # # Set navigation callbacks
-        # self.navbar.set_nav_callback("ticket", self.show_ticket)
-        # self.navbar.set_nav_callback("receipt", self.show_receipt)
-        # self.navbar.set_nav_callback("inventory", self.show_inventory)
-        # self.navbar.set_nav_callback("staff", self.show_staff)
-        # self.navbar.set_nav_callback("cashbox", self.show_cashbox)
-        # self.navbar.set_nav_callback("dashboard", self.show_dashboard)
         
         # Main content area
         self.main_frame = ctk.CTkFrame(self, fg_color="#f2efea")
@@ -116,10 +98,7 @@ class TicketMainPage(ctk.CTkFrame):
             self.current_total += item_total
             self.ticket_panel.update_total(self.current_total)
             
-            print(f"Item added/updated in cart. New total: ₱{self.current_total:.2f}")
-            
         except Exception as e:
-            print(f"Error adding item to cart: {e}")
             messagebox.showerror("Error", f"Failed to add item to cart: {e}")
 
     def find_existing_item(self, new_cart_item):
@@ -136,7 +115,6 @@ class TicketMainPage(ctk.CTkFrame):
                     return item_detail
             return None
         except Exception as e:
-            print(f"Error finding existing item: {e}")
             return None
 
     def update_existing_item(self, existing_item_detail, new_cart_item):
@@ -163,10 +141,8 @@ class TicketMainPage(ctk.CTkFrame):
                     cart_item["quantity"] = new_quantity
                     break
             
-            print(f"Updated existing item quantity to {new_quantity}")
-            
         except Exception as e:
-            print(f"Error updating existing item: {e}")
+            messagebox.showerror(f"Error updating existing item: {e}")
 
     def refresh_item_detail_display(self, item_detail):
         """Refresh the display of an ItemDetail widget"""
@@ -235,7 +211,7 @@ class TicketMainPage(ctk.CTkFrame):
             total_text.place(relx=1.0, rely=1.0, anchor="se")
             
         except Exception as e:
-            print(f"Error refreshing item detail display: {e}")
+            messagebox.showerror(f"Error refreshing item detail display: {e}")
 
     def remove_item(self, product_name, item_total):
         """Handle item removal from cart"""
@@ -256,10 +232,8 @@ class TicketMainPage(ctk.CTkFrame):
                 if not (item.product_name == product_name and item.item_total == item_total)
             ]
 
-            print(f"Item removed. New total: ₱{self.current_total:.2f}")
-
         except Exception as e:
-            print(f"Error removing item: {e}")
+            messagebox.showerror(f"Error removing item: {e}")
 
     def handle_charge(self, charge_data):
         """Handle charge button click - create ticket in database"""
@@ -298,8 +272,6 @@ class TicketMainPage(ctk.CTkFrame):
                 if not result:
                     return
             
-            print(f"Processing charge: {charge_data}")
-            
             # Create ticket in database
             ticket_result = TicketController.create_ticket(
                 employee_id=self.current_user_id,
@@ -332,6 +304,15 @@ class TicketMainPage(ctk.CTkFrame):
                 # Clear cart after successful transaction
                 self.clear_cart()
                 
+                # Refresh the product panel to show updated inventory levels
+                if hasattr(self, 'product_panel') and hasattr(self.product_panel, 'refresh'):
+                    self.product_panel.refresh()
+                    print("Product panel refreshed after successful order")
+                
+                # Also refresh the inventory frame in the main app
+                if hasattr(self.main_app, 'refresh_inventory_after_transaction'):
+                    self.main_app.refresh_inventory_after_transaction()
+                
             else:
                 if error_msg and "Insufficient inventory" in error_msg:
                     messagebox.showerror("Insufficient Inventory", error_msg)
@@ -339,22 +320,17 @@ class TicketMainPage(ctk.CTkFrame):
                     messagebox.showerror("Error", error_msg or "Failed to create ticket")
                 
         except Exception as e:
-            print(f"Error handling charge: {e}")
             messagebox.showerror("Error", f"Failed to process charge: {e}")
 
     def show_receipt_popup(self, ticket_id):
         """Show receipt popup with ticket details"""
         try:
-            print(f"Showing receipt for ticket ID: {ticket_id}")
             ticket_details = TicketController.get_ticket_details(ticket_id)
             if ticket_details:
-                print("Ticket details retrieved successfully, creating receipt popup")
                 ReceiptPopup(self, ticket_details)
             else:
-                print("Failed to retrieve ticket details from database")
                 messagebox.showerror("Error", "Failed to retrieve ticket details")
         except Exception as e:
-            print(f"Error showing receipt: {e}")
             import traceback
             traceback.print_exc()
             messagebox.showerror("Error", f"Failed to show receipt: {e}")
@@ -375,10 +351,8 @@ class TicketMainPage(ctk.CTkFrame):
             self.ticket_panel.cash_received_display.configure(text="₱ 0")
             self.ticket_panel.update_change()
             
-            print("Cart cleared successfully")
-            
         except Exception as e:
-            print(f"Error clearing cart: {e}")
+            messagebox.showerror(f"Error clearing cart: {e}")
 
     def refresh(self):
         """Refresh the ticket page - mainly refreshes the product panel to show new products"""
@@ -390,7 +364,7 @@ class TicketMainPage(ctk.CTkFrame):
                 self.product_panel.update_idletasks()
                 self.update_idletasks()
         except Exception as e:
-            print(f"Error refreshing ticket page: {e}")
+            messagebox.showerror(f"Error refreshing ticket page: {e}")
 
     # Navigation methods
     def show_ticket(self):
@@ -415,7 +389,7 @@ class TicketMainPage(ctk.CTkFrame):
         try:
             self.ticket_panel.open_split_popup(total)
         except Exception as e:
-            print(f"Error opening split popup: {e}")
+            messagebox.showerror(f"Error opening split popup: {e}")
 
 # Alternative entry point function to avoid recursion issues
 def create_ticket_app(user_role="employee"):
@@ -424,5 +398,5 @@ def create_ticket_app(user_role="employee"):
         app = TicketMainPage(None, None, user_role=user_role)
         return app
     except Exception as e:
-        print(f"Error creating ticket app: {e}")
+        messagebox.showerror(f"Error creating ticket app: {e}")
         return None

@@ -31,20 +31,17 @@ class ProductPanel(ctk.CTkFrame):
     def load_products_from_db(self):
         """Load products from the database grouped by product, not by variant"""
         try:
-            print("ProductPanel: Loading products from database...")
             
             # Import ProductController here to avoid circular imports
             sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'inventory'))
             from inventory.product_controller import ProductController
             
             db_products = ProductController.get_all_products()
-            print(f"ProductPanel: Retrieved {len(db_products)} products from database")
             self.products = []
             
             for product in db_products:
                 # Get all product types for this product to check if it has pricing
                 product_types = ProductController.get_product_types_by_product_id(product['product_id'])
-                print(f"ProductPanel: Product '{product['name']}' has {len(product_types)} product types")
                 
                 if product_types:
                     # Product has variants with pricing - show as single product
@@ -72,7 +69,6 @@ class ProductPanel(ctk.CTkFrame):
                     })
                 else:
                     # Product with no types yet - show as unavailable
-                    print(f"ProductPanel: Product '{product['name']}' has no product types, showing as unavailable")
                     self.products.append({
                         "name": product['name'],
                         "image": product.get('image', 'default.png'),
@@ -83,8 +79,6 @@ class ProductPanel(ctk.CTkFrame):
                         "product_id": product['product_id'],
                         "product_types": []
                     })
-            
-            print(f"ProductPanel: Processed {len(self.products)} products total")
                     
         except Exception as e:
             print(f"Error loading products from database: {e}")
@@ -193,15 +187,12 @@ class ProductPanel(ctk.CTkFrame):
             if not has_enough:
                 messagebox.showwarning("Low Inventory", f"Warning: {error_msg}\n\nYou can still proceed, but check inventory levels.")
         except Exception as e:
-            print(f"Error checking inventory: {e}")
-            # Continue anyway if inventory check fails
+            messagebox.showerror(f"Error checking inventory: {e}")
             
         if product["category"] in ["Coffee", "Non-Coffee"]:
-            # Show modifier popup for beverages
             self.show_modifier_popup(product)
         else:
-            # Food item - show quantity selection popup
-            food_type = product["product_types"][0]  # Food should have only one type
+            food_type = product["product_types"][0]
             if food_type and food_type['selling_price'] > 0:
                 self.show_food_quantity_popup(product, food_type)
 
@@ -281,10 +272,5 @@ class ProductPanel(ctk.CTkFrame):
 
     def refresh(self):
         """Refresh the product list from database"""
-        print("ProductPanel: Starting refresh...")
-        old_count = len(self.products)
         self.load_products_from_db()
-        new_count = len(self.products)
-        print(f"ProductPanel: Loaded {new_count} products (was {old_count})")
         self.filter_products(self.current_tab)
-        print(f"ProductPanel: Filtered to {len(self.filtered_products)} products for tab '{self.current_tab}'")

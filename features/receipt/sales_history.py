@@ -31,12 +31,10 @@ class SalesHistoryMain(ctk.CTkFrame):
         main_content.grid_columnconfigure(1, weight=2)
 
         self.selected_receipt = None
-        self.receipts_data = []  # Store fetched receipts
+        self.receipts_data = []
 
-        # Load receipts from database
         self.load_receipts_from_db()
 
-        # === LEFT COLUMN (Header + Product Panel) ===
         left_column = ctk.CTkFrame(main_content, fg_color="transparent", width=300)
         left_column.grid(row=0, column=0, sticky="ns", padx=(20, 20), pady=40)
         left_column.grid_rowconfigure(2, weight=1)
@@ -331,7 +329,6 @@ class SalesHistoryMain(ctk.CTkFrame):
 
     def refresh(self):
         """Refreshes the sales history data and UI."""
-        print("Refreshing Sales History data...")
         self.load_receipts_from_db()
         self.populate_receipt_list()
         # Optionally, clear or re-display the selected receipt if needed

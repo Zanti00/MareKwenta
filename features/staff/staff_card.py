@@ -1,3 +1,4 @@
+from tkinter import messagebox
 import customtkinter as ctk
 from datetime import datetime, timedelta
 from typing import Optional
@@ -224,18 +225,11 @@ class StaffTimeCard(ctk.CTkFrame):
             return
 
         if self.is_on_break:
-            # Employee is currently on break, so this click is to end the break
             self.show_password_popup("end break", self._do_end_break)
         else:
-            # Employee is not on break, so this click is to start a break
-            # Only allow starting a break if break_in hasn't been recorded yet for the day
-            # or if break_in exists but break_out also exists (meaning a break was completed and another can start if multiple breaks are allowed).
-            # For now, let's stick to the assumption of one break-in, one break-out cycle per attendance_id.
             if self.break_in == "--" or (self.break_in != "--" and self.break_out != "--"): # Allow if no break started or a previous break completed
                 self.show_password_popup("start break", self._do_start_break)
             else:
-                print("Break already in progress or completed for today.")
-                # You might want to show a message to the user that they can't take another break
                 self._update_button_states() # Ensure button is disabled if break already completed
 
     def _do_start_break(self):
@@ -247,7 +241,7 @@ class StaffTimeCard(ctk.CTkFrame):
             self.break_label.configure(text=self._get_break_display_text())
             self._update_button_states()
         else:
-            print("Failed to start break.")
+            messagebox.showwarning("Failed to start break.")
 
     def _do_end_break(self):
         current_time = datetime.now()
@@ -258,7 +252,7 @@ class StaffTimeCard(ctk.CTkFrame):
             self.break_label.configure(text=self._get_break_display_text())
             self._update_button_states()
         else:
-            print("Failed to end break.")
+            messagebox.showwarning("Failed to end break.")
 
 
     def show_password_popup(self, action, on_success_callback):

@@ -516,3 +516,26 @@ class InventoryManagement(ctk.CTkFrame):
         except Exception as e:
             print(f"Error loading inventory from DB: {e}")
             messagebox.showerror("Error", f"Failed to load inventory from database: {e}")
+
+    def refresh(self):
+        """Refresh the inventory page by reloading data from the database"""
+        try:
+            print("InventoryManagement: Refreshing inventory data...")
+            self.load_inventory_from_db()
+            print("InventoryManagement: Inventory data refreshed successfully")
+            # Force update the UI
+            self.update_idletasks()
+        except Exception as e:
+            print(f"Error refreshing inventory page: {e}")
+
+    def force_refresh(self):
+        """Force a complete refresh of the inventory page - useful after inventory deductions"""
+        try:
+            print("InventoryManagement: Force refreshing inventory data...")
+            # Clear current data
+            self.inventory_data = []
+            # Reload from database
+            self.load_inventory_from_db()
+            print("InventoryManagement: Force refresh completed")
+        except Exception as e:
+            print(f"Error force refreshing inventory page: {e}")

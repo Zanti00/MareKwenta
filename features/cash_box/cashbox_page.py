@@ -9,13 +9,13 @@ from .add_expense import AddExpenseDialog
 from .edit_expense import EditExpenseDialog
 
 class CashBoxApp(ctk.CTkFrame):
-    def __init__(self, parent, main_app, user_role="employee"):
+    def __init__(self, parent, main_app, user_role="employee", employee_id = None):
         super().__init__(parent)
         self.configure(fg_color="#f2efea")
         self.main_app = main_app
         self.user_role = user_role
         # For now, using a hardcoded employee_id. In a real app, this would come from login.
-        self.employee_id = 1 
+        self.employee_id = employee_id
 
         self.controller = CashboxController()
         self.current_date = datetime.now().strftime('%Y-%m-%d')
@@ -24,9 +24,6 @@ class CashBoxApp(ctk.CTkFrame):
         # Configure grid weights for main layout
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
-        
-        # Bind window close event
-        # self.protocol("WM_DELETE_WINDOW", self.on_closing)
         
         self.setup_ui()
         self.refresh_expense_list() # Initial load of expenses
@@ -41,8 +38,6 @@ class CashBoxApp(ctk.CTkFrame):
         self.cash_sales_amount = cashbox_data['cash_sales_amount']
         self.cash_expenses_amount = cashbox_data['cash_expenses_amount']
         self.non_cash_expenses_amount = cashbox_data['non_cash_expenses_amount']
-        # Calculate net profit as: (cash + gcash + maya) - (cash expenses + non-cash expenses)
-        # This will be displayed as "NET PROFIT" in the UI
         self.net_profit = (self.cash_amount + self.gcash_amount + self.maya_amount) - (self.cash_expenses_amount + self.non_cash_expenses_amount)
         self.expenses = self.controller.get_expenses_by_date(self.current_date)
 
@@ -117,7 +112,6 @@ class CashBoxApp(ctk.CTkFrame):
         self.setup_expense_section(content_frame)
         
     def setup_payment_cards(self, parent):
-        # Container for payment cards with soft shadow and rounded corners
         cards_container = ctk.CTkFrame(
             parent,
             fg_color="#f7f3ee",
@@ -129,7 +123,6 @@ class CashBoxApp(ctk.CTkFrame):
         cards_container.grid_propagate(False)
         cards_container.grid_rowconfigure(0, weight=1)
         cards_container.grid_columnconfigure(0, weight=1)
-        # Inner grid for cards: 2 columns, 4 rows
         cards_frame = ctk.CTkFrame(cards_container, fg_color="transparent")
         cards_frame.grid(row=0, column=0, sticky="nsew", padx=24, pady=24)
         for i in range(4):
@@ -147,12 +140,10 @@ class CashBoxApp(ctk.CTkFrame):
             ("CASH EXPENSES", self.cash_expenses_amount, "#6B3F19", "cash.png"),
             ("NON - CASH EXPENSES", self.non_cash_expenses_amount, "#6B3F19", "cash.png"),
         ]
-        # Arrange as 2 columns: first 6 cards in rows 0-2
         for idx, (method, amount, color, icon_file) in enumerate(payment_methods[:6]):
             row = idx // 2
             col = idx % 2
             self.create_soft_card(cards_frame, row, col, method, amount, color, icon_file)
-        # Last card (NON - CASH EXPENSES) spans both columns in last row
         self.create_soft_card(cards_frame, 3, 0, payment_methods[6][0], payment_methods[6][1], payment_methods[6][2], payment_methods[6][3], colspan=2)
 
     def create_soft_card(self, parent, row, col, title, amount, color, icon_file, colspan=1):
@@ -174,7 +165,6 @@ class CashBoxApp(ctk.CTkFrame):
         card_frame.grid_rowconfigure(1, weight=2)
         card_frame.grid_columnconfigure(0, weight=1)
         card_frame.grid_columnconfigure(1, weight=0)
-        # Icon (right, top)
         icon_img = None
         icon_label = None
         try:
@@ -187,7 +177,6 @@ class CashBoxApp(ctk.CTkFrame):
                 icon_label.grid(row=0, column=1, sticky="ne", padx=(0, 16), pady=(12, 0))
         except Exception:
             pass
-        # Title (left, top)
         title_label = ctk.CTkLabel(
             card_frame,
             text=title,
@@ -196,7 +185,6 @@ class CashBoxApp(ctk.CTkFrame):
             anchor="w"
         )
         title_label.grid(row=0, column=0, sticky="nw", padx=(18, 0), pady=(14, 0))
-        # Amount (centered, big)
         amount_label = ctk.CTkLabel(
             card_frame,
             text=f"₱ {amount:,.2f}",
@@ -208,7 +196,6 @@ class CashBoxApp(ctk.CTkFrame):
         amount_label.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=18, pady=(0, 12))
         
     def setup_expense_section(self, parent):
-        # Main expense container with border and rounded corners
         expense_container = ctk.CTkFrame(
             parent,
             fg_color="#f2efea",
@@ -220,7 +207,6 @@ class CashBoxApp(ctk.CTkFrame):
         expense_container.grid_columnconfigure(0, weight=1)
         expense_container.grid_rowconfigure(1, weight=1)
 
-        # Header section with title and add button
         header_frame = ctk.CTkFrame(expense_container, fg_color="transparent", border_width=0)
         header_frame.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
         header_frame.grid_columnconfigure(0, weight=1)
@@ -250,38 +236,34 @@ class CashBoxApp(ctk.CTkFrame):
         )
         add_button.grid(row=0, column=1, sticky="e")
 
-        # Expense list container
         self.expense_list_frame = ctk.CTkScrollableFrame(
             expense_container,
             fg_color="transparent",
-            border_width=0,  # Ensure no border
+            border_width=0,
             corner_radius=0,
-            width=370  # Set fixed width to prevent overlap
+            width=370
         )
         self.expense_list_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 20))  # Add horizontal padding
         self.expense_list_frame.grid_columnconfigure(0, weight=1)
         self.refresh_expense_list()
         
     def refresh_expense_list(self):
-        # Clear existing widgets
         for widget in self.expense_list_frame.winfo_children():
             widget.destroy()
         
-        # Fetch latest expenses from DB
         self.expenses = self.controller.get_expenses_by_date(self.current_date)
 
-        # Populate with new data
         for i, expense in enumerate(self.expenses):
             self.create_expense_item(i, expense)
         
-        self.update_totals() # Update totals after refreshing the list
+        self.update_totals()
 
     def create_expense_item(self, index, expense):
         item_frame = ctk.CTkFrame(
             self.expense_list_frame,
             height=80,
             fg_color="#ffffff",
-            border_width=0,  # Remove border to avoid extra lines
+            border_width=0,
             corner_radius=12
         )
         item_frame.grid(row=index, column=0, sticky="ew", padx=12, pady=10)
@@ -291,7 +273,6 @@ class CashBoxApp(ctk.CTkFrame):
         item_frame.grid_columnconfigure(2, weight=0)
         item_frame.grid_rowconfigure(0, weight=1)
 
-        # Action buttons (delete, edit) in a horizontal row, vertically centered, fixed size
         action_frame = ctk.CTkFrame(item_frame, fg_color="transparent", width=80, height=80)
         action_frame.grid(row=0, column=0, sticky="nsew", padx=(16, 0), pady=0)
         action_frame.grid_rowconfigure(0, weight=1)
@@ -330,7 +311,6 @@ class CashBoxApp(ctk.CTkFrame):
         )
         edit_btn.grid(row=0, column=1, padx=0, pady=0, sticky="")
 
-        # Expense details (name and category), vertically centered and expanding
         details_frame = ctk.CTkFrame(item_frame, fg_color="transparent", width=200, height=80)
         details_frame.grid(row=0, column=1, sticky="nsew", padx=(18, 0), pady=0)
         details_frame.grid_columnconfigure(0, weight=1)
@@ -353,7 +333,6 @@ class CashBoxApp(ctk.CTkFrame):
         )
         category_label.grid(row=1, column=0, sticky="nw", pady=(0, 8))
 
-        # Amount (right side, vertically centered, no overflow)
         amount_label = ctk.CTkLabel(
             item_frame,
             text=f"₱ {expense['amount']:.2f}",
@@ -365,7 +344,6 @@ class CashBoxApp(ctk.CTkFrame):
         
     def add_expense_clicked(self):
         def on_save(expense_data):
-            # Pass employee_id to the controller
             success = self.controller.add_expense(
                 expense_data["name"], 
                 expense_data["amount"], 
@@ -406,11 +384,8 @@ class CashBoxApp(ctk.CTkFrame):
     def update_totals(self):
         """Updates the cashbox summary and refreshes the payment cards."""
         self.update_cashbox_data()
-        # Re-setup payment cards to reflect updated amounts
-        # This will clear and recreate the cards with new values
-        self.setup_payment_cards(self.main_frame.winfo_children()[1]) # Pass the content_frame
+        self.setup_payment_cards(self.main_frame.winfo_children()[1])
         
-    # Navigation methods now use main_app.show_frame
     def show_ticket(self):
         self.main_app.show_frame("ticket")
     def show_receipt(self):
